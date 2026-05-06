@@ -31,7 +31,7 @@ import {
 } from '@/src/types/entity/app.interface';
 import { Pagination } from '../../components/common/Pagination';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { EditWarehouseModal } from '../../components/features/warehouses/EditWarehouseModal';
 import { SetWithdrawalLimitModal } from '../../components/features/warehouses/SetWithdrawalLimitModal';
 import { ReturnToMainWarehouseModal } from '../../components/features/warehouses/ReturnToMainWarehouseModal';

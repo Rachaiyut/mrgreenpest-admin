@@ -29,7 +29,7 @@ import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { UserWalletModal } from '../../components/features/users/UserWalletModal';
 import { RoleApi, Role } from '../../api/role';
 import { UserApi } from '../../api/user';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 
 const ROLE_NAME_MAPPING: Record<string, string> = {};
 

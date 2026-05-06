@@ -1,4 +1,4 @@
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import {
   useState,
   useEffect,
@@ -1278,7 +1278,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     if (paymentCondition === PaymentMethod.INSTALLMENT) {
       const totalInstallment = installments.reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0);
       if (Math.abs(totalInstallment - netTotal) >= 1) {
-        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `ยอดรวมงวดงาน (${totalInstallment.toLocaleString()}) ไม่ตรงกับยอดรวมสุทธิ (${netTotal.toLocaleString()})` });
+        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `ยอดรวมงวดงาน (${totalInstallment.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) ไม่ตรงกับยอดรวมสุทธิ (${netTotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` });
         return;
       }
     }
@@ -1564,12 +1564,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} disabled={isReadOnly} placeholder="หมายเหตุเพิ่มเติม..." className="!w-full !max-w-none resize-none flex-1" />
           </div>
           <div className="w-full lg:w-96 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน</span><span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span></div>
+            <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน</span><span className="font-medium text-slate-900">{subtotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span></div>
             <div className="flex justify-between items-center text-sm">
               <label className={`flex items-center gap-2 ${isReadOnly ? 'cursor-not-allowed text-slate-400' : 'cursor-pointer text-slate-600'}`}><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} disabled={isReadOnly} className={`rounded h-4 w-4 ${isReadOnly ? 'border-slate-200 text-slate-400 cursor-not-allowed opacity-60' : 'border-slate-300 text-green-600'}`} />ภาษีมูลค่ารวม 7% (VAT)</label>
-              <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>
+              <span className="font-medium text-slate-900">{vatAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
             </div>
-            <div className="border-t border-slate-200 pt-3 flex justify-between items-center"><span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span><span className="text-xl font-bold text-green-600">{netTotal.toLocaleString()} บาท</span></div>
+            <div className="border-t border-slate-200 pt-3 flex justify-between items-center"><span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span><span className="text-xl font-bold text-green-600">{netTotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span></div>
           </div>
         </div>
 

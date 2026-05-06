@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, FC } from 'react';
 import { createPortal } from 'react-dom';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { FormField, Input, Button, Textarea } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
@@ -748,7 +748,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                     .map((q) => ({
                       value: q.id,
                       label: q.code || `QT-${q.id.slice(0, 8)}`,
-                      description: `${q.customer_name} - ${Number(q.total).toLocaleString()} บาท`,
+                      description: `${q.customer_name} - ${Number(q.total).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`,
                     }))}
                   placeholder="เลือกใบเสนอราคา (ถ้ามี)"
                   className="bg-white h-11"
@@ -831,7 +831,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                         </td>
                       )}
                       <td className="px-4 py-4 text-sm text-center font-bold text-slate-900">
-                        ฿{Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                       </td>
                     </tr>
                     );
@@ -1043,7 +1043,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                       <tr key={p.id} className="[&>td]:text-center [&>td]:align-middle">
                         <td className="px-4 py-3 text-sm text-slate-700 !text-left">{method}</td>
                         <td className="px-4 py-3 text-sm font-bold text-emerald-600">
-                          ฿{Number(p.amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          {Number(p.amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-600">{paidAt}</td>
                         <td className="px-4 py-3 text-sm">

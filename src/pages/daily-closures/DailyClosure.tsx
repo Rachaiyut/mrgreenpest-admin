@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { DailyJobClosure, DailyClosureOverviewItem } from '@/src/types/entity/daily-closure.interface';
 import { DailyClosureApi } from '@/src/api/daily-closure';
 import { JobApi } from '@/src/api/job';
@@ -13,7 +13,6 @@ import {
   TruckIcon,
   DocumentCheckIcon,
   ClockIcon,
-  CalendarDaysIcon,
 } from '../../assets/icons/Icons';
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
@@ -302,7 +301,7 @@ const DailyClosure: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <div className="flex-1 min-w-[120px] sm:w-48 sm:flex-none relative">
+              <div className="flex-1 min-w-[120px] sm:w-48 sm:flex-none">
                 <BuddhistDatePicker
                   selected={filterDate}
                   onChange={(date: Date | null) => {
@@ -312,10 +311,9 @@ const DailyClosure: React.FC = () => {
                   dateFormat="dd/MM/yyyy"
                   placeholderText="เลือกวันที่"
                   isClearable
-                  className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                  className="w-full pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
                   wrapperClassName="w-full"
                 />
-                <CalendarDaysIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
               </div>
               <div className="flex-1 min-w-[120px] sm:w-40 sm:flex-none">
                 <DropdownSelect

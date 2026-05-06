@@ -1,5 +1,5 @@
 // ===== React / External =====
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import {
   FC,
   Fragment,
@@ -830,13 +830,13 @@ const Issue: FC = () => {
           </div>
           <Button onClick={() => setIsAddModalOpen(true)}>
             <PlusIcon className="h-5 w-5" />
-            สร้างใบเบิก
+            สร้างใบเบิกสินค้า/อุปกรณ์
           </Button>
         </div>
 
-        <Card className="!p-4 mb-4 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row gap-3 items-center">
-            <div className="relative w-full sm:w-72 flex-shrink-0">
+        <Card className="!p-3 sm:!p-4 mb-4 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-stretch sm:items-center">
+            <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-sm">
               <Input
                 type="search"
                 placeholder="ค้นหาเลขที่เอกสารเบิก"
@@ -853,7 +853,7 @@ const Issue: FC = () => {
               </svg>
             </div>
             {!isTechRole && (
-              <div className="w-full sm:w-48 flex-shrink-0">
+              <div className="w-full sm:w-48 sm:flex-shrink-0">
                 <SearchableSelect
                   value={creatorFilter === 'all' ? '' : creatorFilter}
                   onChange={(v) => {
@@ -874,27 +874,27 @@ const Issue: FC = () => {
                 />
               </div>
             )}
-
-            <DropdownSelect
-              value={statusFilter}
-              onChange={(val) => {
-                setStatusFilter(val);
-                setCurrentPage(1);
-              }}
-              className="w-fit text-sm"
-              options={[
-                { value: 'all', label: 'สถานะทั้งหมด' },
-                { value: 'DRAFT', label: 'ฉบับร่าง' },
-                { value: 'PENDING', label: 'รออนุมัติ' },
-                { value: 'APPROVED', label: 'อนุมัติแล้ว' },
-                { value: 'PARTIALLY_APPROVED', label: 'อนุมัติบางส่วน' },
-                { value: 'REJECTED', label: 'ไม่อนุมัติ' },
-                { value: 'COMPLETED', label: 'เสร็จสิ้น' },
-                { value: 'CANCELLED', label: 'ยกเลิก' },
-              ]}
-            />
-
-            <div className="flex items-center gap-2">
+            <div className="w-full sm:w-auto">
+              <DropdownSelect
+                value={statusFilter}
+                onChange={(val) => {
+                  setStatusFilter(val);
+                  setCurrentPage(1);
+                }}
+                className="w-full sm:w-fit text-sm"
+                options={[
+                  { value: 'all', label: 'สถานะทั้งหมด' },
+                  { value: 'DRAFT', label: 'ฉบับร่าง' },
+                  { value: 'PENDING', label: 'รออนุมัติ' },
+                  { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+                  { value: 'PARTIALLY_APPROVED', label: 'อนุมัติบางส่วน' },
+                  { value: 'REJECTED', label: 'ไม่อนุมัติ' },
+                  { value: 'COMPLETED', label: 'เสร็จสิ้น' },
+                  { value: 'CANCELLED', label: 'ยกเลิก' },
+                ]}
+              />
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <DatePicker
                 selected={startDate ? new Date(startDate) : null}
                 onChange={(date: Date | null) => {
@@ -903,12 +903,12 @@ const Issue: FC = () => {
                 }}
                 dateFormat="dd/MM/yyyy"
                 locale="th"
-                placeholderText="เริ่มต้น"
+                placeholderText="วันที่เริ่มต้น"
                 isClearable
                 className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                wrapperClassName="w-32 sm:w-36"
+                wrapperClassName="flex-1 sm:w-36"
               />
-              <span className="text-slate-400">-</span>
+              <span className="text-slate-400 shrink-0">-</span>
               <DatePicker
                 selected={endDate ? new Date(endDate) : null}
                 onChange={(date: Date | null) => {
@@ -917,15 +917,14 @@ const Issue: FC = () => {
                 }}
                 dateFormat="dd/MM/yyyy"
                 locale="th"
-                placeholderText="สิ้นสุด"
+                placeholderText="วันที่สิ้นสุด"
                 isClearable
                 className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                wrapperClassName="w-32 sm:w-36"
+                wrapperClassName="flex-1 sm:w-36"
               />
             </div>
-
-            {/* Category Tabs — กรองตามประเภทรายการ */}
-            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1 ml-auto">
+            {/* Category Tabs */}
+            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1 sm:ml-auto">
               {[
                 { value: 'all', label: 'ทั้งหมด' },
                 { value: 'stock', label: 'สินค้า/สารเคมี' },

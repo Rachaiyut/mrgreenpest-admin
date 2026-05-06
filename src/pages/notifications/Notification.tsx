@@ -228,7 +228,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
           <DropdownSelect
             value={filterType}
             onChange={(val) => setFilterType(val as typeof filterType)}
-            className="w-auto"
+            className="w-full sm:w-fit"
             options={[
               { value: 'ทั้งหมด', label: 'ประเภท: ทั้งหมด' },
               { value: 'ใกล้หมดสัญญา', label: 'ใกล้หมดสัญญา' },
@@ -236,15 +236,15 @@ const Notifications: React.FC<NotificationsProps> = () => {
               { value: 'ค้างชำระ', label: 'ค้างชำระ' },
             ]}
           />
-          <div className="flex items-center gap-2">
-            <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-32 sm:w-36" />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เริ่มต้น" isClearable className="w-full pr-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
             <span className="text-slate-400">-</span>
-            <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-32 sm:w-36" />
+            <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่สิ้นสุด" isClearable className="w-full pr-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
           </div>
           <DropdownSelect
             value={invoiceStatus}
             onChange={(val) => setInvoiceStatus(val)}
-            className="w-auto"
+            className="w-full sm:w-fit"
             options={[
               { value: 'ทั้งหมด', label: 'Invoice: ทั้งหมด' },
               { value: 'PAID', label: 'ชำระแล้ว' },
@@ -275,10 +275,10 @@ const Notifications: React.FC<NotificationsProps> = () => {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap sticky left-0 z-20 bg-slate-50 w-16">
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap sticky left-0 z-20 bg-slate-50 min-w-[64px] w-16">
                   ลำดับ
                 </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap sticky left-16 z-20 bg-slate-50">
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap sticky left-[64px] z-20 bg-slate-50 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)]">
                   เลขที่สัญญา
                 </th>
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">
@@ -347,10 +347,10 @@ const Notifications: React.FC<NotificationsProps> = () => {
                         : 'hover:bg-slate-50'
                     }`}
                   >
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-500 sticky left-0 z-10 w-16 ${stickyBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-500 sticky left-0 z-10 min-w-[64px] w-16 ${stickyBg}`}>
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-green-600 sticky left-16 z-10 ${stickyBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-green-600 sticky left-[64px] z-10 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)] ${stickyBg}`}>
                       <button
                         type="button"
                         onClick={() => handleOpenContractPdf(row.contractUuid)}
@@ -452,7 +452,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                       {row.total_visits || '-'}
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800">
-                      {row.price.toLocaleString()}
+                      {row.price.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
 
                     {/* 🔴 Red Section: Invoice Info */}
@@ -461,7 +461,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     </td>
                     <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${yellowBg}`}>
                       {row.invoiceAmount > 0
-                        ? row.invoiceAmount.toLocaleString()
+                        ? row.invoiceAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                         : '-'}
                     </td>
                     <td className={`px-3 py-3 whitespace-nowrap text-center align-middle ${yellowBg}`}>

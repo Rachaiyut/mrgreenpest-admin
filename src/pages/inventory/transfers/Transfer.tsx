@@ -1,5 +1,5 @@
 // ===== React =====
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // ===== Types =====

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { Modal } from '../../common/Modal';
 import { Button, Input } from '../../common/FormControls';
 import DatePicker from '../../common/BuddhistDatePicker';
@@ -316,6 +316,7 @@ export const DailyClosureCloseModal: React.FC<DailyClosureCloseModalProps> = ({
                   placeholderText="เลือกวันที่"
                   portalId="root"
                   popperClassName="!z-[9999]"
+                  showCalendarIcon={false}
                   className="bg-transparent border-none p-0 text-slate-800 font-semibold focus:ring-0 focus:outline-none text-sm w-[90px] cursor-pointer"
                 />
               </div>

@@ -159,7 +159,7 @@ const ItemsSection: FC<ItemsSectionProps> = ({
                   <div className="col-span-12 sm:col-span-2">
                     <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block text-center">รวม</label>
                     <div className="h-10 flex items-center justify-end px-3 font-semibold text-slate-900 bg-slate-50 rounded border border-slate-200">
-                      {item.amount.toLocaleString()}
+                      {Number(item.amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   </div>
                 </div>

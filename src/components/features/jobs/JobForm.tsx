@@ -1,6 +1,6 @@
 // ===== React =====
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 
 // ===== External Libraries =====
 import DatePicker from '@/src/components/common/BuddhistDatePicker';

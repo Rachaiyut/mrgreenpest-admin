@@ -111,7 +111,7 @@ const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
                           <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isWithTermiteSelected ? 'border-green-600' : (readOnly ? 'border-slate-300' : 'border-slate-400')}`}>
                             {isWithTermiteSelected && <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>}
                           </div>
-                          <div className="font-semibold text-sm text-slate-800 ml-2">{fit.price_with_termite.toLocaleString()} บาท</div>
+                          <div className="font-semibold text-sm text-slate-800 ml-2">{Number(fit.price_with_termite || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</div>
                         </div>
                       </label>
                       {/* ไม่มีปลวก */}
@@ -133,7 +133,7 @@ const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
                           <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isWithoutTermiteSelected ? 'border-green-600' : (readOnly ? 'border-slate-300' : 'border-slate-400')}`}>
                             {isWithoutTermiteSelected && <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>}
                           </div>
-                          <div className="font-semibold text-sm text-slate-800 ml-2">{fit.price_without_termite.toLocaleString()} บาท</div>
+                          <div className="font-semibold text-sm text-slate-800 ml-2">{Number(fit.price_without_termite || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</div>
                         </div>
                       </label>
                     </div>

@@ -169,7 +169,7 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
             { value: 'ADJUSTMENT', label: 'ปรับปรุงยอด' },
           ]}
         />
-        <span className="text-sm text-slate-500">ทั้งหมด {total.toLocaleString('th-TH')} รายการ</span>
+        <span className="ml-auto text-sm text-slate-500">ทั้งหมด {total.toLocaleString('th-TH')} รายการ</span>
       </div>
 
       {/* Table */}

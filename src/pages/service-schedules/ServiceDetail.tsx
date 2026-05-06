@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo, FC } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
 import { Button, Input } from '../../components/common/FormControls';

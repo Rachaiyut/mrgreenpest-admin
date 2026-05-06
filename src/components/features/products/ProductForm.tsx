@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { FormField, Input, Textarea } from '../../common/FormControls';
 import { DropdownSelect } from '../../common';
 import { PhotoIcon } from '../../../assets/icons/Icons';

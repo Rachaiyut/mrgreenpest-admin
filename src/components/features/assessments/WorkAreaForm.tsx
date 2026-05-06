@@ -538,7 +538,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 พื้นที่ {displayIndex}
                 {(area.total_price || 0) > 0 && isCollapsed && (
                   <span className="text-sm font-normal text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
-                    {area.total_price?.toLocaleString()} บาท
+                    {Number(area.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                   </span>
                 )}
               </h3>

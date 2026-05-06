@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
 import { Contract } from '@/src/types/entity/financial.interface';

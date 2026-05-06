@@ -1,6 +1,6 @@
 import { isFieldRole } from '@/src/utils/role';
 // ===== React / External =====
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -37,7 +37,6 @@ import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 // ===== Assets =====
 import {
-  CalendarDaysIcon,
   CurrencyDollarIcon,
   EyeIcon,
   ManageIcon,
@@ -441,7 +440,7 @@ const IssueSummaryPage: React.FC = () => {
       warehouses?.find((w: any) => w.id === summary?.warehouse_id)?.name || '-';
     const code = (summary as any)?.code || null;
     const fmt = (v: number) =>
-      `฿${Number(v || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      `${Number(v || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`;
 
     let html = '';
     if (category === 'STOCK') {
@@ -718,62 +717,61 @@ const IssueSummaryPage: React.FC = () => {
           </div>
           <Button onClick={() => { setModalMode('create'); setIsModalOpen(true); }}>
             <PlusIcon className="h-5 w-5" />
-            สร้างใบเบิก
+            สร้างใบเบิกสินค้า/อุปกรณ์
           </Button>
         </div>
 
-        {/* --- Filter Bar + Tabs (เหมือนหน้าภาคสนาม) --- */}
-        <Card className="!p-4 flex-shrink-0">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center flex-1 min-w-0">
-              <div className="relative w-full sm:w-72">
-                <Input
-                  type="search"
-                  placeholder="ค้นหาเลขที่เอกสารเบิก"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
+        {/* --- Filter Bar + Tabs --- */}
+        <Card className="!p-3 sm:!p-4 flex-shrink-0">
+          <div className="flex flex-col lg:flex-row flex-wrap lg:items-center gap-3">
+            <div className="relative w-full sm:w-72">
+              <Input
+                type="search"
+                placeholder="ค้นหาเลขที่เอกสารเบิก"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-10"
+              />
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            {!isTechRole && (
+              <div className="w-full sm:w-48 sm:flex-shrink-0">
+                <SearchableSelect
+                  value={creatorFilter === 'all' ? '' : creatorFilter}
+                  onChange={(v) => {
+                    setCreatorFilter(v || 'all');
                     setCurrentPage(1);
                   }}
-                  className="w-full pl-10"
+                  onSearchChange={(q) => {
+                    if (creatorSearchTimerRef.current) clearTimeout(creatorSearchTimerRef.current);
+                    creatorSearchTimerRef.current = setTimeout(() => searchCreators(q), 300);
+                  }}
+                  options={[
+                    { value: '', label: 'ผู้เบิกทั้งหมด' },
+                    ...creatorOptions,
+                  ]}
+                  placeholder="ผู้เบิกทั้งหมด"
                 />
-                <svg
-                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
               </div>
-              {!isTechRole && (
-                <div className="w-40 flex-shrink-0">
-                  <SearchableSelect
-                    value={creatorFilter === 'all' ? '' : creatorFilter}
-                    onChange={(v) => {
-                      setCreatorFilter(v || 'all');
-                      setCurrentPage(1);
-                    }}
-                    onSearchChange={(q) => {
-                      if (creatorSearchTimerRef.current) clearTimeout(creatorSearchTimerRef.current);
-                      creatorSearchTimerRef.current = setTimeout(() => searchCreators(q), 300);
-                    }}
-                    options={[
-                      { value: '', label: 'ผู้เบิกทั้งหมด' },
-                      ...creatorOptions,
-                    ]}
-                    placeholder="ผู้เบิกทั้งหมด"
-                  />
-                </div>
-              )}
+            )}
+            <div className="w-full sm:w-auto">
               <DropdownSelect
                 value={statusFilter}
                 onChange={(val) => {
                   setStatusFilter(val);
                   setCurrentPage(1);
                 }}
-                className="w-fit text-sm"
+                className="w-full sm:w-fit text-sm"
                 options={[
                   { value: 'all', label: 'สถานะทั้งหมด' },
                   { value: 'DRAFT', label: 'ฉบับร่าง' },
@@ -783,39 +781,38 @@ const IssueSummaryPage: React.FC = () => {
                   { value: 'CANCELLED', label: 'ยกเลิก' },
                 ]}
               />
-              <div className="flex items-center gap-2">
-                <DatePicker
-                  selected={startDate ? new Date(startDate) : null}
-                  onChange={(date: Date | null) => {
-                    setStartDate(date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : '');
-                    setCurrentPage(1);
-                  }}
-                  dateFormat="dd/MM/yyyy"
-                  locale="th"
-                  placeholderText="เริ่มต้น"
-                  isClearable
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                  wrapperClassName="w-32 sm:w-36"
-                />
-                <span className="text-slate-400">-</span>
-                <DatePicker
-                  selected={endDate ? new Date(endDate) : null}
-                  onChange={(date: Date | null) => {
-                    setEndDate(date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : '');
-                    setCurrentPage(1);
-                  }}
-                  dateFormat="dd/MM/yyyy"
-                  locale="th"
-                  placeholderText="สิ้นสุด"
-                  isClearable
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                  wrapperClassName="w-32 sm:w-36"
-                />
-              </div>
             </div>
-
-            {/* Tabs (ขวาสุด — pill style เหมือนหน้า Job) */}
-            <div className="flex gap-1 p-1 bg-slate-100 rounded-lg flex-shrink-0">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <DatePicker
+                selected={startDate ? new Date(startDate) : null}
+                onChange={(date: Date | null) => {
+                  setStartDate(date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : '');
+                  setCurrentPage(1);
+                }}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="วันที่เริ่มต้น"
+                isClearable
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                wrapperClassName="flex-1 sm:w-36"
+              />
+              <span className="text-slate-400 shrink-0">-</span>
+              <DatePicker
+                selected={endDate ? new Date(endDate) : null}
+                onChange={(date: Date | null) => {
+                  setEndDate(date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : '');
+                  setCurrentPage(1);
+                }}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="วันที่สิ้นสุด"
+                isClearable
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                wrapperClassName="flex-1 sm:w-36"
+              />
+            </div>
+            {/* Category Tabs */}
+            <div className="flex gap-1 p-1 bg-slate-100 rounded-lg flex-shrink-0 lg:ml-auto">
               {([
                 { key: 'all', label: 'ทั้งหมด' },
                 { key: 'stock', label: 'สินค้า/สารเคมี' },

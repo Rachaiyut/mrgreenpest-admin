@@ -3,7 +3,7 @@ import { usePermissions } from '@/src/hooks/usePermissions';
 import { useNotificationFocus } from '@/src/hooks/useNotificationFocus';
 import { renderApprovalDetails, joinName, pickName } from '@/src/utils/approvalSwal';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { useLocation } from 'react-router-dom';
 
 // Enum
@@ -29,7 +29,6 @@ import {
   PencilIcon,
   TrashIcon,
   ManageIcon,
-  CalendarDaysIcon,
   PlayIcon,
   ClipboardDocumentListIcon,
   DocumentCheckIcon,
@@ -322,7 +321,7 @@ const Assessments: React.FC = () => {
         { label: 'เลขที่ใบประเมิน', value: aAny.code || null },
         { label: 'ลูกค้า', value: customerName },
         { label: 'วันที่ประเมิน', value: date },
-        { label: 'ยอดรวม', value: `฿${total}`, accent: 'money' },
+        { label: 'ยอดรวม', value: `${total} บาท`, accent: 'money' },
       ]),
       showCancelButton: true,
       confirmButtonText: 'อนุมัติ',
@@ -632,7 +631,7 @@ const Assessments: React.FC = () => {
               </div>
 
               {/* DatePicker กรองวันที่ */}
-              <div className="flex-1 min-w-[120px] sm:w-48 sm:flex-none relative">
+              <div className="flex-1 min-w-[120px] sm:w-48 sm:flex-none">
                  <DatePicker
                     selected={filterDate ? new Date(filterDate) : null}
                     onChange={(date: Date | null) => {
@@ -651,10 +650,9 @@ const Assessments: React.FC = () => {
                     dateFormat="dd/MM/yyyy"
                     locale="th"
                     isClearable
-                    className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                    className="w-full pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
                     wrapperClassName="w-full"
                   />
-                  <CalendarDaysIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
               </div>
 
               {/* Dropdown สถานะ */}
@@ -677,7 +675,7 @@ const Assessments: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-auto">
               <div className="flex items-center rounded-lg bg-slate-100 p-1">
                 <Button
                   onClick={() => setView('kanban')}

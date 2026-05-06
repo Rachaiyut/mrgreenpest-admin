@@ -4,7 +4,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { useData } from '../../contexts/DataContext';
 import { CustomerApi } from '@/src/api/customer';

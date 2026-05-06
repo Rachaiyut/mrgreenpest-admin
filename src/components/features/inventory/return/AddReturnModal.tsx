@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { Modal } from '../../../common/Modal';
 import { Input, Button } from '../../../common/FormControls';
@@ -288,16 +288,16 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
         title="สร้างใบคืนสินค้า"
         size="5xl"
         footer={
-          <div className="flex w-full justify-between items-center">
-            <div className="flex items-center gap-4 text-sm text-slate-500">
+          <div className="flex flex-col sm:flex-row w-full sm:justify-between sm:items-center gap-2">
+            <div className="flex items-center text-xs sm:text-sm text-slate-500">
               <span>* จำเป็นต้องกรอกข้อมูลที่มีเครื่องหมายดอกจัน</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto justify-end">
               <Button
                 variant="outline"
                 type="button"
                 onClick={onClose}
-                className="py-2 px-4 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-medium border border-slate-300"
+                className="py-2 px-3 sm:px-4 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-medium border border-slate-300 text-sm"
               >
                 ยกเลิก
               </Button>
@@ -306,7 +306,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                 type="submit"
                 form="add-return-form"
                 disabled={!isFormValid}
-                className={`py-2 px-6 rounded-lg text-white font-semibold shadow-sm transition-all ${
+                className={`py-2 px-4 sm:px-6 rounded-lg text-white font-semibold shadow-sm transition-all text-sm ${
                   isFormValid
                     ? 'bg-primary hover:bg-primary/90'
                     : 'bg-slate-300 cursor-not-allowed'
@@ -325,7 +325,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
         >
           {/* Logistics Header Card */}
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
               <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
                 <TruckIcon className="w-5 h-5" />
               </div>
@@ -333,7 +333,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                 การคืนสินค้า
               </h3>
 
-              <div className="ml-auto flex items-center gap-3">
+              <div className="w-full sm:w-auto sm:ml-auto flex flex-wrap items-center gap-2 sm:gap-3">
                 <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
                   <span className="text-xs text-slate-500 font-medium">
                     เลขที่:
@@ -354,6 +354,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                     dateFormat="dd/MM/yyyy"
                     locale="th"
                     placeholderText="dd/mm/yyyy"
+                    showCalendarIcon={false}
                     className="bg-transparent border-none p-0 text-slate-800 font-bold focus:ring-0 text-sm w-32 cursor-pointer"
                     wrapperClassName="w-full"
                     required
@@ -454,7 +455,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
                     <div className="col-span-5">รายละเอียดสินค้า</div>
                     <div className="col-span-2 text-right">จำนวนคืน</div>
                     <div className="col-span-4">เหตุผลการคืน</div>
@@ -476,9 +477,9 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                             : 'bg-white border-slate-200 hover:border-indigo-200 hover:shadow-md'
                         }`}
                       >
-                        <div className="grid grid-cols-12 gap-4 items-center">
+                        <div className="flex flex-col sm:grid sm:grid-cols-12 gap-3 sm:gap-4 sm:items-center">
                           {/* Product Info */}
-                          <div className="col-span-5">
+                          <div className="sm:col-span-5">
                             <div className="font-bold text-slate-800 text-sm">
                               {product?.name || 'Unknown Product'}
                             </div>
@@ -493,9 +494,9 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                             </div>
                           </div>
 
-                          {/* Quantity Input */}
-                          <div className="col-span-2 flex flex-col items-end gap-1">
-                            <div className="relative w-full">
+                          {/* Quantity + Reason + Delete row on mobile */}
+                          <div className="sm:col-span-2 flex items-center sm:flex-col sm:items-end gap-2 sm:gap-1">
+                            <div className="relative flex-1 sm:flex-none sm:w-full">
                               <Input
                                 type="number"
                                 min="1"
@@ -518,6 +519,14 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                                 {product?.unit?.name || 'หน่วย'}
                               </span>
                             </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(item.id)}
+                              className="sm:hidden text-slate-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                              title="ลบรายการ"
+                            >
+                              <TrashIcon className="w-5 h-5" />
+                            </button>
                             {isOverStock && (
                               <span className="text-[10px] font-bold text-red-600">
                                 เกินสต็อกที่มี
@@ -526,7 +535,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                           </div>
 
                           {/* Reason Input */}
-                          <div className="col-span-4">
+                          <div className="sm:col-span-4">
                             <Input
                               type="text"
                               placeholder="ระบุเหตุผลการคืน..."
@@ -542,8 +551,8 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                             />
                           </div>
 
-                          {/* Delete Button */}
-                          <div className="col-span-1 flex justify-center">
+                          {/* Delete Button - desktop only */}
+                          <div className="hidden sm:col-span-1 sm:flex justify-center">
                             <button
                               type="button"
                               onClick={() => handleRemoveItem(item.id)}

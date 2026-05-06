@@ -1,4 +1,4 @@
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import React, {
   useState,
   useRef,
