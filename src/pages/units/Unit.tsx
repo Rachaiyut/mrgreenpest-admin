@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { Card } from '../../components/common/Card';
 import { IUnit } from '@/src/types/entity/unit.interface';
 import { Unit as UnitApi } from '@/src/api/unit';

@@ -1,6 +1,6 @@
 // ===== React =====
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 
 // ===== External Libraries =====
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
@@ -1129,22 +1129,19 @@ export const JobForm: React.FC<JobFormProps> = ({
               <div className="space-y-6">
                 <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
                   <FormField label="วันที่ปฏิบัติงาน *" htmlFor="work-date" className="mb-0">
-                    <div className="relative w-full">
-                      <DatePicker
-                        id="work-date"
-                        selected={workDate ? new Date(workDate) : null}
-                        onChange={(date: Date | null) => { if (date) { const yyyy = date.getFullYear(); const mm = String(date.getMonth() + 1).padStart(2, '0'); const dd = String(date.getDate()).padStart(2, '0'); setWorkDate(`${yyyy}-${mm}-${dd}`); } else { setWorkDate(''); } }}
-                        minDate={mode === 'add' ? new Date() : undefined}
-                        disabled={mode === 'edit'}
-                        required
-                        wrapperClassName="w-full"
-                        placeholderText="dd/mm/yyyy"
-                        dateFormat="dd/MM/yyyy"
-                        locale="th"
-                        className={`w-full h-12 pl-3 pr-10 rounded-md border-slate-300 focus:border-primary focus:ring-primary text-slate-700 shadow-sm ${mode === 'edit' ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
-                      />
-                      <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none z-10" />
-                    </div>
+                    <DatePicker
+                      id="work-date"
+                      selected={workDate ? new Date(workDate) : null}
+                      onChange={(date: Date | null) => { if (date) { const yyyy = date.getFullYear(); const mm = String(date.getMonth() + 1).padStart(2, '0'); const dd = String(date.getDate()).padStart(2, '0'); setWorkDate(`${yyyy}-${mm}-${dd}`); } else { setWorkDate(''); } }}
+                      minDate={mode === 'add' ? new Date() : undefined}
+                      disabled={mode === 'edit'}
+                      required
+                      wrapperClassName="w-full"
+                      placeholderText="dd/mm/yyyy"
+                      dateFormat="dd/MM/yyyy"
+                      locale="th"
+                      className={`w-full h-12 pr-10 rounded-md border-slate-300 focus:border-primary focus:ring-primary text-slate-700 shadow-sm ${mode === 'edit' ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
+                    />
                   </FormField>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

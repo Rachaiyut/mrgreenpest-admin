@@ -233,15 +233,15 @@ const DailyCashPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-sm text-emerald-600 text-right font-semibold">
-                      {row.income > 0 ? `+${row.income.toLocaleString()}` : '-'}
+                      {row.income > 0 ? `+${row.income.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
                     </td>
                     <td className="px-5 py-3.5 text-sm text-red-600 text-right font-semibold">
                       {row.expense > 0
-                        ? `-${row.expense.toLocaleString()}`
+                        ? `-${row.expense.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         : '-'}
                     </td>
                     <td className="px-5 py-3.5 text-sm text-slate-900 text-right font-bold bg-slate-50/50">
-                      {row.balance.toLocaleString()}
+                      {row.balance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="px-5 py-3.5 text-sm text-slate-600">
                       {row.wallet}
@@ -284,13 +284,13 @@ const DailyCashPage: React.FC = () => {
                     รวมทั้งสิ้น
                   </td>
                   <td className="px-5 py-4 text-right text-sm text-emerald-700 bg-emerald-50/50">
-                    +{totalIncome.toLocaleString()}
+                    +{totalIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td className="px-5 py-4 text-right text-sm text-red-700 bg-red-50/50">
-                    -{totalExpense.toLocaleString()}
+                    -{totalExpense.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td className="px-5 py-4 text-right text-sm text-slate-900 bg-slate-100/80 font-bold">
-                    {(totalIncome - totalExpense).toLocaleString()}
+                    {(totalIncome - totalExpense).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td className="bg-slate-50"></td>
                 </tr>

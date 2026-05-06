@@ -324,10 +324,10 @@ const MonthlySalesPage: React.FC<MonthlySalesPageProps> = () => {
                       {row.area}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-900 text-right font-medium">
-                      {row.priceInclVat.toLocaleString()}
+                      {row.priceInclVat.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700 text-right">
-                      {row.priceExclVat.toLocaleString(undefined, {
+                      {row.priceExclVat.toLocaleString('th-TH', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}

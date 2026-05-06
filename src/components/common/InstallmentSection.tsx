@@ -150,7 +150,7 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
                       <input type="checkbox" checked={includeVat} onChange={(e) => onIncludeVatChange(e.target.checked)} className={`rounded h-4 w-4 ${isReadOnly ? 'border-slate-200 text-slate-400 cursor-not-allowed opacity-60' : 'border-slate-300 text-green-600 focus:ring-green-500'}`} disabled={isReadOnly} />
                       รวม VAT 7%
                     </label>
-                    {includeVat && <span className="font-semibold text-slate-800 text-sm">{vatAmount.toLocaleString()} บาท</span>}
+                    {includeVat && <span className="font-semibold text-slate-800 text-sm">{vatAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>}
                   </div>
                 </div>
               )}
@@ -234,7 +234,7 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
                 <div className="px-5 py-2.5 bg-red-50 border-t border-red-100 text-xs text-red-600">
                   {!pctOk && <span>สัดส่วนรวม {totalPct.toFixed(0)}% (ต้องครบ 100%)</span>}
                   {!pctOk && !amtOk && <span className="mx-2">|</span>}
-                  {!amtOk && <span>ยอดไม่ตรงกับยอดสุทธิ ({totalAmount.toLocaleString()} บาท)</span>}
+                  {!amtOk && <span>ยอดไม่ตรงกับยอดสุทธิ ({totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท)</span>}
                 </div>
               )}
             </div>

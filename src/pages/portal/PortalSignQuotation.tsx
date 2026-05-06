@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { useSearchParams } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { portalApi } from '../../api/customer-portal';

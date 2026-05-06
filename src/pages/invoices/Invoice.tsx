@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { TruncateText } from '../../components/common/TruncateText';
@@ -311,7 +311,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       { label: 'ลูกค้า', value: customerName },
       { label: 'วันที่ออก', value: issueDate },
       { label: 'ครบกำหนด', value: dueDate },
-      { label: 'ยอดรวม', value: `฿${amount}`, accent: 'money' },
+      { label: 'ยอดรวม', value: `${amount} บาท`, accent: 'money' },
     ]);
 
     const r = await Swal.fire({
@@ -370,7 +370,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
         ${renderApprovalDetails([
           { label: 'เลขที่ใบแจ้งหนี้', value: invoice.code || null },
           { label: 'ลูกค้า', value: customerName },
-          { label: 'ยอดรวม', value: `฿${amountStr}`, accent: 'money' },
+          { label: 'ยอดรวม', value: `${amountStr} บาท`, accent: 'money' },
         ])}
         <div style="margin-top:12px;font-size:13px;color:#64748b;text-align:center;">
           ระบบจะออกใบเสร็จและบันทึกเงินเข้าบัญชีอัตโนมัติ
@@ -468,7 +468,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       </div>
 
       {/* Invoice Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-500 rounded-lg">

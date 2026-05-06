@@ -1,5 +1,5 @@
 // ===== React =====
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import imageCompression from 'browser-image-compression';
@@ -1687,8 +1687,7 @@ const Job: React.FC<JobProps> = ({
                   className="!text-xs sm:!text-sm !font-medium !bg-amber-500 !text-white hover:!bg-amber-600 !border-amber-500 !shadow-md"
                 >
                   <DocumentCheckIcon className="w-4 h-4 mr-1 sm:mr-1.5" />
-                  <span className="hidden sm:inline">สรุปเบิกสินค้า/ค่าใช้จ่าย</span>
-                  <span className="sm:hidden">สรุปเบิก</span>
+                  สรุปเบิกสินค้า/ค่าใช้จ่าย
                 </Button>
                 {todayClosure?.status === 'CLOSED' ? (
                   <Button
@@ -1810,7 +1809,7 @@ const Job: React.FC<JobProps> = ({
 
               {/* Unassigned tab filters */}
               {activeTab === 'unassigned' && (
-                <div className="relative w-full sm:w-auto">
+                <div className="w-full sm:w-auto">
                   <DatePicker
                     selected={unassignedDateFilter ? new Date(unassignedDateFilter) : null}
                     onChange={(date: Date | null) => {
@@ -1832,17 +1831,16 @@ const Job: React.FC<JobProps> = ({
                     dateFormat="dd/MM/yyyy"
                     locale="th"
                     isClearable
-                    className="w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                    className="w-44 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
                     wrapperClassName="w-full sm:w-auto"
                   />
-                  <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
               )}
 
               {/* Schedule tab filters */}
               {activeTab === 'schedule' && (
                 <>
-                  <div className="relative w-[calc(50%-0.25rem)] sm:w-auto">
+                  <div className="w-[calc(50%-0.25rem)] sm:w-auto">
                     <DatePicker
                       selected={filterDate ? new Date(filterDate) : null}
                       onChange={(date: Date | null) => {
@@ -1862,10 +1860,9 @@ const Job: React.FC<JobProps> = ({
                       dateFormat="dd/MM/yyyy"
                       locale="th"
                       isClearable
-                      className="w-full sm:w-36 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                      className="w-full sm:w-36 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
                       wrapperClassName="w-full sm:w-auto"
                     />
-                    <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   </div>
                   <DropdownSelect
                     value={selectedTechnicianId}
@@ -1919,9 +1916,8 @@ const Job: React.FC<JobProps> = ({
               {/* Work-schedule tab filters */}
               {activeTab === 'work-schedule' && (
                 <>
-                  <div className="relative w-[calc(50%-0.25rem)] sm:w-auto">
-                    <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-full sm:w-36 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-auto" />
-                    <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <div className="w-[calc(50%-0.25rem)] sm:w-auto">
+                    <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-full sm:w-36 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-auto" />
                   </div>
                   <SearchableSelect
                     value={scheduleVehicleId}
@@ -2781,7 +2777,7 @@ const Job: React.FC<JobProps> = ({
                               <td className="px-4 py-3 whitespace-nowrap">
                                 {invoiceTotal ? (
                                   <span className="text-sm font-semibold text-emerald-600">
-                                    ฿{Number(invoiceTotal).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    {Number(invoiceTotal).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                                   </span>
                                 ) : (
                                   <span className="text-sm text-slate-400">-</span>

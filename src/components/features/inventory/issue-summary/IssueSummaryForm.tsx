@@ -1,6 +1,6 @@
 import { isFieldRole } from '@/src/utils/role';
 // ===== React =====
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import React, {
   useCallback,
@@ -622,6 +622,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   required
                   portalId="root"
                   popperClassName="!z-[9999]"
+                  showCalendarIcon={false}
                   className="bg-transparent border-none p-0 text-slate-800 font-semibold focus:ring-0 focus:outline-none text-sm w-[100px] cursor-pointer placeholder:text-slate-400 placeholder:font-normal"
                 />
               </div>
@@ -863,10 +864,10 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   <p className="text-sm text-slate-500 mt-0.5">รายการเบิกเงินสด (ไม่ต้องระบุก็ได้ หากต้องการเบิกเฉพาะสินค้า)</p>
                 </div>
               </div>
-              <div className="p-5">
+              <div className="p-3 sm:p-5">
 
               {walletInfo && (
-                <div className="mb-6 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div className="mb-4 sm:mb-6 bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm">
                   <div className="flex justify-between items-center text-sm font-bold text-slate-500 mb-3 border-b border-slate-100 pb-2">
                     <span>สถานะวงเงินเบิกจ่าย</span>
                     <span
@@ -880,17 +881,17 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   <div className="flex items-end justify-between mb-2">
                     <span className="text-sm font-medium text-slate-500">วงเงินที่ได้รับ</span>
                     <span className="text-base font-semibold text-slate-700">
-                      {walletInfo.expense_limit.toLocaleString()} บาท
+                      {walletInfo.expense_limit.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                     </span>
                   </div>
                   <div className="flex items-end justify-between mb-2">
                     <span className="text-sm font-medium text-slate-500">คงเหลือปัจจุบัน</span>
-                    <span className="text-base font-semibold text-slate-700">{walletInfo.balance.toLocaleString()} บาท</span>
+                    <span className="text-base font-semibold text-slate-700">{walletInfo.balance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
                   </div>
                   {totalExpenses > 0 && (
                     <div className="flex items-end justify-between mb-2">
                       <span className="text-sm font-medium text-slate-500">รวมที่ต้องการเบิกครั้งนี้</span>
-                      <span className="text-base font-bold text-amber-600">-{totalExpenses.toLocaleString()} บาท</span>
+                      <span className="text-base font-bold text-amber-600">-{totalExpenses.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
                     </div>
                   )}
                   <div className="flex items-end justify-between mt-3 pt-3 border-t border-slate-100 mb-2">
@@ -900,7 +901,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                         walletInfo.balance - totalExpenses < 0 ? 'text-red-600' : 'text-emerald-600'
                       }`}
                     >
-                      {(walletInfo.balance - totalExpenses).toLocaleString()} บาท
+                      {(walletInfo.balance - totalExpenses).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 mb-1 overflow-hidden">
@@ -932,23 +933,23 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                       key={item.id}
                       className="bg-white rounded-lg border border-slate-200 shadow-sm group hover:border-primary/30 transition-colors"
                     >
-                      <div className="flex items-center gap-3 p-4">
-                        <div className="p-2 bg-slate-100 rounded-md text-slate-400 flex-shrink-0">
-                          <BanknotesIcon className="w-5 h-5" />
+                      <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-4">
+                        <div className="p-1.5 sm:p-2 bg-slate-100 rounded-md text-slate-400 flex-shrink-0">
+                          <BanknotesIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <input
                             type="text"
                             value={item.description}
                             onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
-                            placeholder="ระบุรายละเอียดค่าใช้จ่าย (เช่น ค่าทางด่วน, ค่าน้ำมัน)..."
-                            className={`w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white ${
+                            placeholder="ระบุรายละเอียด..."
+                            className={`w-full border border-slate-300 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white ${
                               isDefaultExpense(item.id) ? 'text-slate-700 bg-slate-50' : ''
                             }`}
                             readOnly={isDefaultExpense(item.id)}
                           />
                         </div>
-                        <div className="flex-shrink-0 w-[200px]">
+                        <div className="flex-shrink-0 w-[120px] sm:w-[200px]">
                           <div className="relative">
                             <input
                               type="number"
@@ -956,20 +957,20 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                               value={item.amount}
                               onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
                               placeholder="0.00"
-                              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-base font-bold text-right pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+                              className="w-full border border-slate-300 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-sm sm:text-base font-bold text-right pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
                             />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400 pointer-events-none">บาท</span>
+                            <span className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm font-semibold text-slate-400 pointer-events-none">บาท</span>
                           </div>
                         </div>
                         {isDefaultExpense(item.id) ? (
-                          <div className="w-10 flex-shrink-0" />
+                          <div className="w-6 sm:w-10 flex-shrink-0" />
                         ) : (
                           <button
                             type="button"
                             onClick={() => handleRemoveExpenseItem(item.id)}
-                            className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-xl transition-all duration-200 focus:outline-none flex-shrink-0"
+                            className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1 sm:p-2 rounded-xl transition-all duration-200 focus:outline-none flex-shrink-0"
                           >
-                            <TrashIcon className="w-5 h-5" />
+                            <TrashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
                         )}
                       </div>
@@ -992,7 +993,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   <div className="flex justify-between items-center pt-4 border-t border-slate-200 mt-4">
                     <span className="text-sm font-bold text-slate-600">ยอดรวมขอเบิกเงิน</span>
                     <span className="text-xl font-black text-primary">
-                      {totalExpenses.toLocaleString()}{' '}
+                      {totalExpenses.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
                       <span className="text-base font-bold text-slate-500 ml-1">บาท</span>
                     </span>
                   </div>

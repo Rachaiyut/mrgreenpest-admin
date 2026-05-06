@@ -3,7 +3,7 @@ import { usePermissions } from '@/src/hooks/usePermissions';
 import { useNotificationFocus } from '@/src/hooks/useNotificationFocus';
 import { renderApprovalDetails, joinName, pickName } from '@/src/utils/approvalSwal';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
@@ -282,7 +282,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         { label: 'เลขที่ใบเสนอราคา', value: quotation.code || null },
         { label: 'ลูกค้า', value: customerName },
         { label: 'วันที่ออก', value: issueDate },
-        { label: 'ยอดรวม', value: `฿${total}`, accent: 'money' },
+        { label: 'ยอดรวม', value: `${total} บาท`, accent: 'money' },
       ]),
       showCancelButton: true,
       confirmButtonColor: '#16a34a',

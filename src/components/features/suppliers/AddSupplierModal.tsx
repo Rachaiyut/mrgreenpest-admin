@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { Modal } from '../../common/Modal';
 import { FormField, Input } from '../../common/FormControls';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';

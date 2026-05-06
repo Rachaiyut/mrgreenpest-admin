@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import {
   FormField,
   Input,

@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useCallback,
 } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 
 // Interface
 import { Category } from '@/src/types/entity/category.interface';

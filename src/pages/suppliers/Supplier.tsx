@@ -4,7 +4,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 
 // Components
 import { Card } from '../../components/common/Card';

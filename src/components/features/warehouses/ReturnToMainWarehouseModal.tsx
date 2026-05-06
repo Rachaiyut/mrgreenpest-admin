@@ -283,16 +283,16 @@ export const ReturnToMainWarehouseModal: React.FC<
       title="สร้างใบคืนสินค้า"
       size="5xl"
       footer={
-        <div className="flex w-full justify-between items-center">
-          <div className="flex items-center gap-4 text-sm text-slate-500">
+        <div className="flex flex-col sm:flex-row w-full sm:justify-between sm:items-center gap-2">
+          <div className="flex items-center text-xs sm:text-sm text-slate-500">
             <span>* จำเป็นต้องกรอกข้อมูลที่มีเครื่องหมายดอกจัน</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto justify-end">
             <Button
               variant="outline"
               onClick={onClose}
               disabled={isSubmitting}
-              className="py-2 px-4 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-medium border border-slate-300"
+              className="py-2 px-3 sm:px-4 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-medium border border-slate-300 text-sm"
             >
               ยกเลิก
             </Button>
@@ -303,7 +303,7 @@ export const ReturnToMainWarehouseModal: React.FC<
                 onClose();
               }}
               disabled={isSubmitting}
-              className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium hidden sm:inline-flex"
+              className="py-2 px-3 sm:px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium text-sm"
             >
               บันทึกฉบับร่าง
             </Button>
@@ -311,7 +311,7 @@ export const ReturnToMainWarehouseModal: React.FC<
               variant="primary"
               onClick={(e) => handleSubmit(e as unknown as React.FormEvent)}
               disabled={isSubmitting || isLoading}
-              className="py-2 px-6 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow-sm"
+              className="py-2 px-3 sm:px-6 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow-sm text-sm"
             >
               {isSubmitting ? 'กำลังบันทึก...' : 'บันทึกและตัดสต็อก'}
             </Button>
@@ -322,14 +322,14 @@ export const ReturnToMainWarehouseModal: React.FC<
       <div className="flex flex-col gap-6">
         {/* Logistics Header Card */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
               <TruckIcon className="w-5 h-5" />
             </div>
             <h3 className="text-base font-semibold text-slate-800">
               การเคลื่อนย้ายสินค้า
             </h3>
-            <div className="ml-auto flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer">
+            <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer">
               <CalendarIcon className="w-4 h-4 text-slate-400" />
               <span className="text-xs text-slate-500 font-medium">
                 วันที่คืน:
@@ -340,6 +340,7 @@ export const ReturnToMainWarehouseModal: React.FC<
                 dateFormat="dd/MM/yyyy"
                 locale="th"
                 placeholderText="dd/mm/yyyy"
+                showCalendarIcon={false}
                 className="bg-transparent border-none p-0 text-slate-800 font-bold focus:ring-0 text-sm w-32 cursor-pointer"
                 wrapperClassName="w-full"
                 required
@@ -422,7 +423,7 @@ export const ReturnToMainWarehouseModal: React.FC<
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
                   <div className="col-span-6">รายละเอียดสินค้า</div>
                   <div className="col-span-3 text-right">จำนวน</div>
                   <div className="col-span-3 text-center">จัดการ</div>
@@ -436,7 +437,8 @@ export const ReturnToMainWarehouseModal: React.FC<
                       key={item.id}
                       className="p-4 rounded-xl border transition-all shadow-sm bg-white border-slate-200 hover:border-indigo-200 hover:shadow-md"
                     >
-                      <div className="grid grid-cols-12 gap-4 items-center">
+                      {/* Desktop: grid layout */}
+                      <div className="hidden sm:grid grid-cols-12 gap-4 items-center">
                         <div className="col-span-6">
                           <SearchableSelect
                             options={productOptions}
@@ -454,7 +456,6 @@ export const ReturnToMainWarehouseModal: React.FC<
                             </span>
                           </div>
                         </div>
-
                         <div className="col-span-3 flex flex-col items-end gap-1">
                           <div className="relative">
                             <Input
@@ -485,7 +486,6 @@ export const ReturnToMainWarehouseModal: React.FC<
                             </span>
                           )}
                         </div>
-
                         <div className="col-span-3 flex justify-center">
                           <button
                             type="button"
@@ -496,6 +496,64 @@ export const ReturnToMainWarehouseModal: React.FC<
                             <TrashIcon className="w-5 h-5" />
                           </button>
                         </div>
+                      </div>
+
+                      {/* Mobile: single column card */}
+                      <div className="flex flex-col gap-3 sm:hidden">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <SearchableSelect
+                              options={productOptions}
+                              value={item.productId}
+                              onChange={(val) =>
+                                handleItemChange(item.id, 'productId', val)
+                              }
+                              placeholder="เลือกสินค้า"
+                              className="w-full text-sm font-bold"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveItem(item.id)}
+                            className="text-slate-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors shrink-0"
+                            title="ลบรายการ"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="relative flex-1">
+                            <Input
+                              type="number"
+                              min="1"
+                              max={currentStock}
+                              value={item.quantity}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  item.id,
+                                  'quantity',
+                                  Number(e.target.value)
+                                )
+                              }
+                              className={`w-full text-right transition-all h-9 text-sm font-bold pr-8 ${
+                                item.quantity > currentStock
+                                  ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200'
+                                  : 'border-slate-200 focus:border-indigo-500'
+                              }`}
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium pointer-events-none">
+                              {product?.unit?.name || 'หน่วย'}
+                            </span>
+                          </div>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
+                            Stock ในรถ: {currentStock.toLocaleString()} {product?.unit?.name || 'หน่วย'}
+                          </span>
+                        </div>
+                        {item.quantity > currentStock && (
+                          <span className="text-[10px] font-bold text-red-600">
+                            เกินสต็อกที่มี
+                          </span>
+                        )}
                       </div>
                     </div>
                   );

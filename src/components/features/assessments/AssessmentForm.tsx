@@ -1,4 +1,4 @@
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { useCurrentUser } from '@/src/hooks/useCurrentUser';
 import { usePermissions } from '@/src/hooks/usePermissions';
 import {
@@ -763,19 +763,13 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                 <div className="space-y-6">
                   <div className={`p-4 rounded-xl border transition-colors ${errors.created_at ? 'border-red-500 bg-red-50/50' : 'border-slate-200/60 bg-slate-50/50'}`}>
                     <FormField label="วันที่สร้าง *" htmlFor="created_at" className="mb-0">
-                      <div className="relative">
-                        <DatePicker selected={formData.created_at ? new Date(formData.created_at) : new Date()} onChange={(date) => handleDateChange('created_at', date)} placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yyyy" locale="th" wrapperClassName="w-full" className={`h-10 border text-sm rounded-md p-2 w-full transition-colors ${errors.created_at ? 'border-red-500 focus:ring-red-500' : 'bg-white'}`} />
-                        <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                      </div>
+                      <DatePicker selected={formData.created_at ? new Date(formData.created_at) : new Date()} onChange={(date) => handleDateChange('created_at', date)} placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yyyy" locale="th" wrapperClassName="w-full" className={`h-10 border text-sm rounded-md p-2 w-full transition-colors ${errors.created_at ? 'border-red-500 focus:ring-red-500' : 'bg-white'}`} />
                     </FormField>
                     {errors.created_at && <p className="text-red-500 text-xs mt-1 font-medium">{errors.created_at}</p>}
                   </div>
                   <div className={`p-4 rounded-xl border transition-colors ${errors.appointment_date ? 'border-red-500 bg-red-50/50' : 'border-slate-200/60 bg-slate-50/50'}`}>
                     <FormField label="วันที่นัดหมาย *" htmlFor="appointment_date" className="mb-0">
-                      <div className="relative">
-                        <DatePicker selected={formData.appointment_date ? new Date(formData.appointment_date) : null} onChange={(date) => handleDateChange('appointment_date', date)} minDate={new Date()} placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yyyy" locale="th" wrapperClassName="w-full" className={`h-10 border text-sm rounded-md p-2 w-full transition-colors ${errors.appointment_date ? 'border-red-500 focus:ring-red-500' : 'bg-white'}`} />
-                        <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                      </div>
+                      <DatePicker selected={formData.appointment_date ? new Date(formData.appointment_date) : null} onChange={(date) => handleDateChange('appointment_date', date)} minDate={new Date()} placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yyyy" locale="th" wrapperClassName="w-full" className={`h-10 border text-sm rounded-md p-2 w-full transition-colors ${errors.appointment_date ? 'border-red-500 focus:ring-red-500' : 'bg-white'}`} />
                     </FormField>
                     {errors.appointment_date && <p className="text-red-500 text-xs mt-1 font-medium">{errors.appointment_date}</p>}
                   </div>
@@ -940,7 +934,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       {/* FOOTER: BUTTONS */}
       <div className="mt-8 pt-4 border-t border-slate-200 flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-3 w-full px-2">
         <div className="text-slate-500 font-medium text-sm sm:text-base text-center sm:text-left whitespace-nowrap">ขั้นตอนที่ {currentStep + 1} จาก {STEPS.length}</div>
-        <div className="flex items-center justify-end gap-2 sm:gap-3">
+        <div className="flex items-center w-full sm:w-auto sm:justify-end gap-2 sm:gap-3">
           {currentStep > 0 && (
             <Button type="button" onClick={handleBack} variant="outline" className="px-4 sm:px-6 !h-10 border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-1.5 sm:gap-2 text-sm sm:text-base font-bold rounded-lg" disabled={isSubmitting}>
               <ArrowLeftIcon className="w-4 h-4" />ย้อนกลับ
@@ -948,7 +942,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
           )}
 
           {currentStep < STEPS.length - 1 ? (
-            <Button type="button" onClick={handleNext} variant="primary" className="px-6 sm:px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-1.5 sm:gap-2 shadow-md text-base sm:text-lg font-bold rounded-xl" disabled={isSubmitting}>
+            <Button type="button" onClick={handleNext} variant="primary" className="ml-auto sm:ml-0 px-6 sm:px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-1.5 sm:gap-2 shadow-md text-base sm:text-lg font-bold rounded-xl" disabled={isSubmitting}>
               ถัดไป<ArrowRightIcon className="w-4 h-4 stroke-[2] mt-0.5" />
             </Button>
           ) : (
@@ -964,7 +958,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                 handleSubmitData(e, targetStatus);
               }}
               variant="primary"
-              className="px-4 sm:px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-1.5 sm:gap-2 shadow-md text-sm sm:text-lg font-bold rounded-xl"
+              className="ml-auto sm:ml-0 px-4 sm:px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-1.5 sm:gap-2 shadow-md text-sm sm:text-lg font-bold rounded-xl"
               disabled={isSubmitting}
             >
               {getSubmitButtonText()}<CheckCircleIcon className="w-4 h-4 stroke-[2] mt-0.5" />

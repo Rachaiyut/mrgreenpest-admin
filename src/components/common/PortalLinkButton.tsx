@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { CustomerApi } from '@/src/api/customer';
 
 interface PortalLinkButtonProps {

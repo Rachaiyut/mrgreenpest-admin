@@ -34,7 +34,7 @@ import { SupplierApi } from '../../../api/supplier';
 import { WarehouseApi } from '../../../api/warehouse';
 
 // ===== Libs =====
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 
 // ===== Assets =====
 import {

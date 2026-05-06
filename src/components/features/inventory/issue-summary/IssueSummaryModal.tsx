@@ -51,18 +51,19 @@ export const IssueSummaryModal: React.FC<IssueSummaryModalProps> = ({
   };
 
   const footer = (
-    <div className="flex gap-3 w-full justify-end">
-      <Button variant="secondary" onClick={onClose} type="button">
+    <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 w-full sm:justify-end">
+      <Button variant="secondary" onClick={onClose} type="button" className="w-full sm:w-auto">
         ยกเลิก
       </Button>
       <Button
         variant="outline"
         type="button"
+        className="w-full sm:w-auto"
         onClick={() => document.getElementById('issue-summary-draft-btn')?.click()}
       >
         บันทึกฉบับร่าง
       </Button>
-      <Button variant="primary" type="submit" form="issue-summary-form">
+      <Button variant="primary" type="submit" form="issue-summary-form" className="w-full sm:w-auto">
         {isEditMode ? 'บันทึกการแก้ไข' : 'บันทึกและตัดสต็อก'}
       </Button>
     </div>

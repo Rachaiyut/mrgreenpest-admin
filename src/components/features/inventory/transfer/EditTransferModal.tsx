@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { Modal } from '../../../common/Modal';
 import {

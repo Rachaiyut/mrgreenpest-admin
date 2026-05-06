@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import SignatureCanvas from 'react-signature-canvas';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { Modal } from '../../common/Modal';
@@ -1642,10 +1642,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                     portalId="root"
                     popperClassName="!z-[9999]"
                     disabled={readOnly}
-                    className={`w-full pl-10 pr-3 py-2 rounded-md shadow-sm focus:outline-none text-sm h-10 ${readOnly ? 'bg-slate-100 border border-slate-300 text-slate-500 cursor-not-allowed' : 'bg-white border border-slate-300 focus:ring-primary focus:border-primary'}`}
+                    className={`w-full pr-3 py-2 rounded-md shadow-sm focus:outline-none text-sm h-10 ${readOnly ? 'bg-slate-100 border border-slate-300 text-slate-500 cursor-not-allowed' : 'bg-white border border-slate-300 focus:ring-primary focus:border-primary'}`}
                     wrapperClassName="w-full"
                   />
-                  <CalendarIcon className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none ${readOnly ? 'text-slate-300' : 'text-slate-400'}`} />
                 </div>
                 {addDaysSelection === 'custom' ? (
                   <div className="w-1/3 relative flex items-center">
@@ -1715,10 +1714,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                     portalId="root"
                     popperClassName="!z-[9999]"
                     disabled={readOnly}
-                    className={`w-full pl-10 pr-3 py-2 rounded-md shadow-sm focus:outline-none text-sm h-10 ${readOnly ? 'bg-slate-100 border border-slate-300 text-slate-500 cursor-not-allowed' : 'bg-white border border-emerald-300 focus:ring-emerald-400 focus:border-emerald-400'}`}
+                    className={`w-full pr-3 py-2 rounded-md shadow-sm focus:outline-none text-sm h-10 ${readOnly ? 'bg-slate-100 border border-slate-300 text-slate-500 cursor-not-allowed' : 'bg-white border border-emerald-300 focus:ring-emerald-400 focus:border-emerald-400'}`}
                     wrapperClassName="w-full"
                   />
-                  <CalendarIcon className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none ${readOnly ? 'text-slate-300' : 'text-emerald-500'}`} />
                 </div>
               </div>
             </div>
@@ -2007,7 +2005,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                       {reportState.payment_amount && (
                         <div className="flex items-center gap-2 text-xs font-medium text-green-600 bg-green-50/50 px-3 py-2 rounded-md border border-green-100">
                           <CheckCircleIcon className="w-4 h-4" />
-                          <span>พร้อมบันทึกยอดเงินจำนวน {Number(reportState.payment_amount).toLocaleString()} บาท เข้าระบบ</span>
+                          <span>พร้อมบันทึกยอดเงินจำนวน {Number(reportState.payment_amount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท เข้าระบบ</span>
                         </div>
                       )}
                     </div>

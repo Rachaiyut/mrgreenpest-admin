@@ -4,7 +4,7 @@
  *              Follows the same split pattern as QuotationModal / QuotationForm.
  *              Mode is controlled via `mode` prop ('create' | 'edit').
  */
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import React, {
   useState,
   useEffect,
@@ -920,23 +920,23 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     <div className="flex items-end justify-between mb-2">
                       <span className="text-sm font-medium text-slate-500">วงเงินที่ได้รับ</span>
                       <span className="text-base font-semibold text-slate-700">
-                        {walletInfo.expense_limit.toLocaleString()} บาท
+                        {walletInfo.expense_limit.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                       </span>
                     </div>
                     <div className="flex items-end justify-between mb-2">
                       <span className="text-sm font-medium text-slate-500">คงเหลือปัจจุบัน</span>
-                      <span className="text-base font-semibold text-slate-700">{walletInfo.balance.toLocaleString()} บาท</span>
+                      <span className="text-base font-semibold text-slate-700">{walletInfo.balance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
                     </div>
                     {totalExpenses > 0 && (
                       <div className="flex items-end justify-between mb-2">
                         <span className="text-sm font-medium text-slate-500">รวมที่ต้องการเบิกครั้งนี้</span>
-                        <span className="text-base font-bold text-amber-600">+{totalExpenses.toLocaleString()} บาท</span>
+                        <span className="text-base font-bold text-amber-600">+{totalExpenses.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
                       </div>
                     )}
                     <div className="flex items-end justify-between mt-3 pt-3 border-t border-slate-100 mb-2">
                       <span className="text-sm font-bold text-slate-600">ยอดเงินรวม</span>
                       <span className={`text-xl font-black ${isOverLimit ? 'text-red-600' : 'text-emerald-600'}`}>
-                        {(walletInfo.balance + totalExpenses).toLocaleString()} บาท
+                        {(walletInfo.balance + totalExpenses).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                       </span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-2 mb-1 overflow-hidden">
@@ -1000,7 +1000,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     <div className="flex justify-between items-center pt-4 border-t border-slate-200 mt-4">
                       <span className="text-sm font-bold text-slate-600">ยอดรวมขอเติมเงิน</span>
                       <span className="text-xl font-black text-primary">
-                        {totalExpenses.toLocaleString()}
+                        {totalExpenses.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         <span className="text-base font-bold text-slate-500 ml-1">บาท</span>
                       </span>
                     </div>

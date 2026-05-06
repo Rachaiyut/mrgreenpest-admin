@@ -1,6 +1,6 @@
 import { FC, MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 
 import { Card } from '../../components/common/Card';
 import { Input, Button } from '../../components/common/FormControls';
@@ -224,18 +224,18 @@ const AccountPage: FC = () => {
         </div>
 
         {/* Summary card */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <Card className="p-4 border-l-4 border-emerald-400">
-            <p className="text-sm text-slate-500">จำนวนบัญชีทั้งหมด</p>
-            <p className="text-2xl font-bold text-slate-800 mt-1">{total.toLocaleString('th-TH')}</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-4">
+          <Card className="p-3 sm:p-4 border-l-4 border-emerald-400">
+            <p className="text-xs sm:text-sm text-slate-500">จำนวนบัญชีทั้งหมด</p>
+            <p className="text-lg sm:text-2xl font-bold text-slate-800 mt-1">{total.toLocaleString('th-TH')}</p>
           </Card>
-          <Card className="p-4 border-l-4 border-blue-400">
-            <p className="text-sm text-slate-500">ยอดรวมในหน้านี้</p>
-            <p className="text-2xl font-bold text-slate-800 mt-1">{fmtMoney(totalBalance)}</p>
+          <Card className="p-3 sm:p-4 border-l-4 border-blue-400">
+            <p className="text-xs sm:text-sm text-slate-500">ยอดรวมในหน้านี้</p>
+            <p className="text-lg sm:text-2xl font-bold text-slate-800 mt-1">{fmtMoney(totalBalance)}</p>
           </Card>
-          <Card className="p-4 border-l-4 border-amber-400">
-            <p className="text-sm text-slate-500">บัญชีใช้งาน</p>
-            <p className="text-2xl font-bold text-slate-800 mt-1">
+          <Card className="p-3 sm:p-4 border-l-4 border-amber-400">
+            <p className="text-xs sm:text-sm text-slate-500">บัญชีใช้งาน</p>
+            <p className="text-lg sm:text-2xl font-bold text-slate-800 mt-1">
               {accounts.filter((a) => a.is_active).length} / {accounts.length}
             </p>
           </Card>
@@ -264,7 +264,7 @@ const AccountPage: FC = () => {
                 setActiveFilter(val as 'all' | 'active' | 'inactive');
                 setPage(1);
               }}
-              className="w-fit text-sm"
+              className="w-full sm:w-fit text-sm"
               placeholder="สถานะทั้งหมด"
               options={[
                 { value: 'all', label: 'สถานะทั้งหมด' },

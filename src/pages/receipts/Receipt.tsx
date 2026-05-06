@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import Swal from 'sweetalert2';
+import Swal from '@/src/utils/swal';
 import { Card } from '../../components/common/Card';
 import { formatThaiDate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
@@ -735,7 +735,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                         { value: '', label: '-- เลือกใบแจ้งหนี้ (ถ้ามี) --' },
                         ...(invoices || []).map((i) => ({
                           value: i.id,
-                          label: `${i.code || i.id} — ${i.customer_name} (${(i.total || 0).toLocaleString()} บาท)`,
+                          label: `${i.code || i.id} — ${i.customer_name} (${(i.total || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท)`,
                         })),
                       ]}
                     />
@@ -917,7 +917,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
               <div>
                 <div className="text-sm text-slate-600">ยอดเงิน</div>
                 <div className="text-sm text-slate-800">
-                  {selectedReceipt.amount.toLocaleString()} บาท
+                  {Number(selectedReceipt.amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                 </div>
               </div>
               {selectedReceipt.invoice_id && (
