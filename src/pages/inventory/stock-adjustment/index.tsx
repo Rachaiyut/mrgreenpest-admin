@@ -21,17 +21,21 @@ import { Input } from '../../../components/common/FormControls';
 import { SearchableSelect } from '../../../components/common/SearchableSelect';
 import { StatusBadge } from '../../../components/common/StatusBadge';
 
-import { useData } from '../../../contexts/DataContext';
 import { StockAdjustmentApi } from '../../../api/stock-adjustment';
+import { WarehouseApi } from '../../../api/warehouse';
+import { ProductApi } from '../../../api/product';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
+import {
+  Warehouse as WarehouseType,
+  Product as ProductType,
+} from '@/src/types/entity/app.interface';
 
 const StockAdjustment: React.FC = () => {
-  // ดึงเฉพาะ master data ที่ใช้ใน modal — list ของใบ adjustment fetch เองในหน้านี้
-  const {
-    warehouses,
-    products,
-    warehouseStocks: stockMap,
-  } = useData();
+  // หน้านี้ fetch master data เองทั้งหมด — ไม่อ่านจาก DataContext เพื่อกัน race
+  // condition ที่ context limit แค่ 10 record (ทำให้ dropdown ขึ้นไม่ครบ)
+  const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
+  const [products, setProducts] = useState<ProductType[]>([]);
+  const [stockMap, setStockMap] = useState<Record<string, Record<string, number>>>({});
 
   const [adjustments, setAdjustments] = useState<StockAdjustmentType[]>([]);
   const [totalItemsServer, setTotalItemsServer] = useState(0);
@@ -87,6 +91,45 @@ const StockAdjustment: React.FC = () => {
   useEffect(() => {
     fetchList();
   }, [fetchList]);
+
+  // Fetch master data ตอน mount (เพื่อให้ dropdown / modal มีข้อมูลครบ)
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const [whRes, prodRes, stockRes] = await Promise.all([
+          WarehouseApi.getWarehouses({ limit: 100 }),
+          ProductApi.getProducts({ limit: 100, is_active: true }),
+          WarehouseApi.getWarehousesWithItems(),
+        ]);
+        if (!active) return;
+        if (whRes?.data) setWarehouses(whRes.data);
+        if (prodRes?.data) setProducts(prodRes.data);
+
+        const map: Record<string, Record<string, number>> = {};
+        const list = (stockRes as any)?.data || stockRes || [];
+        if (Array.isArray(list)) {
+          list.forEach((wh: any) => {
+            map[wh.id] = {};
+            const balances =
+              wh.stock || wh.stocks || wh.stockBalances || wh.stock_balances
+              || wh.stocks_balances || wh.items || [];
+            balances.forEach((b: any) => {
+              const pid = b.product_id || b.productId;
+              const qty = Number(b.quantity || 0);
+              if (pid) map[wh.id][pid] = qty;
+            });
+          });
+        }
+        setStockMap(map);
+      } catch (err) {
+        console.error('Failed to fetch master data', err);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Debounce searchQuery → searchDebounced
   useEffect(() => {
