@@ -1216,12 +1216,12 @@ const Issue: FC = () => {
                               : '-'}
                           </td>
                           {categoryTab !== 'expense' && (
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 lg:table-cell hidden">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center lg:table-cell hidden">
                               {withdrawal.items?.length || 0}
                             </td>
                           )}
                           {categoryTab !== 'stock' && (
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                               {totalExpenseAmount.toLocaleString('th-TH', {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
@@ -1251,11 +1251,11 @@ const Issue: FC = () => {
                               return looksLikeUuid ? 'ไม่กรอก' : withdrawal.created_by || '-';
                             })()}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap text-center">
                             <StatusBadge status={withdrawal.lifecycle} />
                           </td>
                           {categoryTab !== 'expense' && (
-                            <td className="px-4 py-3 whitespace-nowrap">
+                            <td className="px-4 py-3 whitespace-nowrap text-center">
                               {hasItems ? (
                                 <StatusBadge status={(withdrawal.items || [])[0]?.status || 'PENDING'} />
                               ) : (
@@ -1264,7 +1264,7 @@ const Issue: FC = () => {
                             </td>
                           )}
                           {categoryTab !== 'stock' && (
-                            <td className="px-4 py-3 whitespace-nowrap">
+                            <td className="px-4 py-3 whitespace-nowrap text-center">
                               {hasExpenses ? (
                                 <StatusBadge status={(withdrawal.expenses || [])[0]?.status || 'PENDING'} />
                               ) : (
@@ -1296,7 +1296,7 @@ const Issue: FC = () => {
                         {isExpanded && (
                           <tr className="bg-gradient-to-b from-slate-50 to-slate-100/60">
                             <td colSpan={colSpan} className="px-6 py-5 border-t border-b border-slate-200">
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                              <div className="grid grid-cols-2 gap-5">
                                 {/* รายการสินค้า */}
                                 <div className="rounded-xl border border-emerald-100 bg-white shadow-sm overflow-hidden">
                                   <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-emerald-50 to-emerald-50/40 border-b border-emerald-100">
