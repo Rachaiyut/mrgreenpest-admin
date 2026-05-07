@@ -246,7 +246,7 @@ const Packages: React.FC = () => {
                 }}
                 className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary"
               >
-                <option value="">หมวดหมู่ทั้งหมด</option>
+                <option value="">หมวดหมู่บริการทั้งหมด</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
@@ -304,7 +304,7 @@ const Packages: React.FC = () => {
                     scope="col"
                     className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
-                    หมวดหมู่
+                    หมวดหมู่บริการ
                   </th>
                   <th
                     scope="col"
@@ -350,7 +350,7 @@ const Packages: React.FC = () => {
                     <td colSpan={10} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
                         <PackageIcon className="h-12 w-12 mb-3 opacity-50" />
-                        <p className="text-base font-medium text-slate-500">ไม่พบแพ็กเกจ</p>
+                        <p className="text-base font-medium text-slate-500">ไม่พบข้อมูลแพ็กเกจ</p>
                         <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างแพ็กเกจใหม่</p>
                       </div>
                     </td>

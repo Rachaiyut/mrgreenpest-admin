@@ -238,12 +238,12 @@ const Transfers: React.FC = () => {
       html: `ยกเลิกใบโอนย้าย <strong>${transfer.code || transfer.id}</strong>`,
       input: 'textarea',
       inputLabel: 'เหตุผลการยกเลิก',
-      inputPlaceholder: 'ระบุเหตุผล...',
+      inputPlaceholder: 'กรอกเหตุผล...',
       showCancelButton: true,
       confirmButtonText: 'ยกเลิกใบนี้',
       cancelButtonText: 'ปิด',
       confirmButtonColor: '#ef4444',
-      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
     });
     if (!r.isConfirmed || !r.value) return;
     const target = transfer.id || transfer.code;
@@ -319,12 +319,12 @@ const Transfers: React.FC = () => {
       html: `ไม่อนุมัติใบโอนย้าย <strong>${transfer.code || transfer.id}</strong>`,
       input: 'textarea',
       inputLabel: 'เหตุผลการไม่อนุมัติ',
-      inputPlaceholder: 'ระบุเหตุผล...',
+      inputPlaceholder: 'กรอกเหตุผล...',
       showCancelButton: true,
       confirmButtonText: 'ไม่อนุมัติ',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: '#ef4444',
-      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
     });
     if (!r.isConfirmed || !r.value) return;
     const target = transfer.id || transfer.code;
@@ -610,9 +610,9 @@ const Transfers: React.FC = () => {
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(() => {
                           const u = (transfer as { created_by_user?: { first_name?: string; last_name?: string; nick_name?: string } }).created_by_user;
-                          if (!u) return 'ไม่ระบุ';
+                          if (!u) return 'ไม่กรอก';
                           const full = `${u.first_name || ''} ${u.last_name || ''}`.trim();
-                          return full || u.nick_name || 'ไม่ระบุ';
+                          return full || u.nick_name || 'ไม่กรอก';
                         })()}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">

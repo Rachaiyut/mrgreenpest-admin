@@ -1242,7 +1242,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         </label>
         <Input
           type="text"
-          placeholder="ระบุจุดที่พบหรือการดำเนินการอื่นๆ..."
+          placeholder="กรอกจุดที่พบหรือการดำเนินการอื่นๆ..."
           value={reportState.ant?.other || ''}
           onChange={(e) => handlePestDataChange('ant', 'other', e.target.value)}
           className="h-10"
@@ -1270,7 +1270,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         </label>
         <Input
           type="text"
-          placeholder="ระบุจุดที่พบหรือการดำเนินการอื่นๆ..."
+          placeholder="กรอกจุดที่พบหรือการดำเนินการอื่นๆ..."
           value={reportState.cockroach?.other || ''}
           onChange={(e) =>
             handlePestDataChange('cockroach', 'other', e.target.value)
@@ -1300,7 +1300,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         </label>
         <Input
           type="text"
-          placeholder="ระบุจุดที่พบหรือการดำเนินการอื่นๆ..."
+          placeholder="กรอกจุดที่พบหรือการดำเนินการอื่นๆ..."
           value={reportState.lizard?.other || ''}
           onChange={(e) =>
             handlePestDataChange('lizard', 'other', e.target.value)
@@ -1394,7 +1394,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         </label>
         <Input
           type="text"
-          placeholder="ระบุจุดที่พบหรือการดำเนินการอื่นๆ..."
+          placeholder="กรอกจุดที่พบหรือการดำเนินการอื่นๆ..."
           value={reportState.rat?.other || ''}
           onChange={(e) => handlePestDataChange('rat', 'other', e.target.value)}
           className="h-10"
@@ -1405,9 +1405,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
   const renderOtherForm = (): React.ReactElement => (
     <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-      <label className="block text-sm font-medium text-slate-700 mb-1">ระบุรายละเอียด</label>
+      <label className="block text-sm font-medium text-slate-700 mb-1">กรอกรายละเอียด</label>
       <Textarea
-        placeholder="ระบุประเภทแมลงและวิธีการดำเนินการ..."
+        placeholder="กรอกประเภทแมลงและวิธีการดำเนินการ..."
         rows={3}
         value={reportState.pest_other_text || ''}
         onChange={(e) =>
@@ -1560,7 +1560,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             {reportState.service_types?.includes('กำจัดอื่นๆ') && (
               <input
                 type="text"
-                placeholder="ระบุประเภทบริการอื่นๆ..."
+                placeholder="กรอกประเภทบริการอื่นๆ..."
                 value={reportState.service_other_text || ''}
                 onChange={(e) => setReportState((prev) => ({ ...prev, service_other_text: e.target.value }))}
                 className="mt-3 w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
@@ -1653,7 +1653,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                       inputMode="numeric"
                       value={customDays}
                       onChange={handleCustomDaysChange}
-                      placeholder="ระบุวัน"
+                      placeholder="กรอกวัน"
                       autoFocus
                       className="w-full text-sm pr-16 pl-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary h-10"
                     />

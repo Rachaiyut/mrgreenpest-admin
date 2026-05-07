@@ -1027,13 +1027,13 @@ const Job: React.FC<JobProps> = ({
     const result = await Swal.fire({
       icon: 'warning',
       title: 'ยืนยันการยกเลิกงาน?',
-      text: 'กรุณาระบุเหตุผลในการยกเลิก',
+      text: 'กรุณากรอกเหตุผลในการยกเลิก',
       input: 'textarea',
       inputAttributes: { rows: '2', style: 'resize:none; font-size:14px;' },
-      inputPlaceholder: 'ระบุเหตุผล เช่น ลูกค้าขอเลื่อน',
+      inputPlaceholder: 'กรอกเหตุผล เช่น ลูกค้าขอเลื่อน',
       width: 400,
       inputValidator: (value) => {
-        if (!value) return 'กรุณาระบุเหตุผลในการยกเลิก';
+        if (!value) return 'กรุณากรอกเหตุผลในการยกเลิก';
       },
       showCancelButton: true,
       confirmButtonText: 'ยืนยันการยกเลิก',
@@ -2334,13 +2334,13 @@ const Job: React.FC<JobProps> = ({
                                           title: 'ปฏิเสธงานนี้?',
                                           input: 'textarea',
                                           inputLabel: 'เหตุผลการปฏิเสธ',
-                                          inputPlaceholder: 'ระบุเหตุผล...',
+                                          inputPlaceholder: 'กรอกเหตุผล...',
                                           showCancelButton: true,
                                           confirmButtonText: 'ปฏิเสธ',
                                           cancelButtonText: 'ยกเลิก',
                                           confirmButtonColor: '#ef4444',
                                           inputValidator: (value) =>
-                                            !value || !value.trim() ? 'กรุณาระบุเหตุผล' : null,
+                                            !value || !value.trim() ? 'กรุณากรอกเหตุผล' : null,
                                         }).then((r) => {
                                           if (r.isConfirmed && r.value) {
                                             handleRejectJob(job.id, r.value.trim());
@@ -2705,7 +2705,7 @@ const Job: React.FC<JobProps> = ({
                         <td colSpan={9} className="p-0 border-b-0 h-0">
                           <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                             <ClipboardDocumentListIcon className="h-12 w-12 mb-3 opacity-50" />
-                            <p className="text-lg font-medium">ไม่พบรายงานบริการ</p>
+                            <p className="text-lg font-medium">ไม่พบข้อมูลรายงานบริการ</p>
                           </div>
                         </td>
                       </tr>

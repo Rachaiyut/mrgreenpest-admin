@@ -214,7 +214,7 @@ export const ReturnToMainWarehouseModal: React.FC<
       return;
     }
     if (!requesterId) {
-      message.error('กรุณาระบุผู้เบิก (Requester)');
+      message.error('กรุณากรอกผู้เบิก (Requester)');
       return;
     }
 
@@ -610,7 +610,7 @@ export const ReturnToMainWarehouseModal: React.FC<
             <Input
               value={remark}
               onChange={(e) => setRemark(e.target.value)}
-              placeholder="ระบุสาเหตุการคืนสินค้า (ถ้ามี)"
+              placeholder="กรอกสาเหตุการคืนสินค้า (ถ้ามี)"
               className="w-full border border-slate-300 rounded-lg p-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm"
             />
           </div>

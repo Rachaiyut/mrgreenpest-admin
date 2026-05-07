@@ -92,7 +92,7 @@ export const SetWithdrawalLimitModal: React.FC<
     if (value !== '' && (isNaN(numValue) || numValue < 0)) {
       setErrors((prev) => ({
         ...prev,
-        [productId]: 'กรุณาระบุตัวเลขที่ถูกต้อง',
+        [productId]: 'กรุณากรอกตัวเลขที่ถูกต้อง',
       }));
     } else {
       setErrors((prev) => {

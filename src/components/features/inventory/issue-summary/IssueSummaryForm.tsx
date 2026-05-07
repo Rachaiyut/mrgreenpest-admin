@@ -469,13 +469,13 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
       return Swal.fire({
         icon: 'warning',
         title: 'กรุณาตรวจสอบ',
-        text: 'กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ หรือ ระบุค่าใช้จ่ายอย่างน้อย 1 รายการ',
+        text: 'กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ หรือ กรอกค่าใช้จ่ายอย่างน้อย 1 รายการ',
       });
     }
 
     const invalidItems = items.filter((item) => !item.product_id || item.quantity <= 0);
     if (invalidItems.length > 0)
-      return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาระบุจำนวนสินค้าให้ถูกต้อง' });
+      return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกจำนวนสินค้าให้ถูกต้อง' });
 
     // Validate: if over limit, must have job + notes
     if (isOverLimit || isAnyItemOverLimit) {
@@ -483,7 +483,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
         return Swal.fire({
           icon: 'warning',
           title: 'กรุณาตรวจสอบ',
-          text: 'กรุณาระบุ "เอกสารอ้างอิง (ใบงาน)" และ "หมายเหตุ" เนื่องจากมีการเบิกสินค้าหรือใช้เงินเกินโควต้า',
+          text: 'กรุณากรอก "เอกสารอ้างอิง (ใบงาน)" และ "หมายเหตุ" เนื่องจากมีการเบิกสินค้าหรือใช้เงินเกินโควต้า',
         });
       }
     }
@@ -730,7 +730,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   <div>
                     <h3 className="text-lg font-bold text-slate-800">รายการสินค้า</h3>
                     <p className="text-sm text-slate-500 mt-0.5">
-                      สินค้าที่ต้องการเบิกออกจากรถ (ไม่ต้องระบุก็ได้ หากต้องการเบิกเฉพาะเงิน)
+                      สินค้าที่ต้องการเบิกออกจากรถ (ไม่ต้องกรอกก็ได้ หากต้องการเบิกเฉพาะเงิน)
                     </p>
                   </div>
                 </div>
@@ -861,7 +861,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-800">การเงินและค่าใช้จ่าย</h3>
-                  <p className="text-sm text-slate-500 mt-0.5">รายการเบิกเงินสด (ไม่ต้องระบุก็ได้ หากต้องการเบิกเฉพาะสินค้า)</p>
+                  <p className="text-sm text-slate-500 mt-0.5">รายการเบิกเงินสด (ไม่ต้องกรอกก็ได้ หากต้องการเบิกเฉพาะสินค้า)</p>
                 </div>
               </div>
               <div className="p-3 sm:p-5">
@@ -931,25 +931,26 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   expenseItems.map((item) => (
                     <div
                       key={item.id}
-                      className="bg-white rounded-lg border border-slate-200 shadow-sm group hover:border-primary/30 transition-colors"
+                      className="bg-white rounded-lg border border-slate-200 shadow-sm group hover:border-primary/30 transition-colors p-2.5 sm:p-4"
                     >
-                      <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-4">
-                        <div className="p-1.5 sm:p-2 bg-slate-100 rounded-md text-slate-400 flex-shrink-0">
-                          <BanknotesIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                      {/* Desktop: single row */}
+                      <div className="hidden sm:flex items-center gap-3">
+                        <div className="p-2 bg-slate-100 rounded-md text-slate-400 flex-shrink-0">
+                          <BanknotesIcon className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <input
                             type="text"
                             value={item.description}
                             onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
-                            placeholder="ระบุรายละเอียด..."
-                            className={`w-full border border-slate-300 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white ${
+                            placeholder="กรอกรายละเอียด..."
+                            className={`w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white ${
                               isDefaultExpense(item.id) ? 'text-slate-700 bg-slate-50' : ''
                             }`}
                             readOnly={isDefaultExpense(item.id)}
                           />
                         </div>
-                        <div className="flex-shrink-0 w-[120px] sm:w-[200px]">
+                        <div className="flex-shrink-0 w-[200px]">
                           <div className="relative">
                             <input
                               type="number"
@@ -957,22 +958,76 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                               value={item.amount}
                               onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
                               placeholder="0.00"
-                              className="w-full border border-slate-300 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-sm sm:text-base font-bold text-right pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+                              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-base font-bold text-right pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
                             />
-                            <span className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-xs sm:text-sm font-semibold text-slate-400 pointer-events-none">บาท</span>
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400 pointer-events-none">บาท</span>
                           </div>
                         </div>
                         {isDefaultExpense(item.id) ? (
-                          <div className="w-6 sm:w-10 flex-shrink-0" />
+                          <div className="w-10 flex-shrink-0" />
                         ) : (
                           <button
                             type="button"
                             onClick={() => handleRemoveExpenseItem(item.id)}
-                            className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1 sm:p-2 rounded-xl transition-all duration-200 focus:outline-none flex-shrink-0"
+                            className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-xl transition-all duration-200 focus:outline-none flex-shrink-0"
                           >
-                            <TrashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <TrashIcon className="w-5 h-5" />
                           </button>
                         )}
+                      </div>
+                      {/* Mobile: two rows, inputs aligned */}
+                      <div className="sm:hidden flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-slate-100 rounded-md text-slate-400 flex-shrink-0">
+                            <BanknotesIcon className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <input
+                              type="text"
+                              value={item.description}
+                              onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
+                              placeholder="กรอกรายละเอียด..."
+                              className={`w-full border border-slate-300 rounded-lg px-2 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white ${
+                                isDefaultExpense(item.id) ? 'text-slate-700 bg-slate-50' : ''
+                              }`}
+                              readOnly={isDefaultExpense(item.id)}
+                            />
+                          </div>
+                          {isDefaultExpense(item.id) ? (
+                            <div className="w-6 flex-shrink-0" />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveExpenseItem(item.id)}
+                              className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1 rounded-xl transition-all duration-200 focus:outline-none flex-shrink-0"
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 flex-shrink-0 invisible">
+                            <BanknotesIcon className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="relative">
+                              <input
+                                type="number"
+                                step="any"
+                                value={item.amount}
+                                onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
+                                placeholder="0.00"
+                                className="w-full border border-slate-300 rounded-lg px-2 py-2 text-sm font-bold text-right pr-10 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+                              />
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">บาท</span>
+                            </div>
+                          </div>
+                          {isDefaultExpense(item.id) ? (
+                            <div className="w-6 flex-shrink-0" />
+                          ) : (
+                            <div className="w-6 flex-shrink-0" />
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))
@@ -1015,7 +1070,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
               </div>
               <div>
                 <h3 className="text-lg font-bold text-slate-800">ข้อมูลอ้างอิงและหมายเหตุ</h3>
-                <p className="text-sm text-slate-500 mt-0.5">ระบุเอกสารอ้างอิงและเหตุผลการเบิก</p>
+                <p className="text-sm text-slate-500 mt-0.5">กรอกเอกสารอ้างอิงและเหตุผลการเบิก</p>
               </div>
             </div>
             <div className="p-5">
@@ -1024,7 +1079,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
               <div className="mb-5 text-sm font-semibold text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-start gap-2">
                 <span className="mt-0.5">⚠️</span>
                 <span>
-                  จำเป็นต้องระบุ <strong>"เอกสารอ้างอิง"</strong> และ <strong>"หมายเหตุ"</strong>{' '}
+                  จำเป็นต้องกรอก <strong>"เอกสารอ้างอิง"</strong> และ <strong>"หมายเหตุ"</strong>{' '}
                   เนื่องจากมีการเบิกสินค้าหรือขอเบิกเงินเกินโควต้าที่ได้รับ
                 </span>
               </div>
@@ -1075,7 +1130,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                       ? 'border-amber-300 bg-white placeholder:text-amber-400/70'
                       : 'border-slate-300 bg-white placeholder:text-slate-400'
                   }`}
-                  placeholder="ระบุเหตุผลการเบิกเพิ่มเติม (เช่น นำไปใช้กับงานซ่อมแซม, ซื้อของเข้าสต๊อก...)"
+                  placeholder="กรอกเหตุผลการเบิกเพิ่มเติม (เช่น นำไปใช้กับงานซ่อมแซม, ซื้อของเข้าสต๊อก...)"
                 />
               </div>
             </div>

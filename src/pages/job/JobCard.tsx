@@ -127,13 +127,13 @@ const JobCard: React.FC<{
         title: 'ปฏิเสธงานนี้?',
         input: 'textarea',
         inputLabel: 'เหตุผลการปฏิเสธ',
-        inputPlaceholder: 'ระบุเหตุผล...',
+        inputPlaceholder: 'กรอกเหตุผล...',
         inputAttributes: { 'aria-label': 'เหตุผลการปฏิเสธ' },
         showCancelButton: true,
         confirmButtonText: 'ปฏิเสธ',
         cancelButtonText: 'ยกเลิก',
         confirmButtonColor: '#ef4444',
-        inputValidator: (value) => (!value || !value.trim() ? 'กรุณาระบุเหตุผล' : null),
+        inputValidator: (value) => (!value || !value.trim() ? 'กรุณากรอกเหตุผล' : null),
       }).then((result) => {
         if (result.isConfirmed && result.value) {
           Promise.resolve(onReject(job.id, result.value.trim()));
@@ -164,7 +164,7 @@ const JobCard: React.FC<{
     const { hasPermission } = usePermissions();
     const canApprove = hasPermission('APPROVE_OPERATION');
     const canUpdate = hasPermission('UPDATE_OPERATION');
-    // Legacy jobs (สร้างก่อน migration) มี created_by = NULL — ไม่สามารถระบุเจ้าของได้
+    // Legacy jobs (สร้างก่อน migration) มี created_by = NULL — ไม่สามารถกรอกเจ้าของได้
     // → ให้ user ที่มี UPDATE_OPERATION แก้ได้ทั้งหมด (กัน edge case UX ค้าง)
     const isLegacyNoCreator = !job.created_by;
     const isCreator = !!currentUserId && !!job.created_by && job.created_by === currentUserId;

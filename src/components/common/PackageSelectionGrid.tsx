@@ -91,7 +91,7 @@ const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                       เงื่อนไขราคา<span className="text-red-500">*</span>
                     </label>
-                    <div className="grid grid-cols-2 gap-2 w-full">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
                       {/* มีปลวก */}
                       <label
                         onClick={(e) => {
@@ -108,11 +108,13 @@ const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
                       >
                         <div className={`text-[10px] ${readOnly && !isWithTermiteSelected ? 'text-slate-300' : 'text-slate-500'}`}>มีปลวก</div>
                         <div className="flex items-center mt-1">
-                          <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isWithTermiteSelected ? 'border-green-600' : (readOnly ? 'border-slate-300' : 'border-slate-400')}`}>
+                          <div className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 flex items-center justify-center ${isWithTermiteSelected ? 'border-green-600' : (readOnly ? 'border-slate-300' : 'border-slate-400')}`}>
                             {isWithTermiteSelected && <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>}
                           </div>
-                          <div className="font-semibold text-sm text-slate-800 ml-2">{Number(fit.price_with_termite || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</div>
+                          <div className="font-semibold text-sm text-slate-800 ml-2">{Number(fit.price_with_termite || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                          <div className="text-xs text-slate-500 ml-1 sm:hidden">บาท</div>
                         </div>
+                        <div className="text-xs text-slate-500 pl-[22px] hidden sm:block">บาท</div>
                       </label>
                       {/* ไม่มีปลวก */}
                       <label
@@ -130,16 +132,18 @@ const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
                       >
                         <div className={`text-[10px] ${readOnly && !isWithoutTermiteSelected ? 'text-slate-300' : 'text-slate-500'}`}>ไม่มีปลวก</div>
                         <div className="flex items-center mt-1">
-                          <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isWithoutTermiteSelected ? 'border-green-600' : (readOnly ? 'border-slate-300' : 'border-slate-400')}`}>
+                          <div className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 flex items-center justify-center ${isWithoutTermiteSelected ? 'border-green-600' : (readOnly ? 'border-slate-300' : 'border-slate-400')}`}>
                             {isWithoutTermiteSelected && <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>}
                           </div>
-                          <div className="font-semibold text-sm text-slate-800 ml-2">{Number(fit.price_without_termite || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</div>
+                          <div className="font-semibold text-sm text-slate-800 ml-2">{Number(fit.price_without_termite || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                          <div className="text-xs text-slate-500 ml-1 sm:hidden">บาท</div>
                         </div>
+                        <div className="text-xs text-slate-500 pl-[22px] hidden sm:block">บาท</div>
                       </label>
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-2 text-xs text-slate-400">ระบุขนาดเพื่อคำนวณราคา</div>
+                  <div className="mt-2 text-xs text-slate-400">กรอกขนาดเพื่อคำนวณราคา</div>
                 )}
                 <div className="text-[10px] text-slate-400 mt-3">
                   {fit ? `สำหรับพื้นที่ไม่เกิน ${fit.area_range} ${unitName}` : 'ดูเงื่อนไขราคาตามขนาดพื้นที่'}

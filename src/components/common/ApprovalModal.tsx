@@ -79,7 +79,7 @@ export const ApprovalModal: React.FC<ApprovalModalProps> = ({
               id="remarks"
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
-              placeholder="ระบุเหตุผลการไม่อนุมัติ..."
+              placeholder="กรอกเหตุผลการไม่อนุมัติ..."
             />
           </FormField>
         ) : (

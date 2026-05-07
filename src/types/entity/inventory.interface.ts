@@ -112,6 +112,7 @@ export interface Withdrawal extends IBase {
   requester_id?: string;
   recipient_id?: string;
   to_warehouse_id?: string;
+  issue_date?: string;
   reference_ids?: string[];
 }
 

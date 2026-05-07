@@ -216,7 +216,7 @@ const InventoryUsagePage: React.FC = () => {
 
       {/* Filter Section */}
       <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200/80">
-        <div className="flex flex-col lg:flex-row gap-4 items-end">
+        <div className="flex flex-col lg:flex-row gap-4 lg:items-end">
           <div className="flex-1 min-w-0">
             <label className="block text-sm font-medium text-slate-600 mb-1.5">
               ค้นหา

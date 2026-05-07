@@ -520,12 +520,12 @@ const IssueSummaryPage: React.FC = () => {
       text: 'การไม่อนุมัติจะยกเลิกใบเบิกทั้งใบ',
       input: 'textarea',
       inputLabel: 'เหตุผลการไม่อนุมัติ',
-      inputPlaceholder: 'ระบุเหตุผล...',
+      inputPlaceholder: 'กรอกเหตุผล...',
       showCancelButton: true,
       confirmButtonText: 'ไม่อนุมัติ',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: '#ef4444',
-      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
     });
     if (!r.isConfirmed || !r.value) return;
     try {
@@ -706,16 +706,16 @@ const IssueSummaryPage: React.FC = () => {
     <div className="flex-1 flex flex-col min-h-0">
       <div className="p-4 sm:p-6 lg:p-8 flex flex-col flex-1 min-h-0 gap-4 max-w-full">
         {/* --- Header: Title + Create Button --- */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
               สรุปการเบิกสินค้า/อุปกรณ์
             </h1>
-            <p className="mt-1 text-slate-600">
+            <p className="mt-1 text-sm sm:text-base text-slate-600">
               ติดตามและจัดการการเบิกสินค้าและอุปกรณ์
             </p>
           </div>
-          <Button onClick={() => { setModalMode('create'); setIsModalOpen(true); }}>
+          <Button onClick={() => { setModalMode('create'); setIsModalOpen(true); }} className="self-start sm:self-auto">
             <PlusIcon className="h-5 w-5" />
             สร้างใบเบิกสินค้า/อุปกรณ์
           </Button>
@@ -878,7 +878,7 @@ const IssueSummaryPage: React.FC = () => {
                         0,
                       ) || 0;
 
-                    // ถ้า row นี้แยกตาม category → แสดงเฉพาะฝั่งที่ระบุ
+                    // ถ้า row นี้แยกตาม category → แสดงเฉพาะฝั่งที่กรอก
                     const showStockOnly = row.category === 'STOCK';
                     const showExpenseOnly = row.category === 'EXPENSE';
 

@@ -307,7 +307,7 @@ const AccountPage: FC = () => {
                     <td colSpan={10} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                         <BuildingOfficeIcon className="h-12 w-12 mb-3 opacity-50" />
-                        <p className="text-lg font-medium">ไม่พบบัญชี</p>
+                        <p className="text-lg font-medium">ไม่พบข้อมูลบัญชี</p>
                         <p className="text-sm">ลองปรับตัวกรองหรือสร้างบัญชีใหม่</p>
                       </div>
                     </td>

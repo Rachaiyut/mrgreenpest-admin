@@ -36,8 +36,8 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const errs: Record<string, string> = {};
-    if (!formData.name?.trim()) errs.name = 'กรุณาระบุชื่อหมวดหมู่';
-    if (mode === 'create' && !formData.code?.trim()) errs.code = 'กรุณาระบุอักษรย่อหมวดหมู่';
+    if (!formData.name?.trim()) errs.name = 'กรุณากรอกชื่อหมวดหมู่';
+    if (mode === 'create' && !formData.code?.trim()) errs.code = 'กรุณากรอกอักษรย่อหมวดหมู่';
     if (!formData.type) errs.type = 'กรุณาเลือกประเภทหมวดหมู่';
     if (Object.keys(errs).length > 0) {
       setErrors(errs);

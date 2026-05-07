@@ -59,7 +59,6 @@ import { formatThaiDate } from '../../../utils/date';
 
 // ===== Assets =====
 import {
-  CalendarDaysIcon,
   CurrencyDollarIcon,
   DocumentCheckIcon,
   EyeIcon,
@@ -68,7 +67,6 @@ import {
   PlusIcon,
   TrashIcon,
   TruckIcon,
-  UserIcon,
   XCircleIcon,
   LoadingIcon,
   ChevronDownIcon,
@@ -633,12 +631,12 @@ const Issue: FC = () => {
         html: `ไม่อนุมัติใบเบิก <strong>${withdrawal.code || withdrawal.id}</strong>`,
         input: 'textarea',
         inputLabel: 'เหตุผลการไม่อนุมัติ',
-        inputPlaceholder: 'ระบุเหตุผล...',
+        inputPlaceholder: 'กรอกเหตุผล...',
         showCancelButton: true,
         confirmButtonText: 'ไม่อนุมัติ',
         cancelButtonText: 'ยกเลิก',
         confirmButtonColor: '#ef4444',
-        inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+        inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
       });
       if (!r.isConfirmed || !r.value) return;
       await submitApproval(withdrawal.id, 'REJECTED', r.value.trim());
@@ -830,7 +828,7 @@ const Issue: FC = () => {
           </div>
           <Button onClick={() => setIsAddModalOpen(true)}>
             <PlusIcon className="h-5 w-5" />
-            สร้างใบเบิกสินค้า/อุปกรณ์
+            สร้างใบเบิกสินค้า
           </Button>
         </div>
 
@@ -950,123 +948,8 @@ const Issue: FC = () => {
           </div>
         </Card>
 
-        {/* --- Mobile View: Cards --- */}
-        <div className="md:hidden space-y-4 flex-grow min-h-0 overflow-y-auto">
-          {isLoading ? (
-            <div className="flex flex-col flex-grow items-center justify-center text-slate-500 py-16 min-h-[40vh]">
-              <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
-              <p className="text-base font-medium">กำลังโหลดข้อมูลการเบิก...</p>
-            </div>
-          ) : paginatedWithdrawals.length === 0 ? (
-            <div className="flex flex-col flex-grow items-center justify-center text-slate-400 py-16 min-h-[40vh]">
-              <DocumentCheckIcon className="h-12 w-12 mb-3 opacity-50" />
-              <p className="text-lg font-medium">ไม่พบข้อมูลใบเบิกสินค้า</p>
-            </div>
-          ) : (
-            <>
-              {paginatedWithdrawals.map((withdrawal) => {
-                const fromWarehouse = warehouseMap.get(withdrawal.warehouse_id);
-                const toWarehouse = withdrawal.to_warehouse_id
-                  ? warehouseMap.get(withdrawal.to_warehouse_id)
-                  : null;
-                const totalGoodsAmount =
-                  withdrawal.items?.reduce((sum, item) => {
-                    const product = productMap.get(item.product_id);
-                    return sum + (product ? product.price * item.quantity : 0);
-                  }, 0) || 0;
-                const totalExpenseAmount =
-                  withdrawal.expenses?.reduce(
-                    (sum, exp) => sum + Number(exp.amount),
-                    0
-                  ) || 0;
-                const totalAmount = totalGoodsAmount + totalExpenseAmount;
-                const recipientObj = (withdrawal as WithdrawalType & {
-                  recipient?: { first_name?: string; last_name?: string; nick_name?: string };
-                }).recipient;
-                const recipientName = recipientObj?.first_name
-                  ? `${recipientObj.first_name} ${recipientObj.last_name || ''}`.trim()
-                  : withdrawal.recipient_id
-                    ? userMap.get(withdrawal.recipient_id)
-                    : '-';
-
-                return (
-                  <Card key={withdrawal.id} className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p
-                          className="font-bold text-primary hover:underline cursor-pointer"
-                          onClick={() => handleViewDetails(withdrawal)}
-                        >
-                          {withdrawal.id}
-                        </p>
-                        <div className="mt-2">
-                          <StatusBadge status={withdrawal.status} />
-                        </div>
-                      </div>
-                      <div className="relative">
-                        <Button
-                          variant="icon"
-                          data-withdrawal-id={withdrawal.id}
-                          onClick={(e) => handleDropdownToggle(e, withdrawal.id)}
-                          className="-mr-2 -mt-2"
-                        >
-                          <ManageIcon className="h-5 w-5" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="mt-4 space-y-3 text-sm text-slate-600">
-                      <div className="flex items-center">
-                        <CalendarDaysIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                        <span>
-                          {withdrawal.created_at
-                            ? formatThaiDate(withdrawal.created_at)
-                            : '-'}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <CurrencyDollarIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                        <span className="font-semibold text-slate-800">
-                          {totalAmount.toLocaleString('th-TH', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}{' '}บาท
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <TruckIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                        <span className="truncate">
-                          {fromWarehouse?.name} &rarr; {toWarehouse?.name}{' '}
-                          {toWarehouse?.type === 'VEHICLE' &&
-                            `(${toWarehouse.vehicle?.vehicle_registration || '-'})`}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                        <span>ผู้สร้าง: {withdrawal.created_by}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                        <span>ผู้รับเงิน: {recipientName}</span>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-              {totalItems > 0 && (
-                <Pagination
-                  currentPage={currentPage}
-                  itemsPerPage={itemsPerPage}
-                  totalItems={totalItems}
-                  onPageChange={setCurrentPage}
-                  onItemsPerPageChange={handleItemsPerPageChange}
-                />
-              )}
-            </>
-          )}
-        </div>
-
-        {/* --- Desktop View: Table --- */}
-        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden hidden md:flex relative">
+        {/* --- Table View (all screen sizes) --- */}
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden relative">
           <div className="overflow-auto flex-1 relative">
             <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200">
               {/* เปลี่ยนให้เหมือนเดิม และเพิ่ม border-b เพื่อกันเส้นหาย */}
@@ -1263,7 +1146,7 @@ const Issue: FC = () => {
                               const looksLikeUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(
                                 withdrawal.created_by || '',
                               );
-                              return looksLikeUuid ? 'ไม่ระบุ' : withdrawal.created_by || '-';
+                              return looksLikeUuid ? 'ไม่กรอก' : withdrawal.created_by || '-';
                             })()}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">

@@ -176,7 +176,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               >
                 <Input
                   prefix={<UserOutlined className="text-slate-400 text-lg" />}
-                  placeholder="ระบุเลขบัตรประชาชน (Username)"
+                  placeholder="กรอกเลขบัตรประชาชน (Username)"
                   className="rounded-xl py-3 bg-slate-50 border-slate-200 hover:bg-white focus:bg-white transition-all duration-200"
                 />
               </Form.Item>
@@ -191,7 +191,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               >
                 <Input.Password
                   prefix={<LockOutlined className="text-slate-400 text-lg" />}
-                  placeholder="ระบุรหัสผ่าน"
+                  placeholder="กรอกรหัสผ่าน"
                   className="rounded-xl py-3 bg-slate-50 border-slate-200 hover:bg-white focus:bg-white transition-all duration-200"
                 />
               </Form.Item>

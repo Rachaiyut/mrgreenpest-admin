@@ -279,7 +279,7 @@ const Categories: React.FC = () => {
                     scope="col"
                     className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
-                    รหัสหมวดหมู่
+                    อักษรย่อหมวดหมู่
                   </th>
                   <th
                     scope="col"
@@ -319,8 +319,12 @@ const Categories: React.FC = () => {
                     <td colSpan={7} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
                         <ArchiveBoxIcon className="h-12 w-12 mb-3 opacity-50" />
-                        <p className="text-base font-medium text-slate-500">ไม่พบหมวดหมู่</p>
-                        <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างหมวดหมู่ใหม่</p>
+                        <p className="text-base font-medium text-slate-500">
+                          ไม่พบข้อมูลหมวดหมู่สินค้า
+                        </p>
+                        <p className="text-sm mt-1">
+                          {searchQuery || typeFilter || statusFilter ? 'ลองค้นหาด้วยคำอื่น หรือปรับตัวกรองใหม่' : 'ลองสร้างหมวดหมู่ใหม่'}
+                        </p>
                       </div>
                     </td>
                   </tr>

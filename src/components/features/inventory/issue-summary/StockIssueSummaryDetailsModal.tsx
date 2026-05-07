@@ -185,12 +185,12 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
       text: 'การปฏิเสธจะยกเลิกใบเบิกทั้งใบ',
       input: 'textarea',
       inputLabel: 'เหตุผลการปฏิเสธ',
-      inputPlaceholder: 'ระบุเหตุผล...',
+      inputPlaceholder: 'กรอกเหตุผล...',
       showCancelButton: true,
       confirmButtonText: 'ปฏิเสธ',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: '#ef4444',
-      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
     });
     if (r.isConfirmed && r.value) await runApprove('REJECTED', category, r.value.trim());
   };

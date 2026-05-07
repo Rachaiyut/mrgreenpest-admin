@@ -154,7 +154,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
             <div>
               <p className="text-sm font-bold text-amber-800">รถที่ยังไม่ปิดงานวันนี้</p>
               <p className="text-xs text-amber-600 mt-0.5">
-                {openClosures.map((c) => c.vehicle?.name || 'ไม่ระบุ').join(', ')}
+                {openClosures.map((c) => c.vehicle?.name || 'ไม่กรอก').join(', ')}
               </p>
             </div>
           </div>

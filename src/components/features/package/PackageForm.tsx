@@ -214,7 +214,7 @@ const PackageForm: FC<PackageFormProps> = ({
                   setCode(e.target.value);
                   if (errors.code) setErrors((p) => ({ ...p, code: undefined }));
                 }}
-                placeholder="ระบุรหัสแพ็กเกจ"
+                placeholder="กรอกรหัสแพ็กเกจ"
                 className={`${mode === 'edit' ? 'bg-slate-50 font-mono' : 'font-mono'} ${inputErrCls(!!errors.code)}`}
                 readOnly={mode === 'edit'}
               />

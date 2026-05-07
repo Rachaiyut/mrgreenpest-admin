@@ -255,12 +255,12 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
         html: `ไม่อนุมัติใบรับเข้า <strong>${target.code || target.id}</strong>`,
         input: 'textarea',
         inputLabel: 'เหตุผลการไม่อนุมัติ',
-        inputPlaceholder: 'ระบุเหตุผล...',
+        inputPlaceholder: 'กรอกเหตุผล...',
         showCancelButton: true,
         confirmButtonText: 'ไม่อนุมัติ',
         cancelButtonText: 'ยกเลิก',
         confirmButtonColor: '#ef4444',
-        inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+        inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
       });
       if (!r.isConfirmed || !r.value) return;
 
@@ -327,12 +327,12 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
       html: `ยกเลิกใบรับเข้า <strong>${target.code || target.id}</strong>`,
       input: 'textarea',
       inputLabel: 'เหตุผลการยกเลิก',
-      inputPlaceholder: 'ระบุเหตุผล...',
+      inputPlaceholder: 'กรอกเหตุผล...',
       showCancelButton: true,
       confirmButtonText: 'ยกเลิกใบนี้',
       cancelButtonText: 'ปิด',
       confirmButtonColor: '#ef4444',
-      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
     });
     if (!r.isConfirmed || !r.value) return;
 
@@ -596,7 +596,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                 {paginatedReceipts.map((receipt, index) => {
                   const warehouseName = (receipt as unknown as Record<string, { name?: string }>).warehouse?.name || warehouseMap[receipt.warehouse_id] || '-';
                   const u = (receipt as { created_by_user?: { first_name?: string; last_name?: string; nick_name?: string } }).created_by_user;
-                  const creator = u ? (`${u.first_name || ''} ${u.last_name || ''}`.trim() || u.nick_name || 'ไม่ระบุ') : 'ไม่ระบุ';
+                  const creator = u ? (`${u.first_name || ''} ${u.last_name || ''}`.trim() || u.nick_name || 'ไม่กรอก') : 'ไม่กรอก';
                   return (
                     <li key={receipt.id} className="p-3 hover:bg-slate-50 transition-colors">
                       <div className="flex items-start justify-between gap-2">
@@ -711,9 +711,9 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(() => {
                           const u = (receipt as { created_by_user?: { first_name?: string; last_name?: string; nick_name?: string } }).created_by_user;
-                          if (!u) return 'ไม่ระบุ';
+                          if (!u) return 'ไม่กรอก';
                           const full = `${u.first_name || ''} ${u.last_name || ''}`.trim();
-                          return full || u.nick_name || 'ไม่ระบุ';
+                          return full || u.nick_name || 'ไม่กรอก';
                         })()}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">

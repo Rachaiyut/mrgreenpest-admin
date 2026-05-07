@@ -379,7 +379,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       country: formData['address-country'] || 'ประเทศไทย',
       tax_id: formData.taxId,
       google_map_link: formData.googleMapLink,
-      gendder: formData.gender || 'ไม่ระบุ',
+      gendder: formData.gender || 'ไม่กรอก',
       road_line: formData['address-roadLine'] || '',
       sequence_no: formData['address-sequence'] ? Number(formData['address-sequence']) : null,
       service_area: formData['address-zone'] || '',
@@ -468,11 +468,11 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 </FormField>
                 <FormField label="เพศ" htmlFor="gender">
                   <DropdownSelect
-                    value={formData.gender || 'ไม่ระบุ'}
+                    value={formData.gender || 'ไม่กรอก'}
                     onChange={(v) => handleChange({ target: { name: 'gender', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
                     placeholder="เลือกเพศ"
                     options={[
-                      { value: 'ไม่ระบุ', label: 'ไม่ระบุ' },
+                      { value: 'ไม่กรอก', label: 'ไม่กรอก' },
                       { value: 'ชาย', label: 'ชาย' },
                       { value: 'หญิง', label: 'หญิง' },
                     ]}
@@ -600,7 +600,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                       type="text"
                       value={phone}
                       onChange={(e) => handleAdditionalPhoneChange(index, e.target.value)}
-                      placeholder="ระบุเบอร์โทรศัพท์สำรอง..."
+                      placeholder="กรอกเบอร์โทรศัพท์สำรอง..."
                       maxLength={20}
                       className="w-full pl-10 font-mono bg-white" 
                     />

@@ -225,7 +225,7 @@ const StockAdjustment: React.FC = () => {
     const r = await Swal.fire({
       icon: 'question',
       title: 'ยืนยันการอนุมัติ',
-      html: `อนุมัติใบปรับปรุง <strong>${(adj as { adjustment_code?: string }).adjustment_code || adj.id}</strong>?<br/><span class="text-xs text-slate-500">ระบบจะปรับ stock ตามรายการที่ระบุ</span>`,
+      html: `อนุมัติใบปรับปรุง <strong>${(adj as { adjustment_code?: string }).adjustment_code || adj.id}</strong>?<br/><span class="text-xs text-slate-500">ระบบจะปรับ stock ตามรายการที่กรอก</span>`,
       showCancelButton: true,
       confirmButtonText: 'อนุมัติ',
       cancelButtonText: 'ยกเลิก',
@@ -250,12 +250,12 @@ const StockAdjustment: React.FC = () => {
       html: `ปฏิเสธใบปรับปรุง <strong>${(adj as { adjustment_code?: string }).adjustment_code || adj.id}</strong>?`,
       input: 'textarea',
       inputLabel: 'เหตุผลการปฏิเสธ',
-      inputPlaceholder: 'ระบุเหตุผล...',
+      inputPlaceholder: 'กรอกเหตุผล...',
       showCancelButton: true,
       confirmButtonText: 'ปฏิเสธ',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: '#ef4444',
-      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
     });
     if (!r.isConfirmed || !r.value) return;
     try {
@@ -493,9 +493,9 @@ const StockAdjustment: React.FC = () => {
                             nick_name?: string;
                           };
                         }).created_by_user;
-                        if (!creator) return 'ไม่ระบุ';
+                        if (!creator) return 'ไม่กรอก';
                         const fullName = `${creator.first_name || ''} ${creator.last_name || ''}`.trim();
-                        return fullName || creator.nick_name || 'ไม่ระบุ';
+                        return fullName || creator.nick_name || 'ไม่กรอก';
                       })()}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">

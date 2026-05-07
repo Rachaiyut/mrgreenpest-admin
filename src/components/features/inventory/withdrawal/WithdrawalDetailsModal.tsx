@@ -189,7 +189,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
                   const looksLikeUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(
                     withdrawal.created_by || '',
                   );
-                  return looksLikeUuid ? 'ไม่ระบุ' : withdrawal.created_by || '-';
+                  return looksLikeUuid ? 'ไม่กรอก' : withdrawal.created_by || '-';
                 })()}
               </dd>
             </div>
