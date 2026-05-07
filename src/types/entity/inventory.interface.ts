@@ -113,6 +113,7 @@ export interface Withdrawal extends IBase {
   purpose?: string;
   lifecycle: WithdrawalLifecycle;
   notes?: string;
+  cancellation_reason?: string;
   created_by: string;
   updated_by?: string;
   items?: WithdrawalItem[];

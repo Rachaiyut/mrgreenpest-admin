@@ -25,12 +25,14 @@ export enum WithdrawalLifecycle {
 
 /**
  * Per-line approval state. Applies to withdrawal_items และ withdrawal_expenses.
+ * CANCELLED ถูกตั้งเมื่อใบเบิกถูกยกเลิก
  */
 export enum WithdrawalLineStatus {
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
   COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
 }
 
 /**
