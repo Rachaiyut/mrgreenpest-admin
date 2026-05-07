@@ -617,7 +617,12 @@ const Issue: FC = () => {
         ]) +
         renderItemList(
           items.map((it: any) => ({
-            name: it.product?.name || it.name || '-',
+            name:
+              it.product?.name
+              || it.product_name
+              || productMap.get(it.product_id)?.name
+              || it.name
+              || '-',
             right: `${Number(it.quantity || 0)} ชิ้น`,
             rightColor: '#64748b',
           })),
@@ -1059,7 +1064,7 @@ const Issue: FC = () => {
                       scope="col"
                       className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase lg:table-cell hidden whitespace-nowrap"
                     >
-                      จำนวนรายการ
+                      จำนวนรายการสินค้า
                     </th>
                   )}
                   {categoryTab !== 'stock' && (
@@ -1067,7 +1072,7 @@ const Issue: FC = () => {
                       scope="col"
                       className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                     >
-                      จำนวนเงินที่เบิก
+                      รวมจำนวนเงินที่เบิก
                     </th>
                   )}
                   {categoryTab !== 'stock' && (
@@ -1212,12 +1217,12 @@ const Issue: FC = () => {
                           </td>
                           {categoryTab !== 'expense' && (
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 lg:table-cell hidden">
-                              {totalItemsCount}
+                              {withdrawal.items?.length || 0}
                             </td>
                           )}
                           {categoryTab !== 'stock' && (
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                              {totalAmount.toLocaleString('th-TH', {
+                              {totalExpenseAmount.toLocaleString('th-TH', {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                               })}{' '}บาท
