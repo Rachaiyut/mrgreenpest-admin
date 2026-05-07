@@ -22,7 +22,7 @@ import {
   Warehouse as WarehouseType,
 } from '@/src/types/entity/app.interface';
 
-import { WithdrawalStatus } from '@/src/types/enums/inventory';
+import { WithdrawalLifecycle, WithdrawalLineStatus } from '@/src/types/enums/inventory';
 
 // ===== Context =====
 import { useData } from '../../../contexts/DataContext';
@@ -92,7 +92,9 @@ const Issue: FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchDebounced, setSearchDebounced] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [lifecycleFilter, setLifecycleFilter] = useState('all');
+  const [stockStatusFilter, setStockStatusFilter] = useState('all');
+  const [expenseStatusFilter, setExpenseStatusFilter] = useState('all');
   const creatorSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -126,7 +128,9 @@ const Issue: FC = () => {
           page: currentPage,
           limit: itemsPerPage,
           ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
-          ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+          ...(lifecycleFilter !== 'all' ? { lifecycle: lifecycleFilter } : {}),
+          ...(stockStatusFilter !== 'all' ? { stock_status: stockStatusFilter } : {}),
+          ...(expenseStatusFilter !== 'all' ? { expense_status: expenseStatusFilter } : {}),
         }),
         UserApi.getAll(),
         WarehouseApi.getWarehouses(),
@@ -151,7 +155,7 @@ const Issue: FC = () => {
       setIsLoading(false); // หยุดหมุน
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, itemsPerPage, searchDebounced, statusFilter]);
+  }, [currentPage, itemsPerPage, searchDebounced, lifecycleFilter, stockStatusFilter, expenseStatusFilter]);
 
   // 2. เรียกใช้ fetchAllData ตอนโหลดหน้าครั้งแรก
   useEffect(() => {
@@ -686,18 +690,10 @@ const Issue: FC = () => {
       }
     }
     if (!target) return;
-    if (target.status !== WithdrawalStatus.PENDING) {
-      const withdrawalStatusLabel: Record<string, string> = {
-        DRAFT: 'ฉบับร่าง',
-        PENDING: 'รออนุมัติ',
-        APPROVED: 'อนุมัติแล้ว',
-        REJECTED: 'ไม่อนุมัติ',
-        PARTIALLY_APPROVED: 'อนุมัติบางส่วน',
-        COMPLETED: 'เสร็จสิ้น',
-        CANCELLED: 'ยกเลิก',
-      };
-      const statusText = withdrawalStatusLabel[String(target.status).toUpperCase()] || target.status;
-      Swal.fire('ใบเบิกไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${statusText}`, 'info');
+    const hasPendingLine = (target.items || []).some((i) => i.status === WithdrawalLineStatus.PENDING)
+      || (target.expenses || []).some((e) => e.status === WithdrawalLineStatus.PENDING);
+    if (target.lifecycle !== WithdrawalLifecycle.SUBMITTED || !hasPendingLine) {
+      Swal.fire('ใบเบิกไม่มีรายการที่รออนุมัติ', 'อาจถูกอนุมัติ/ยกเลิก หรือยังเป็นฉบับร่าง', 'info');
       return;
     }
     // give React a tick to update state if we just injected the record
@@ -713,7 +709,7 @@ const Issue: FC = () => {
           ...exp,
           type: exp.type || 'INCOME',
         })),
-        status: WithdrawalStatus.CANCELLED,
+        lifecycle: WithdrawalLifecycle.CANCELLED,
         notes: 'ยกเลิกโดยผู้ใช้',
       });
     }
@@ -760,12 +756,12 @@ const Issue: FC = () => {
       },
     ];
 
-    if (
-      withdrawal.status === WithdrawalStatus.DRAFT ||
-      withdrawal.status === WithdrawalStatus.PENDING ||
-      withdrawal.status === Status.Draft ||
-      withdrawal.status === Status.PendingApproval
-    ) {
+    const hasPendingLine = (withdrawal.items || []).some((i) => i.status === WithdrawalLineStatus.PENDING)
+      || (withdrawal.expenses || []).some((e) => e.status === WithdrawalLineStatus.PENDING);
+    const isDraft = withdrawal.lifecycle === WithdrawalLifecycle.DRAFT;
+    const isSubmitted = withdrawal.lifecycle === WithdrawalLifecycle.SUBMITTED;
+
+    if (isDraft || (isSubmitted && hasPendingLine)) {
       actions.push({
         label: 'แก้ไข',
         icon: PencilIcon,
@@ -775,10 +771,7 @@ const Issue: FC = () => {
       });
     }
 
-    if (
-      withdrawal.status === WithdrawalStatus.PENDING ||
-      withdrawal.status === Status.PendingApproval
-    ) {
+    if (isSubmitted && hasPendingLine) {
       const canApprove =
         hasPermission('APPROVE_STOCK_ISSUE_NOTE') ||
         hasPermission('APPROVE_EXPENSE_ISSUE_NOTE');
@@ -874,21 +867,40 @@ const Issue: FC = () => {
             )}
             <div className="w-full sm:w-auto">
               <DropdownSelect
-                value={statusFilter}
-                onChange={(val) => {
-                  setStatusFilter(val);
-                  setCurrentPage(1);
-                }}
+                value={lifecycleFilter}
+                onChange={(val) => { setLifecycleFilter(val); setCurrentPage(1); }}
                 className="w-full sm:w-fit text-sm"
                 options={[
-                  { value: 'all', label: 'สถานะทั้งหมด' },
+                  { value: 'all', label: 'สถานะใบทั้งหมด' },
                   { value: 'DRAFT', label: 'ฉบับร่าง' },
-                  { value: 'PENDING', label: 'รออนุมัติ' },
-                  { value: 'APPROVED', label: 'อนุมัติแล้ว' },
-                  { value: 'PARTIALLY_APPROVED', label: 'อนุมัติบางส่วน' },
-                  { value: 'REJECTED', label: 'ไม่อนุมัติ' },
-                  { value: 'COMPLETED', label: 'เสร็จสิ้น' },
+                  { value: 'SUBMITTED', label: 'ส่งแล้ว' },
                   { value: 'CANCELLED', label: 'ยกเลิก' },
+                ]}
+              />
+            </div>
+            <div className="w-full sm:w-auto">
+              <DropdownSelect
+                value={stockStatusFilter}
+                onChange={(val) => { setStockStatusFilter(val); setCurrentPage(1); }}
+                className="w-full sm:w-fit text-sm"
+                options={[
+                  { value: 'all', label: 'สถานะสินค้าทั้งหมด' },
+                  { value: 'PENDING', label: 'สินค้า: รออนุมัติ' },
+                  { value: 'APPROVED', label: 'สินค้า: อนุมัติแล้ว' },
+                  { value: 'REJECTED', label: 'สินค้า: ไม่อนุมัติ' },
+                ]}
+              />
+            </div>
+            <div className="w-full sm:w-auto">
+              <DropdownSelect
+                value={expenseStatusFilter}
+                onChange={(val) => { setExpenseStatusFilter(val); setCurrentPage(1); }}
+                className="w-full sm:w-fit text-sm"
+                options={[
+                  { value: 'all', label: 'สถานะค่าใช้จ่ายทั้งหมด' },
+                  { value: 'PENDING', label: 'ค่าใช้จ่าย: รออนุมัติ' },
+                  { value: 'APPROVED', label: 'ค่าใช้จ่าย: อนุมัติแล้ว' },
+                  { value: 'REJECTED', label: 'ค่าใช้จ่าย: ไม่อนุมัติ' },
                 ]}
               />
             </div>
@@ -1007,7 +1019,19 @@ const Issue: FC = () => {
                     scope="col"
                     className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
-                    สถานะ
+                    สถานะใบ
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                  >
+                    สถานะสินค้า
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                  >
+                    สถานะค่าใช้จ่าย
                   </th>
                   <th
                     scope="col"
@@ -1021,7 +1045,7 @@ const Issue: FC = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={10} className="p-0 border-b-0 h-0">
+                    <td colSpan={12} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
                         <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                         <p className="text-base font-medium">กำลังโหลดข้อมูลการเบิก...</p>
@@ -1030,7 +1054,7 @@ const Issue: FC = () => {
                   </tr>
                 ) : paginatedWithdrawals.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="p-0 border-b-0 h-0">
+                    <td colSpan={12} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                         <DocumentCheckIcon className="w-12 h-12 text-slate-300 mb-3 opacity-50" />
                         <p className="text-lg font-medium">ไม่พบข้อมูลใบเบิกสินค้า</p>
@@ -1070,7 +1094,7 @@ const Issue: FC = () => {
                     const hasItems = (withdrawal.items?.length || 0) > 0;
                     const hasExpenses = (withdrawal.expenses?.length || 0) > 0;
                     const colSpan =
-                      6 +
+                      8 +
                       (categoryTab !== 'expense' ? 1 : 0) +
                       (categoryTab !== 'stock' ? 2 : 0);
                     const fmtMoney = (v: number) =>
@@ -1150,7 +1174,21 @@ const Issue: FC = () => {
                             })()}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <StatusBadge status={withdrawal.status} />
+                            <StatusBadge status={withdrawal.lifecycle} />
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {hasItems ? (
+                              <StatusBadge status={(withdrawal.items || [])[0]?.status || 'PENDING'} />
+                            ) : (
+                              <span className="text-slate-400 text-xs">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {hasExpenses ? (
+                              <StatusBadge status={(withdrawal.expenses || [])[0]?.status || 'PENDING'} />
+                            ) : (
+                              <span className="text-slate-400 text-xs">—</span>
+                            )}
                           </td>
                           <td
                             className="px-4 py-3 whitespace-nowrap text-sm font-medium"

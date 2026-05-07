@@ -116,9 +116,29 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-500">สถานะ</dt>
+              <dt className="font-medium text-slate-500">สถานะใบ</dt>
               <dd className="mt-1">
-                <StatusBadge status={withdrawal.status} />
+                <StatusBadge status={withdrawal.lifecycle} />
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium text-slate-500">สถานะสินค้า</dt>
+              <dd className="mt-1">
+                {(withdrawal.items || []).length > 0 ? (
+                  <StatusBadge status={(withdrawal.items || [])[0]?.status || 'PENDING'} />
+                ) : (
+                  <span className="text-slate-400 text-xs">—</span>
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium text-slate-500">สถานะค่าใช้จ่าย</dt>
+              <dd className="mt-1">
+                {(withdrawal.expenses || []).length > 0 ? (
+                  <StatusBadge status={(withdrawal.expenses || [])[0]?.status || 'PENDING'} />
+                ) : (
+                  <span className="text-slate-400 text-xs">—</span>
+                )}
               </dd>
             </div>
             <div>

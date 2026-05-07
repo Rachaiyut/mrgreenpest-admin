@@ -36,7 +36,7 @@ import {
 } from '@/src/types/entity/app.interface';
 import {
   WarehouseType as InventoryWarehouseType,
-  WithdrawalStatus,
+  WithdrawalLifecycle,
 } from '@/src/types/enums/inventory';
 import { UserApi } from '../../../../api/user';
 import { WarehouseApi } from '../../../../api/warehouse';
@@ -461,7 +461,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const buildPayload = (status: WithdrawalStatus): Partial<WithdrawalType> => ({
+  const buildPayload = (lifecycle: WithdrawalLifecycle): Partial<WithdrawalType> => ({
     warehouse_id: fromWarehouseId || undefined,
     to_warehouse_id: toWarehouseId || undefined,
     requester_id: requesterId,
@@ -483,7 +483,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
         description: item.description,
         amount: Number(item.amount),
       })),
-    status,
+    lifecycle,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -491,7 +491,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
     if (!validate()) return;
     setIsSubmitting(true);
     try {
-      await onSubmit(buildPayload(WithdrawalStatus.PENDING));
+      await onSubmit(buildPayload(WithdrawalLifecycle.SUBMITTED));
     } finally {
       setIsSubmitting(false);
     }
@@ -501,7 +501,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
     if (!validate()) return;
     setIsSubmitting(true);
     try {
-      await onSubmit(buildPayload(WithdrawalStatus.DRAFT));
+      await onSubmit(buildPayload(WithdrawalLifecycle.DRAFT));
     } finally {
       setIsSubmitting(false);
     }
