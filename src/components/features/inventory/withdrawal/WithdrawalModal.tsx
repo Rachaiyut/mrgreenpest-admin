@@ -954,14 +954,6 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     <span className="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg flex items-center justify-center text-base font-black border border-emerald-200">฿</span>
                     การเงิน & ค่าใช้จ่าย
                   </h3>
-                  <Button
-                    type="button"
-                    onClick={handleAddExpense}
-                    variant="outline"
-                    className="text-primary border-primary/20 bg-primary/5 text-sm font-bold px-4 py-2 w-full sm:w-auto"
-                  >
-                    <PlusIcon className="w-5 h-5 mr-1.5" /> เพิ่มรายการเบิกเงิน
-                  </Button>
                 </div>
 
                 {walletInfo && (
@@ -1022,42 +1014,83 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     expenseItems.map((item) => (
                       <div
                         key={item.id}
-                        className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center bg-white p-3 rounded-lg border border-slate-200 shadow-sm group hover:border-primary/30 transition-colors"
+                        className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm group hover:border-primary/30 transition-colors"
                       >
-                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-3 sm:mb-0 sm:hidden justify-between">
                           <div className="p-2 bg-slate-100 rounded-md text-slate-400 shrink-0">
                             <BanknotesIcon className="w-5 h-5" />
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveExpenseItem(item.id)}
+                            className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors shrink-0"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <div className="hidden sm:flex items-center gap-3">
+                          <div className="p-2 bg-slate-100 rounded-md text-slate-400 shrink-0">
+                            <BanknotesIcon className="w-5 h-5" />
+                          </div>
+                          <div className="flex gap-3 flex-1 min-w-0">
+                            <input
+                              type="text"
+                              value={item.description}
+                              onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
+                              placeholder="กรอกรายละเอียดค่าใช้จ่าย..."
+                              className="w-[70%] rounded-lg border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium bg-white px-3 py-2 min-w-0"
+                            />
+                            <div className="relative flex items-center w-[30%]">
+                              <input
+                                type="number"
+                                value={item.amount}
+                                onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
+                                placeholder="0.00"
+                                className="w-full rounded-lg border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary text-base font-bold text-right pr-12 bg-white px-3 py-2"
+                              />
+                              <span className="absolute right-3 text-sm font-semibold text-slate-400">บาท</span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveExpenseItem(item.id)}
+                            className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors shrink-0"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-3 sm:hidden">
                           <input
                             type="text"
                             value={item.description}
                             onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
                             placeholder="กรอกรายละเอียดค่าใช้จ่าย..."
-                            className="flex-grow border-0 border-b border-transparent focus:border-primary focus:ring-0 text-sm font-medium bg-transparent px-2 min-w-0"
+                            className="w-full rounded-lg border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium bg-white px-3 py-2"
                           />
-                        </div>
-                        <div className="flex items-center gap-2 pl-11 sm:pl-0">
-                          <div className="relative flex items-center w-full sm:w-auto max-w-[150px]">
+                          <div className="relative flex items-center w-full">
                             <input
                               type="number"
                               value={item.amount}
                               onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
                               placeholder="0.00"
-                              className="w-full border-0 border-b border-transparent focus:border-primary focus:ring-0 text-base font-bold text-right pr-8 bg-transparent"
+                              className="w-full rounded-lg border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary text-base font-bold text-right pr-12 bg-white px-3 py-2"
                             />
-                            <span className="absolute right-0 text-sm font-semibold text-slate-400">บาท</span>
+                            <span className="absolute right-3 text-sm font-semibold text-slate-400">บาท</span>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveExpenseItem(item.id)}
-                            className="text-slate-300 hover:text-red-500 ml-auto sm:ml-2 p-1 rounded-lg hover:bg-red-50 transition-colors shrink-0"
-                          >
-                            <XCircleIcon className="w-6 h-6" />
-                          </button>
                         </div>
                       </div>
                     ))
                   )}
+
+                  <div className="flex justify-center mt-2">
+                    <button
+                      type="button"
+                      onClick={handleAddExpense}
+                      className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium"
+                    >
+                      <PlusIcon className="h-5 w-5" /> เพิ่มรายการเบิกเงิน
+                    </button>
+                  </div>
 
                   {expenseItems.length > 0 && (
                     <div className="flex justify-between items-center pt-4 border-t border-slate-200 mt-4">

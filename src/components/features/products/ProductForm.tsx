@@ -201,8 +201,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
               onChange={(v) => handleChange({ target: { name: 'category_id', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
               placeholder="-- เลือกหมวดหมู่ --"
               options={filteredCategories.map((cat) => ({ value: cat.id, label: cat.name }))}
-              disabled={mode === 'edit'}
-              className={mode === 'edit' ? 'bg-slate-50' : ''}
             />
           </FormField>
 
@@ -249,8 +247,6 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 onChange={(v) => handleChange({ target: { name: 'category_id', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
                 placeholder="-- เลือกหมวดหมู่ --"
                 options={filteredCategories.map((cat) => ({ value: cat.id, label: cat.name }))}
-                disabled={mode === 'edit'}
-                className={mode === 'edit' ? 'bg-slate-50' : ''}
               />
             </FormField>
           </div>

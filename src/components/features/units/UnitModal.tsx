@@ -52,7 +52,7 @@ export const UnitModal: FC<UnitModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={mode === 'create' ? 'เพิ่มหน่วยนับ' : 'แก้ไขหน่วยนับ'}
+      title={mode === 'create' ? 'สร้างหน่วยนับ' : 'แก้ไขหน่วยนับ'}
       size="md"
       footer={
         <div className="flex items-center gap-3 w-full justify-end">
@@ -65,7 +65,7 @@ export const UnitModal: FC<UnitModalProps> = ({
             disabled={!isValid || isSubmitting}
             className="px-6 bg-green-600 hover:bg-green-700"
           >
-            {isSubmitting ? 'กำลังบันทึก...' : mode === 'create' ? 'เพิ่ม' : 'บันทึก'}
+            {isSubmitting ? 'กำลังบันทึก...' : 'บันทึก'}
           </Button>
         </div>
       }

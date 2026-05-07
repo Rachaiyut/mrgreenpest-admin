@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import Swal from '@/src/utils/swal';
 import {
   FormField,
   Input,
@@ -40,7 +39,8 @@ const SearchableSelect: React.FC<{
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
-}> = ({ id, value, options, onChange, placeholder, required, disabled }) => {
+  error?: boolean;
+}> = ({ id, value, options, onChange, placeholder, required, disabled, error }) => {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -96,7 +96,7 @@ const SearchableSelect: React.FC<{
         required={required}
         disabled={disabled}
         autoComplete="off"
-        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900"
+        className={`w-full px-3 py-2 bg-white border ${error ? 'border-red-500' : 'border-slate-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900`}
       />
       {open && filtered.length > 0 && (
         <ul className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto text-sm">
@@ -186,6 +186,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   });
 
   const [additionalPhones, setAdditionalPhones] = useState<string[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Geo cascading data
   const provinceNames = useMemo(() => provinces.map((p) => p.name_th), []);
@@ -218,6 +219,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       'address-subdistrict': '',
       'address-postalcode': '',
     }));
+    if (errors['address-province']) setErrors((prev) => { const next = { ...prev }; delete next['address-province']; return next; });
   };
 
   const handleDistrictChange = (value: string) => {
@@ -227,6 +229,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       'address-subdistrict': '',
       'address-postalcode': '',
     }));
+    if (errors['address-district']) setErrors((prev) => { const next = { ...prev }; delete next['address-district']; return next; });
   };
 
   const handleSubdistrictChange = (value: string) => {
@@ -236,6 +239,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       'address-subdistrict': value,
       'address-postalcode': subdistrict ? String(subdistrict.postal_code) : prev['address-postalcode'] || '',
     }));
+    if (errors['address-subdistrict']) setErrors((prev) => { const next = { ...prev }; delete next['address-subdistrict']; return next; });
+    if (errors['address-postalcode']) setErrors((prev) => { const next = { ...prev }; delete next['address-postalcode']; return next; });
   };
 
   useEffect(() => {
@@ -279,6 +284,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       });
       setAdditionalPhones([]);
     }
+    setErrors({});
   }, [mode, initialValues]);
 
   const handleChange = (
@@ -288,10 +294,12 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => { const next = { ...prev }; delete next[name]; return next; });
   };
 
   const handleTypeChange = (type: CustomerType) => {
     setFormData((prev) => ({ ...prev, type: type }));
+    setErrors({});
   };
 
   // 🟢 ฟังก์ชันกรองเฉพาะตัวเลข และจำกัด 10 หลัก (สำหรับเบอร์หลัก, มือถือ, เบอร์ผู้ติดต่อ)
@@ -301,6 +309,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   ) => {
     const value = e.target.value.slice(0, 20);
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
+    if (errors[fieldName]) setErrors((prev) => { const next = { ...prev }; delete next[fieldName]; return next; });
   };
 
   const handleAddAdditionalPhone = () => {
@@ -320,30 +329,31 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     setAdditionalPhones(newPhones);
   };
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const requiredFields = [
-      'primaryPhone',
-      'address-street',
-      'address-subdistrict',
-      'address-district',
-      'address-province',
-      'address-postalcode',
-    ];
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
 
     if (formData.type === CustomerType.INDIVIDUAL) {
-      requiredFields.push('first_name', 'last_name');
+      if (!formData.first_name?.trim()) newErrors.first_name = 'กรุณากรอกชื่อจริง';
+      if (!formData.last_name?.trim()) newErrors.last_name = 'กรุณากรอกนามสกุล';
     } else if (formData.type === CustomerType.CORPORATE) {
-      requiredFields.push('name');
+      if (!formData.name?.trim()) newErrors.name = 'กรุณากรอกชื่อบริษัท';
     }
 
-    for (const field of requiredFields) {
-      if (!formData[field as keyof FlatCustomerFormData]) {
-        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน (รวมถึงเบอร์หลักและอีเมล)' });
-        return;
-      }
-    }
+    if (!formData.primaryPhone?.trim()) newErrors.primaryPhone = 'กรุณากรอกเบอร์โทรศัพท์';
+    if (!formData['address-street']?.trim()) newErrors['address-street'] = 'กรุณากรอกบ้านเลขที่';
+    if (!formData['address-province']?.trim()) newErrors['address-province'] = 'กรุณาเลือกจังหวัด';
+    if (!formData['address-district']?.trim()) newErrors['address-district'] = 'กรุณาเลือกเขต/อำเภอ';
+    if (!formData['address-subdistrict']?.trim()) newErrors['address-subdistrict'] = 'กรุณาเลือกแขวง/ตำบล';
+    if (!formData['address-postalcode']?.trim()) newErrors['address-postalcode'] = 'กรุณากรอกรหัสไปรษณีย์';
+    if (!formData.googleMapLink?.trim()) newErrors.googleMapLink = 'กรุณากรอกลิงก์แผนที่';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
 
     let firstName = '';
     let lastName = '';
@@ -455,11 +465,13 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           {formData.type === CustomerType.INDIVIDUAL ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <FormField label="ชื่อจริง" htmlFor="first_name">
-                  <Input id="first_name" name="first_name" type="text" value={formData.first_name || ''} onChange={handleChange} required />
+                <FormField label="ชื่อจริง*" htmlFor="first_name">
+                  <Input id="first_name" name="first_name" type="text" value={formData.first_name || ''} onChange={handleChange} className={errors.first_name ? 'border-red-500' : ''} />
+                  {errors.first_name && <p className="text-red-500 text-xs mt-1">{errors.first_name}</p>}
                 </FormField>
-                <FormField label="นามสกุล" htmlFor="last_name">
-                  <Input id="last_name" name="last_name" type="text" value={formData.last_name || ''} onChange={handleChange} required />
+                <FormField label="นามสกุล*" htmlFor="last_name">
+                  <Input id="last_name" name="last_name" type="text" value={formData.last_name || ''} onChange={handleChange} className={errors.last_name ? 'border-red-500' : ''} />
+                  {errors.last_name && <p className="text-red-500 text-xs mt-1">{errors.last_name}</p>}
                 </FormField>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -486,8 +498,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <FormField label="ชื่อบริษัท" htmlFor="name">
-                  <Input id="name" name="name" type="text" value={formData.name || ''} onChange={handleChange} required />
+                <FormField label="ชื่อบริษัท*" htmlFor="name">
+                  <Input id="name" name="name" type="text" value={formData.name || ''} onChange={handleChange} className={errors.name ? 'border-red-500' : ''} />
+                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                 </FormField>
                 <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="taxId">
                   <Input name="taxId" type="text" value={formData.taxId || ''} onChange={handleChange} className="font-mono" />
@@ -529,17 +542,17 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-          <FormField label="เบอร์โทรศัพท์ (หลัก)" htmlFor="primaryPhone">
-            <Input 
-              name="primaryPhone" 
-              type="text" 
-              value={formData.primaryPhone || ''} 
-              onChange={(e) => handlePhoneChange(e, 'primaryPhone')} 
-              required 
-              maxLength={20} 
-              className="font-mono" 
+          <FormField label="เบอร์โทรศัพท์ (หลัก)*" htmlFor="primaryPhone">
+            <Input
+              name="primaryPhone"
+              type="text"
+              value={formData.primaryPhone || ''}
+              onChange={(e) => handlePhoneChange(e, 'primaryPhone')}
+              maxLength={20}
+              className={`font-mono ${errors.primaryPhone ? 'border-red-500' : ''}`}
               placeholder="08xxxxxxxx"
             />
+            {errors.primaryPhone && <p className="text-red-500 text-xs mt-1">{errors.primaryPhone}</p>}
           </FormField>
           <FormField label="เบอร์มือถือ" htmlFor="mobilePhone">
             <Input 
@@ -633,8 +646,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         />
 
         <div className="space-y-5">
-          <FormField label="บ้านเลขที่ / อาคาร / หมู่บ้าน" htmlFor="address-street">
-            <Textarea id="address-street" name="address-street" rows={2} value={formData['address-street'] || ''} onChange={handleChange} required />
+          <FormField label="บ้านเลขที่ / อาคาร / หมู่บ้าน*" htmlFor="address-street">
+            <Textarea id="address-street" name="address-street" rows={2} value={formData['address-street'] || ''} onChange={handleChange} className={errors['address-street'] ? 'border-red-500' : ''} />
+            {errors['address-street'] && <p className="text-red-500 text-xs mt-1">{errors['address-street']}</p>}
           </FormField>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -647,46 +661,50 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <FormField label="จังหวัด" htmlFor="address-province">
+            <FormField label="จังหวัด*" htmlFor="address-province">
               <SearchableSelect
                 id="address-province"
                 value={formData['address-province'] || ''}
                 options={provinceNames}
                 onChange={handleProvinceChange}
                 placeholder="พิมพ์เพื่อค้นหาจังหวัด..."
-                required
+                error={!!errors['address-province']}
               />
+              {errors['address-province'] && <p className="text-red-500 text-xs mt-1">{errors['address-province']}</p>}
             </FormField>
-            <FormField label="เขต/อำเภอ" htmlFor="address-district">
+            <FormField label="เขต/อำเภอ*" htmlFor="address-district">
               <SearchableSelect
                 id="address-district"
                 value={formData['address-district'] || ''}
                 options={districtNames}
                 onChange={handleDistrictChange}
                 placeholder="เลือกจังหวัดก่อน"
-                required
                 disabled={!formData['address-province']}
+                error={!!errors['address-district']}
               />
+              {errors['address-district'] && <p className="text-red-500 text-xs mt-1">{errors['address-district']}</p>}
             </FormField>
-            <FormField label="แขวง/ตำบล" htmlFor="address-subdistrict">
+            <FormField label="แขวง/ตำบล*" htmlFor="address-subdistrict">
               <SearchableSelect
                 id="address-subdistrict"
                 value={formData['address-subdistrict'] || ''}
                 options={subdistrictNames}
                 onChange={handleSubdistrictChange}
                 placeholder="เลือกเขต/อำเภอก่อน"
-                required
                 disabled={!formData['address-district']}
+                error={!!errors['address-subdistrict']}
               />
+              {errors['address-subdistrict'] && <p className="text-red-500 text-xs mt-1">{errors['address-subdistrict']}</p>}
             </FormField>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <FormField label="รหัสไปรษณีย์" htmlFor="address-postalcode">
-              <Input id="address-postalcode" name="address-postalcode" type="text" value={formData['address-postalcode'] || ''} onChange={handleChange} required className="font-mono" readOnly />
+            <FormField label="รหัสไปรษณีย์*" htmlFor="address-postalcode">
+              <Input id="address-postalcode" name="address-postalcode" type="text" value={formData['address-postalcode'] || ''} onChange={handleChange} className={`font-mono ${errors['address-postalcode'] ? 'border-red-500' : ''}`} readOnly />
+              {errors['address-postalcode'] && <p className="text-red-500 text-xs mt-1">{errors['address-postalcode']}</p>}
             </FormField>
             <FormField label="ประเทศ" htmlFor="address-country">
-              <Input id="address-country" name="address-country" type="text" value={formData['address-country'] || ''} onChange={handleChange} required />
+              <Input id="address-country" name="address-country" type="text" value={formData['address-country'] || ''} onChange={handleChange} />
             </FormField>
           </div>
         </div>
@@ -720,7 +738,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           </FormField>
         </div>
 
-        <FormField label="ลิงก์แผนที่ (Google Map)" htmlFor="googleMapLink">
+        <FormField label="ลิงก์แผนที่ (Google Map)*" htmlFor="googleMapLink">
           <Input
             id="googleMapLink"
             name="googleMapLink"
@@ -728,9 +746,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
             value={formData.googleMapLink || ''}
             onChange={handleChange}
             placeholder="https://maps.app.goo.gl/..."
-            className="pl-10"
-            required
+            className={`pl-10 ${errors.googleMapLink ? 'border-red-500' : ''}`}
           />
+          {errors.googleMapLink && <p className="text-red-500 text-xs mt-1">{errors.googleMapLink}</p>}
         </FormField>
       </div>
     </form>

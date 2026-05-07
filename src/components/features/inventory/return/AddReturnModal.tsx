@@ -53,6 +53,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
   const [toWarehouseId, setToWarehouseId] = useState('');
   const [withdrawalRefId, setWithdrawalRefId] = useState('');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [returnDate, setReturnDate] = useState(
     new Date().toISOString().substring(0, 10)
   );
@@ -209,6 +210,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
       setToWarehouseId('');
       setWithdrawalRefId('');
       setReturnDate(new Date().toISOString().substring(0, 10));
+      setErrors({});
       fetchWarehouses();
     }
   }, [isOpen, fetchWarehouses]);
@@ -238,12 +240,22 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
     );
   };
 
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (!fromWarehouseId) newErrors.fromWarehouse = 'กรุณาเลือกคลังต้นทาง (รถ)';
+    if (!toWarehouseId) newErrors.toWarehouse = 'กรุณาเลือกคลังปลายทาง';
+    if (items.length === 0) newErrors.items = 'กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ';
+    items.forEach((item) => {
+      if (item.quantity <= 0) newErrors[`quantity_${item.id}`] = 'กรุณากรอกจำนวน';
+      if (!item.reason.trim()) newErrors[`reason_${item.id}`] = 'กรุณากรอกเหตุผล';
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isFormValid) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องเลือกคลังต้นทาง, คลังปลายทาง, และมีสินค้าที่คืนอย่างน้อย 1 รายการพร้อมกรอกจำนวนและเหตุผล' });
-      return;
-    }
+    if (!validate()) return;
     const newReturn: any = {
       createdAt: new Date(returnDate).toISOString(),
       warehouse_id: toWarehouseId,
@@ -305,12 +317,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                 variant="primary"
                 type="submit"
                 form="add-return-form"
-                disabled={!isFormValid}
-                className={`py-2 px-4 sm:px-6 rounded-lg text-white font-semibold shadow-sm transition-all text-sm ${
-                  isFormValid
-                    ? 'bg-primary hover:bg-primary/90'
-                    : 'bg-slate-300 cursor-not-allowed'
-                }`}
+                className="py-2 px-4 sm:px-6 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm transition-all text-sm"
               >
                 บันทึก
               </Button>
@@ -371,11 +378,12 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                 <SearchableSelect
                   required
                   value={fromWarehouseId}
-                  onChange={setFromWarehouseId}
+                  onChange={(v) => { setFromWarehouseId(v); if (errors.fromWarehouse) setErrors((prev) => { const next = { ...prev }; delete next.fromWarehouse; return next; }); }}
                   placeholder="เลือกคลังสินค้า (รถ)"
                   options={vehicleWarehouseOptions}
                   className="w-full bg-white shadow-sm border-slate-200"
                 />
+                {errors.fromWarehouse && <p className="text-red-500 text-xs mt-1">{errors.fromWarehouse}</p>}
               </div>
 
               <div className="flex items-center justify-center pt-6 text-slate-300">
@@ -389,12 +397,13 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                 </label>
                 <SearchableSelect
                   value={toWarehouseId}
-                  onChange={setToWarehouseId}
+                  onChange={(v) => { setToWarehouseId(v); if (errors.toWarehouse) setErrors((prev) => { const next = { ...prev }; delete next.toWarehouse; return next; }); }}
                   placeholder="เลือกคลังสินค้า"
                   options={mainWarehouseOptions}
                   className="w-full bg-white shadow-sm border-slate-200"
                   required
                 />
+                {errors.toWarehouse && <p className="text-red-500 text-xs mt-1">{errors.toWarehouse}</p>}
               </div>
             </div>
 
@@ -427,20 +436,19 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                   </p>
                 </div>
               </div>
-              <Button
+              <button
                 type="button"
-                onClick={() => setIsProductModalOpen(true)}
-                variant="outline"
-                className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 transition-all text-sm font-medium"
+                onClick={() => { setIsProductModalOpen(true); if (errors.items) setErrors((prev) => { const next = { ...prev }; delete next.items; return next; }); }}
                 disabled={!fromWarehouseId}
                 title={!fromWarehouseId ? 'กรุณาเลือกรถต้นทางก่อน' : ''}
+                className="flex items-center gap-1.5 px-4 py-2 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <PlusIcon className="w-4 h-4 mr-1.5" />
+                <PlusIcon className="w-4 h-4" />
                 เพิ่มสินค้า
-              </Button>
+              </button>
             </div>
 
-            <div className="flex-grow overflow-y-auto bg-slate-50/30 p-4">
+            <div className="grow overflow-y-auto bg-slate-50/30 p-4">
               {items.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-400 py-8">
                   <div className="bg-slate-50 p-4 rounded-full mb-3 border border-dashed border-slate-200 animate-pulse">
@@ -452,6 +460,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                   <p className="text-xs mt-1 text-slate-400">
                     กดปุ่ม "เพิ่มสินค้า" เพื่อเลือกจากคลัง
                   </p>
+                  {errors.items && <p className="text-red-500 text-xs font-medium mt-2">{errors.items}</p>}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -502,15 +511,12 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                                 min="1"
                                 max={currentStock}
                                 value={item.quantity}
-                                onChange={(e) =>
-                                  handleItemChange(
-                                    item.id,
-                                    'quantity',
-                                    Number(e.target.value)
-                                  )
-                                }
+                                onChange={(e) => {
+                                  handleItemChange(item.id, 'quantity', Number(e.target.value));
+                                  if (errors[`quantity_${item.id}`]) setErrors((prev) => { const next = { ...prev }; delete next[`quantity_${item.id}`]; return next; });
+                                }}
                                 className={`w-full text-right transition-all h-9 text-sm font-bold pr-8 ${
-                                  isOverStock
+                                  isOverStock || errors[`quantity_${item.id}`]
                                     ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200'
                                     : 'border-slate-200 focus:border-indigo-500'
                                 }`}
@@ -532,6 +538,11 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                                 เกินสต็อกที่มี
                               </span>
                             )}
+                            {errors[`quantity_${item.id}`] && !isOverStock && (
+                              <span className="text-[10px] font-bold text-red-600">
+                                {errors[`quantity_${item.id}`]}
+                              </span>
+                            )}
                           </div>
 
                           {/* Reason Input */}
@@ -540,15 +551,13 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                               type="text"
                               placeholder="กรอกเหตุผลการคืน..."
                               value={item.reason}
-                              onChange={(e) =>
-                                handleItemChange(
-                                  item.id,
-                                  'reason',
-                                  e.target.value
-                                )
-                              }
-                              className="w-full text-sm border-slate-200 focus:border-indigo-500 h-9"
+                              onChange={(e) => {
+                                handleItemChange(item.id, 'reason', e.target.value);
+                                if (errors[`reason_${item.id}`]) setErrors((prev) => { const next = { ...prev }; delete next[`reason_${item.id}`]; return next; });
+                              }}
+                              className={`w-full text-sm h-9 ${errors[`reason_${item.id}`] ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-slate-200 focus:border-indigo-500'}`}
                             />
+                            {errors[`reason_${item.id}`] && <p className="text-red-500 text-[10px] mt-1">{errors[`reason_${item.id}`]}</p>}
                           </div>
 
                           {/* Delete Button - desktop only */}

@@ -379,6 +379,7 @@ const Suppliers: React.FC = () => {
 
             </table>
           </div>
+          {totalItems > 0 && (
           <div className="mt-auto border-t border-slate-200">
             <Pagination
               currentPage={currentPage}
@@ -388,6 +389,7 @@ const Suppliers: React.FC = () => {
               onItemsPerPageChange={handleItemsPerPageChange}
             />
           </div>
+          )}
         </div>
         )}
       </div>

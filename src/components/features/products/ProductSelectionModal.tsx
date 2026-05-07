@@ -170,12 +170,6 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                   scope="col"
                   className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase"
                 >
-                  รหัสสินค้า
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase"
-                >
                   ชื่อสินค้า
                 </th>
                 {stockMap && (
@@ -217,9 +211,6 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                     {index + 1}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                    {product.code}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600">
                     {product.name}

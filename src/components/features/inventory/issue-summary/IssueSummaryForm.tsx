@@ -1125,10 +1125,10 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={4}
-                  className={`w-full border rounded-xl p-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none shadow-sm transition-colors ${
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm resize-none bg-white ${
                     (isOverLimit || isAnyItemOverLimit) && !notes.trim()
-                      ? 'border-amber-300 bg-white placeholder:text-amber-400/70'
-                      : 'border-slate-300 bg-white placeholder:text-slate-400'
+                      ? 'border-amber-300 placeholder:text-amber-400/70'
+                      : 'border-slate-300 placeholder:text-slate-400'
                   }`}
                   placeholder="กรอกเหตุผลการเบิกเพิ่มเติม (เช่น นำไปใช้กับงานซ่อมแซม, ซื้อของเข้าสต๊อก...)"
                 />

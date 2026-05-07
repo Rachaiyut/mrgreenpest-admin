@@ -310,17 +310,16 @@ const Returns: React.FC<ReturnsProps> = ({
 
         <Card className="!p-4 mb-4 flex-shrink-0">
           <div className="flex flex-col sm:flex-row gap-3 items-center">
-            <div className="relative w-full sm:w-80 flex-shrink-0">
+            <div className="relative w-full sm:w-96 flex-shrink-0">
               <Input
                 type="search"
-                placeholder="ค้นหา (เลขที่, วันที่)..."
+                placeholder="ค้นหาเลขที่เอกสารคืนสินค้า"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
                 className="w-full pl-10"
-                title="ค้นหาด้วย: เลขที่เอกสาร, วันที่คืนสินค้า"
               />
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -344,13 +343,13 @@ const Returns: React.FC<ReturnsProps> = ({
                     scope="col"
                     className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
-                    เลขที่เอกสาร
+                    เลขที่เอกสารคืนสินค้า
                   </th>
                   <th
                     scope="col"
                     className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
-                    วันที่คืน
+                    วันที่คืนสินค้า
                   </th>
                   <th
                     scope="col"
@@ -362,7 +361,7 @@ const Returns: React.FC<ReturnsProps> = ({
                     scope="col"
                     className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
-                    คืนเข้าคลัง
+                    คืนเข้า (คลัง)
                   </th>
                   <th
                     scope="col"

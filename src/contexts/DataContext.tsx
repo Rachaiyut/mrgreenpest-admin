@@ -401,6 +401,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       'warehouses',
       'suppliers',
       'warehouseStocks',
+      'productReturns',
     ]);
   }, []);
 

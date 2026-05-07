@@ -134,7 +134,7 @@ const Units: React.FC = () => {
             }}
           >
             <PlusIcon className="h-5 w-5" />
-            เพิ่มหน่วยนับ
+            สร้างหน่วยนับ
           </Button>
         </div>
 
@@ -144,7 +144,7 @@ const Units: React.FC = () => {
             <div className="relative w-full sm:w-80 flex-shrink-0">
               <Input
                 type="search"
-                placeholder="ค้นหาหน่วยนับ..."
+                placeholder="ค้นหาชื่อหน่วยนับ"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
