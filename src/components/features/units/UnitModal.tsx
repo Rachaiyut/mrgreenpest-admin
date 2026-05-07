@@ -81,14 +81,13 @@ export const UnitModal: FC<UnitModalProps> = ({
             required
           />
         </FormField>
-        <FormField label="สัญลักษณ์ *" htmlFor="unit-symbol">
+        <FormField label="อักษรย่อ" htmlFor="unit-symbol">
           <Input
             id="unit-symbol"
             value={symbol}
             onChange={(e) => setSymbol(e.target.value)}
             placeholder="เช่น ตร.ม., ม., กก."
             maxLength={5}
-            required
           />
         </FormField>
       </form>
