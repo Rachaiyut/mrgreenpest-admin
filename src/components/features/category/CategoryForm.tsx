@@ -54,7 +54,6 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
           type="text"
           value={formData.name || ''}
           onChange={handleChange}
-          className={errors.name ? 'border-red-500' : ''}
         />
         {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
       </FormField>
@@ -69,7 +68,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
             maxLength={3}
             placeholder="เช่น CH, MAT"
             disabled={mode === 'edit'}
-            className={`${mode === 'edit' ? 'bg-slate-50' : ''} ${errors.code ? 'border-red-500' : ''}`}
+            className={mode === 'edit' ? 'bg-slate-50' : ''}
           />
           {errors.code && <p className="text-sm text-red-500 mt-1">{errors.code}</p>}
         </FormField>
@@ -82,8 +81,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
               { value: CategoryType.PRODUCT, label: 'สินค้า' },
               { value: CategoryType.SERVICE, label: 'บริการ' },
             ]}
-            disabled={mode === 'edit' && !!(((initialValues as unknown as Record<string, number>)?.product_count) > 0)}
-            error={!!errors.type}
+            disabled={mode === 'edit'}
           />
           {errors.type && <p className="text-sm text-red-500 mt-1">{errors.type}</p>}
         </FormField>
