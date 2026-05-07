@@ -62,7 +62,7 @@ const Product: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await CategoryApi.getCategories({});
+      const response = await CategoryApi.getCategories({ is_active: true });
       setCategories(response.data);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
@@ -71,7 +71,7 @@ const Product: React.FC = () => {
 
   const fetchUnits = async () => {
     try {
-      const response = await UnitApi.getUnit({ limit: 10, is_active: true });
+      const response = await UnitApi.getUnit({ limit: 100, is_active: true });
       setUnits(response.data);
     } catch (error) {
       console.error('Failed to fetch units:', error);
