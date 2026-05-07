@@ -113,7 +113,7 @@ const PortalQuotations: React.FC = () => {
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">เลขที่</th>
                     <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">วันที่</th>
-                    <th className="text-right px-6 py-3 text-sm font-semibold text-slate-600">จำนวนเงิน</th>
+                    <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">จำนวนเงิน</th>
                     <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">สถานะ</th>
                     <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">ดาวน์โหลด</th>
                   </tr>
@@ -121,9 +121,9 @@ const PortalQuotations: React.FC = () => {
                 <tbody>
                   {quotations.map((item) => (
                     <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="px-6 py-4 text-sm font-medium text-slate-800">{item.code || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{item.created_at ? dayjs(item.created_at).format('DD/MM/YYYY') : '-'}</td>
-                      <td className="px-6 py-4 text-sm text-right text-slate-800 font-medium">
+                      <td className="px-6 py-4 text-sm text-left font-medium text-slate-800">{item.code || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-left text-slate-600">{item.created_at ? dayjs(item.created_at).format('DD/MM/YYYY') : '-'}</td>
+                      <td className="px-6 py-4 text-sm text-center text-slate-800 font-medium">
                         {item.total_amount != null ? Number(item.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 }) : '-'}
                       </td>
                       <td className="px-6 py-4 text-center"><StatusBadge status={item.status} /></td>

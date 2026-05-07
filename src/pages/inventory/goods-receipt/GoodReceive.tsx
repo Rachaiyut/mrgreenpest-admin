@@ -661,18 +661,18 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
 
           {/* Desktop / tablet table view */}
           <div className="hidden md:block overflow-auto w-full flex-1 relative">
-            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-center">
+            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-left">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่เอกสารใบรับเข้า</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่อ้างอิง</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้จัดจำหน่าย</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้สร้าง</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่เอกสารใบรับเข้า</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่อ้างอิง</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้จัดจำหน่าย</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้สร้าง</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -687,28 +687,28 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                   </tr>
                 ) : paginatedReceipts.length > 0 ? (
                   paginatedReceipts.map((receipt, index) => (
-                    <tr key={receipt.id} className="hover:bg-slate-50 transition-colors [&>td]:align-middle">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    <tr key={receipt.id} className="hover:bg-slate-50 transition-colors [&>td]:align-top">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
                       <td
-                        className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:text-primary-dark cursor-pointer transition-colors"
+                        className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:text-primary-dark cursor-pointer transition-colors text-left"
                         onClick={() => handleViewDetails(receipt)}
                       >
                         {receipt.code || receipt.id.substring(0, 8)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 font-medium">{receipt.receipt_no || '-'}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{formatThaiDate(receipt.created_at)}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 font-medium text-left">{receipt.receipt_no || '-'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">{formatThaiDate(receipt.created_at)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                         {(receipt as unknown as Record<string, { name?: string }>).warehouse?.name || warehouseMap[receipt.warehouse_id] || '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                         {receipt.supplier_id ? supplierMap[receipt.supplier_id] : '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap text-center">
                         <StatusBadge status={receipt.status} />
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                         {(() => {
                           const u = (receipt as { created_by_user?: { first_name?: string; last_name?: string; nick_name?: string } }).created_by_user;
                           if (!u) return 'ไม่กรอก';
@@ -716,7 +716,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                           return full || u.nick_name || 'ไม่กรอก';
                         })()}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
                         <div className="inline-block">
                           <Button data-receipt-id={receipt.id} onClick={(e) => handleDropdownToggle(e, receipt.id)} variant="icon" title="ตัวเลือก">
                             <span className="sr-only">Open options</span>

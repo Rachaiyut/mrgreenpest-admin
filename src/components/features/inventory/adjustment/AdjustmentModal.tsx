@@ -395,7 +395,7 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
             </div>
 
             <div className="overflow-hidden border border-slate-200 rounded-lg shadow-sm">
-              <table className="min-w-full text-sm text-center">
+              <table className="min-w-full text-sm text-left">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
                     <th className="px-4 py-3 font-semibold text-slate-600 w-16">ลำดับ</th>
@@ -421,19 +421,19 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                           : 0;
                       return (
                         <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-700 font-medium">
                             {index + 1}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-700 font-medium">
                             {product?.code || '-'}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-800 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-800 font-medium">
                             {product?.name || 'N/A'}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-700 font-medium">
                             {item.originalQuantity}
                           </td>
-                          <td className="px-4 py-3 align-middle">
+                          <td className="px-4 py-3 align-top">
                             {isViewMode ? (
                               <span className="text-slate-700 font-medium">
                                 {item.adjustedQuantity}
@@ -454,7 +454,7 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                             )}
                           </td>
                           <td
-                            className={`px-4 py-3 align-middle font-semibold ${
+                            className={`px-4 py-3 align-top font-semibold ${
                               difference > 0
                                 ? 'text-green-600'
                                 : difference < 0
@@ -464,12 +464,12 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                           >
                             {difference > 0 ? `+${difference}` : difference}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-700 font-medium">
                             {typeof item.adjustedQuantity === 'number'
                               ? item.adjustedQuantity
                               : '-'}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-700 font-medium">
                             {(() => {
                               const u = product?.unit as { name?: string } | string | undefined;
                               if (typeof u === 'string') return u;
@@ -477,7 +477,7 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                               return '-';
                             })()}
                           </td>
-                          <td className="px-4 py-3 align-middle">
+                          <td className="px-4 py-3 align-top">
                             {!isViewMode && (
                               <button
                                 type="button"

@@ -481,17 +481,17 @@ const ReturnToSupplierPage: React.FC = () => {
 
         <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
           <div className="overflow-auto flex-1 relative">
-            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-center">
+            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-left">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่เอกสาร</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คืนจากคลัง</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้จำหน่าย</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้สร้าง</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่เอกสาร</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คืนจากคลัง</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้จำหน่าย</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้สร้าง</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -516,29 +516,29 @@ const ReturnToSupplierPage: React.FC = () => {
                   </tr>
                 ) : (
                   returns.map((r, index) => (
-                    <tr key={r.id} className="hover:bg-slate-50 transition-colors [&>td]:align-middle">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    <tr key={r.id} className="hover:bg-slate-50 transition-colors [&>td]:align-top">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
                       <td
-                        className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
+                        className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer text-left"
                         onClick={() => handleViewDetails(r)}
                       >
                         {(r as { code?: string }).code || r.id}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                         {formatThaiDate(r.created_at)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                         {warehouseMap[r.warehouse_id] || '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                         {r.supplier_id ? supplierMap[r.supplier_id] : '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap text-center">
                         <StatusBadge status={r.status as Status} />
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                         {(() => {
                           const u = (r as { creator?: { first_name?: string; last_name?: string; nick_name?: string } }).creator;
                           if (!u) return 'ไม่กรอก';
@@ -546,7 +546,7 @@ const ReturnToSupplierPage: React.FC = () => {
                           return full || u.nick_name || 'ไม่กรอก';
                         })()}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
                         <div className="inline-block">
                           <Button
                             data-return-id={r.id}

@@ -163,7 +163,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                 <th scope="col" className="w-12 px-4 py-3">
                   <span className="sr-only">Select</span>
                 </th>
-                <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase w-16">
+                <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase w-16">
                   ลำดับ
                 </th>
                 <th
@@ -210,7 +210,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
               {availableProducts.map((product, index) => (
                 <tr
                   key={product.id}
-                  className={`cursor-pointer hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle ${selectedIds.has(product.id) ? 'bg-primary/10' : ''}`}
+                  className={`cursor-pointer hover:bg-slate-50 [&>td]:text-center [&>td]:align-top ${selectedIds.has(product.id) ? 'bg-primary/10' : ''}`}
                   onClick={() => handleToggleSelection(product.id)}
                 >
                   <td className="px-4 py-3">

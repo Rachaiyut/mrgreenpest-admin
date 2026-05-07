@@ -763,34 +763,34 @@ const Assessments: React.FC = () => {
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ลำดับ
                       </th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         รหัสใบประเมิน
                       </th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         รหัสลูกค้า
                       </th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        ลูกค้า
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                        ชื่อลูกค้า
                       </th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         วันที่นัดหมาย
                       </th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ประเภทสิ่งปลูกสร้าง
                       </th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ประเภทบริการ
-                      </th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        สถานะ
                       </th>
                       <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ยอดรวม
                       </th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                        สถานะ
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ผู้สร้าง
                       </th>
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         จัดการ
                       </th>
                     </tr>
@@ -821,9 +821,9 @@ const Assessments: React.FC = () => {
                       return (
                         <tr
                           key={assessment.id}
-                          className={`hover:bg-slate-50/50 transition-colors [&>td]:align-middle [&>td]:text-center ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                          className={`hover:bg-slate-50/50 transition-colors [&>td]:align-top ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
                         >
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                             {(currentPage - 1) * itemsPerPage + index + 1}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
@@ -852,20 +852,20 @@ const Assessments: React.FC = () => {
                           <td className="px-4 py-3 text-sm text-slate-700">
                             {allServiceTypes.join(', ') || '-'}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                            <StatusBadge status={assessment.status} />
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium text-slate-900">
-                            {Number(assessment.total_price || 0).toLocaleString('en-US', {
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900 text-right">
+                            {Number(assessment.total_price || 0).toLocaleString('th-TH', {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })} บาท
                           </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                            <StatusBadge status={assessment.status} />
+                          </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             {(() => { const creator = (assessment as unknown as Record<string, Record<string, string>>).creator; return creator ? `${creator.first_name} ${creator.last_name || ''}`.trim() : '-'; })()}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
-                            <div className="flex items-center justify-end gap-1">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                            <div className="flex items-center justify-center gap-1">
                               <Button
                                 onClick={async () => {
                                   try {

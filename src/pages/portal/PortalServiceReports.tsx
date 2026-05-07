@@ -130,10 +130,10 @@ const PortalServiceReports: React.FC = () => {
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">วันที่</th>
-                    <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">เวลาเข้า-ออก</th>
+                    <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">เวลาเข้า-ออก</th>
                     <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">ประเภทบริการ</th>
-                    <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">วิธีการชำระเงิน</th>
-                    <th className="text-right px-6 py-3 text-sm font-semibold text-slate-600">จำนวนเงิน</th>
+                    <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">วิธีการชำระเงิน</th>
+                    <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">จำนวนเงิน</th>
                     <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">ดาวน์โหลด</th>
                   </tr>
                 </thead>
@@ -143,17 +143,17 @@ const PortalServiceReports: React.FC = () => {
                     const paymentLabel = paymentLabels[item.payment_condition] || null;
                     return (
                       <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="px-6 py-4 text-sm font-medium text-slate-800">
+                        <td className="px-6 py-4 text-sm text-left font-medium text-slate-800">
                           {(item.report_date || item.created_at) ? dayjs(item.report_date || item.created_at).format('DD/MM/YYYY') : '-'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{item.time_in || '-'} - {item.time_out || '-'}</td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{serviceTypes.length > 0 ? serviceTypes.join(', ') : '-'}</td>
-                        <td className="px-6 py-4 text-center">
+                        <td className="px-6 py-4 text-sm text-center text-slate-600">{item.time_in || '-'} - {item.time_out || '-'}</td>
+                        <td className="px-6 py-4 text-sm text-left text-slate-600">{serviceTypes.length > 0 ? serviceTypes.join(', ') : '-'}</td>
+                        <td className="px-6 py-4 text-left">
                           {paymentLabel ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{paymentLabel}</span>
                           ) : <span className="text-xs text-slate-400">-</span>}
                         </td>
-                        <td className="px-6 py-4 text-sm text-right font-medium text-slate-800">
+                        <td className="px-6 py-4 text-sm text-center font-medium text-slate-800">
                           {item.payment_amount ? `${Number(item.payment_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท` : '-'}
                         </td>
                         <td className="px-6 py-4 text-center"><PdfButton id={item.id} /></td>

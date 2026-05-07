@@ -363,19 +363,19 @@ const DailyClosure: React.FC = () => {
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider w-16">
                       ลำดับ
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       วันที่
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       รถ
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       ทะเบียน
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       หัวหน้าทีม
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       ลูกค้า
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -422,19 +422,19 @@ const DailyClosure: React.FC = () => {
                           <td className="px-4 py-3 text-sm text-slate-600 text-center">
                             {rowNumber}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-800 text-center">
+                          <td className="px-4 py-3 text-sm text-slate-800 text-left">
                             {job.appointment_date ? formatThaiDate(String(job.appointment_date).substring(0, 10)) : '-'}
                           </td>
-                          <td className="px-4 py-3 text-sm font-medium text-slate-800 text-center">
+                          <td className="px-4 py-3 text-sm font-medium text-slate-800 text-left">
                             {vehicleName}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-500 text-center">
+                          <td className="px-4 py-3 text-sm text-slate-500 text-left">
                             {vehicleReg}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-800 text-center">
+                          <td className="px-4 py-3 text-sm text-slate-800 text-left">
                             {techName}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-700 text-center">
+                          <td className="px-4 py-3 text-sm text-slate-700 text-left">
                             {customerName}
                           </td>
                           <td className="px-4 py-3 text-center">

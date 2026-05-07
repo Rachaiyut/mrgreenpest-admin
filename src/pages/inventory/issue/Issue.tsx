@@ -963,13 +963,13 @@ const Issue: FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     เลขที่เอกสารเบิก
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     วันที่เบิก
                   </th>
@@ -984,7 +984,7 @@ const Issue: FC = () => {
                   {categoryTab !== 'stock' && (
                     <th
                       scope="col"
-                      className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                      className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                     >
                       จำนวนเงินที่เบิก
                     </th>
@@ -992,14 +992,14 @@ const Issue: FC = () => {
                   {categoryTab !== 'stock' && (
                     <th
                       scope="col"
-                      className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                      className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                     >
                       ผู้รับเงิน
                     </th>
                   )}
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ผู้สร้าง
                   </th>
@@ -1082,10 +1082,10 @@ const Issue: FC = () => {
                     return (
                       <Fragment key={withdrawal.id}>
                         <tr
-                          className={`hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle ${isAllTab ? 'cursor-pointer' : ''}`}
+                          className={`hover:bg-slate-50 [&>td]:align-top ${isAllTab ? 'cursor-pointer' : ''}`}
                           onClick={isAllTab ? () => toggleExpanded(withdrawal.id) : undefined}
                         >
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 xl:table-cell hidden">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center xl:table-cell hidden">
                             {isAllTab ? (
                               <div className="inline-flex items-center gap-1">
                                 {isExpanded ? (
@@ -1114,12 +1114,12 @@ const Issue: FC = () => {
                               : '-'}
                           </td>
                           {categoryTab !== 'expense' && (
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 lg:table-cell hidden">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center lg:table-cell hidden">
                               {totalItemsCount}
                             </td>
                           )}
                           {categoryTab !== 'stock' && (
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                               {totalAmount.toLocaleString('th-TH', {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
@@ -1149,11 +1149,11 @@ const Issue: FC = () => {
                               return looksLikeUuid ? 'ไม่กรอก' : withdrawal.created_by || '-';
                             })()}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap text-center">
                             <StatusBadge status={withdrawal.status} />
                           </td>
                           <td
-                            className="px-4 py-3 whitespace-nowrap text-sm font-medium"
+                            className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="inline-block">
@@ -1200,14 +1200,14 @@ const Issue: FC = () => {
                                   </div>
                                   {hasItems ? (
                                     <div className="overflow-x-auto">
-                                      <table className="min-w-full text-sm text-center">
+                                      <table className="min-w-full text-sm text-left">
                                         <thead>
                                           <tr className="text-sm font-semibold text-slate-700 bg-slate-100 border-b border-slate-200">
-                                            <th className="px-4 py-2.5 w-12">ลำดับ</th>
-                                            <th className="px-4 py-2.5">รหัสสินค้า</th>
-                                            <th className="px-4 py-2.5">ชื่อสินค้า</th>
-                                            <th className="px-4 py-2.5 w-24">จำนวน</th>
-                                            <th className="px-4 py-2.5 w-24">หน่วย</th>
+                                            <th className="px-4 py-2.5 w-12 text-center">ลำดับ</th>
+                                            <th className="px-4 py-2.5 text-left">รหัสสินค้า</th>
+                                            <th className="px-4 py-2.5 text-left">ชื่อสินค้า</th>
+                                            <th className="px-4 py-2.5 w-24 text-center">จำนวน</th>
+                                            <th className="px-4 py-2.5 w-24 text-left">หน่วย</th>
                                           </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
@@ -1224,17 +1224,17 @@ const Issue: FC = () => {
                                                 key={item.id || `${withdrawal.id}-item-${i}`}
                                                 className="hover:bg-emerald-50/40 transition-colors"
                                               >
-                                                <td className="px-4 py-2.5 text-slate-500 tabular-nums">{i + 1}</td>
-                                                <td className="px-4 py-2.5 text-slate-500 font-mono text-xs">
+                                                <td className="px-4 py-2.5 text-slate-500 tabular-nums text-center">{i + 1}</td>
+                                                <td className="px-4 py-2.5 text-slate-500 font-mono text-xs text-left">
                                                   {product?.code || (item as { product_code?: string }).product_code || '-'}
                                                 </td>
-                                                <td className="px-4 py-2.5 text-slate-700">
+                                                <td className="px-4 py-2.5 text-slate-700 text-left">
                                                   {product?.name || (item as { product_name?: string }).product_name || item.product_id}
                                                 </td>
-                                                <td className="px-4 py-2.5 text-slate-800 font-medium tabular-nums">
+                                                <td className="px-4 py-2.5 text-slate-800 font-medium tabular-nums text-center">
                                                   {Number(item.quantity || 0).toLocaleString('th-TH')}
                                                 </td>
-                                                <td className="px-4 py-2.5 text-slate-500">{unitText}</td>
+                                                <td className="px-4 py-2.5 text-slate-500 text-left">{unitText}</td>
                                               </tr>
                                             );
                                           })}
@@ -1271,12 +1271,12 @@ const Issue: FC = () => {
                                   </div>
                                   {hasExpenses ? (
                                     <div className="overflow-x-auto">
-                                      <table className="min-w-full text-sm text-center">
+                                      <table className="min-w-full text-sm text-left">
                                         <thead>
                                           <tr className="text-sm font-semibold text-slate-700 bg-slate-100 border-b border-slate-200">
-                                            <th className="px-4 py-2.5 w-12">ลำดับ</th>
-                                            <th className="px-4 py-2.5">รายละเอียด</th>
-                                            <th className="px-4 py-2.5 w-36">จำนวนเงิน</th>
+                                            <th className="px-4 py-2.5 w-12 text-center">ลำดับ</th>
+                                            <th className="px-4 py-2.5 text-left">รายละเอียด</th>
+                                            <th className="px-4 py-2.5 w-36 text-center">จำนวนเงิน</th>
                                           </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
@@ -1285,9 +1285,9 @@ const Issue: FC = () => {
                                               key={(exp as { id?: string }).id || `${withdrawal.id}-exp-${i}`}
                                               className="hover:bg-amber-50/40 transition-colors"
                                             >
-                                              <td className="px-4 py-2.5 text-slate-500 tabular-nums">{i + 1}</td>
-                                              <td className="px-4 py-2.5 text-slate-700">{exp.description || '-'}</td>
-                                              <td className="px-4 py-2.5 text-slate-800 font-medium tabular-nums">
+                                              <td className="px-4 py-2.5 text-slate-500 tabular-nums text-center">{i + 1}</td>
+                                              <td className="px-4 py-2.5 text-slate-700 text-left">{exp.description || '-'}</td>
+                                              <td className="px-4 py-2.5 text-slate-800 font-medium tabular-nums text-center">
                                                 {fmtMoney(Number(exp.amount || 0))}
                                               </td>
                                             </tr>

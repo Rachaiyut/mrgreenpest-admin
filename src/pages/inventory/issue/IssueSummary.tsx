@@ -841,19 +841,19 @@ const IssueSummaryPage: React.FC = () => {
               <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
                 <tr>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap w-16">ลำดับ</th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่เบิก</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่เบิก</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนรายการ</th>
                   {activeTab !== 'expense' && (
                     <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนสินค้าที่เบิกเกิน</th>
                   )}
                   {activeTab !== 'stock' && (
-                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนเงินที่เบิก</th>
+                    <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนเงินที่เบิก</th>
                   )}
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้เบิก</th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เอกสารอ้างอิง</th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">หมายเหตุ</th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ประเภท</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้เบิก</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เอกสารอ้างอิง</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">หมายเหตุ</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ประเภท</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap w-20">จัดการ</th>
                 </tr>
@@ -964,7 +964,7 @@ const IssueSummaryPage: React.FC = () => {
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                           {summary.issue_date
                             ? formatThaiDate(summary.issue_date)
                             : summary.created_at
@@ -984,17 +984,17 @@ const IssueSummaryPage: React.FC = () => {
                           </td>
                         )}
                         {activeTab !== 'stock' && (
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                             {showExpenseCell ? fmtMoney(totalExpenseAmount) : <span className="text-slate-300">—</span>}
                           </td>
                         )}
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                           {warehouse?.name || '-'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                           {requesterName}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700 text-center max-w-[200px]">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-left max-w-[200px]">
                           {summary.job_id ? (
                             <span className="truncate block" title={jobMap.get(summary.job_id) || summary.job_id}>
                               {jobMap.get(summary.job_id) || `#${summary.job_id.substring(0, 8)}`}
@@ -1003,7 +1003,7 @@ const IssueSummaryPage: React.FC = () => {
                             <span className="text-slate-400">-</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700 text-center max-w-[180px]">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-left max-w-[180px]">
                           {summary.notes ? (
                             <span className="truncate block" title={summary.notes}>
                               {summary.notes}
@@ -1012,7 +1012,7 @@ const IssueSummaryPage: React.FC = () => {
                             <span className="text-slate-400">-</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
+                        <td className="px-4 py-3 whitespace-nowrap text-left text-sm">
                           <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${typeClass}`}>
                             {typeText}
                           </span>

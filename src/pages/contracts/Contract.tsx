@@ -469,17 +469,17 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50 sticky top-0 z-10 border-b border-slate-200 shadow-sm">
                 <tr>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">เลขที่สัญญา</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อลูกค้า</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ประเภทบริการ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">เลขที่สัญญา</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อลูกค้า</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ประเภทบริการ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">อายุสัญญา</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันเริ่มต้น</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันสิ้นสุด</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">อ้างอิงตารางงาน</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันเริ่มต้น</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันสิ้นสุด</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">อ้างอิงตารางงาน</th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">ยอดรวม</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ผู้สร้าง</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ผู้สร้าง</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
                 </tr>
               </thead>
               
@@ -493,9 +493,9 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                     return (
                       <tr
                         key={c.id}
-                        className={`hover:bg-slate-50/50 transition-colors [&>td]:align-middle [&>td]:text-center ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                        className={`hover:bg-slate-50/50 transition-colors [&>td]:align-top ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
                       >
-                        <td className="px-4 py-3 text-sm text-slate-700">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
@@ -513,7 +513,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                         <td className="px-6 py-4 text-sm text-slate-600">
                           {'-'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
+                        <td className="px-6 py-4 text-sm text-slate-600 text-center">
                           {'-'}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
@@ -522,7 +522,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                         <td className="px-6 py-4 text-sm text-slate-600">
                           {formatThaiDate(c.end_date)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-center">
+                        <td className="px-4 py-3 text-sm text-left">
                           {(c as unknown as Record<string, unknown>).service_schedule
                             ? <span className="text-xs text-green-700 font-medium">{((c as unknown as Record<string, unknown>).service_schedule as Record<string, string>)?.name}</span>
                             : <span className="text-slate-400">-</span>
@@ -534,7 +534,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                             maximumFractionDigits: 2,
                           })}{' บาท'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
                             c.status === ContractStatus.ACTIVE ? 'bg-green-100 text-green-700' :
                             c.status === ContractStatus.DRAFT ? 'bg-slate-100 text-slate-600' :
@@ -550,8 +550,8 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                         <td className="px-4 py-3 text-sm text-slate-700">
                           <TruncateText text={((c as unknown as Record<string, Record<string, string>>).creator) ? `${((c as unknown as Record<string, Record<string, string>>).creator).first_name} ${((c as unknown as Record<string, Record<string, string>>).creator).last_name || ''}`.trim() : '-'} maxWidth={140} />
                         </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
                             <Button
                               className="px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm border-none flex items-center gap-2 hover:shadow-md transition-shadow bg-emerald-500 text-white hover:bg-emerald-600"
                               disabled={loadingPdfId === c.id}

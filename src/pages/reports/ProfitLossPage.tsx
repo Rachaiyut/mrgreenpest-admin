@@ -174,7 +174,7 @@ const ProfitLossPage: React.FC = () => {
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">ช่องทาง</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600">จำนวน</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600">ยอดเงิน (บาท)</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600">ยอดเงิน (บาท)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -189,7 +189,7 @@ const ProfitLossPage: React.FC = () => {
                     <tr key={idx} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 text-sm text-slate-900 font-medium">{item.method || 'อื่นๆ'}</td>
                       <td className="px-4 py-3 text-sm text-center text-slate-600">{item.count}</td>
-                      <td className="px-4 py-3 text-sm text-right text-green-700 font-semibold">{fmt(item.total)}</td>
+                      <td className="px-4 py-3 text-sm text-center text-green-700 font-semibold">{fmt(item.total)}</td>
                     </tr>
                   ))
                 ) : (
@@ -203,7 +203,7 @@ const ProfitLossPage: React.FC = () => {
                     <td className="px-4 py-3 text-sm text-center text-slate-600">
                       {incomeByMethod.reduce((s, i) => s + i.count, 0)}
                     </td>
-                    <td className="px-4 py-3 text-sm text-right text-green-800">{fmt(data?.income.total || 0)}</td>
+                    <td className="px-4 py-3 text-sm text-center text-green-800">{fmt(data?.income.total || 0)}</td>
                   </tr>
                 </tfoot>
               )}
@@ -233,7 +233,7 @@ const ProfitLossPage: React.FC = () => {
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600">หมวดหมู่</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600">จำนวน</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600">ยอดเงิน (บาท)</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600">ยอดเงิน (บาท)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -250,7 +250,7 @@ const ProfitLossPage: React.FC = () => {
                         <tr key={idx} className="hover:bg-slate-50 transition-colors">
                           <td className="px-4 py-3 text-sm text-slate-900 font-medium">{item.category}</td>
                           <td className="px-4 py-3 text-sm text-center text-slate-600">{item.count}</td>
-                          <td className="px-4 py-3 text-sm text-right text-red-600 font-semibold">{fmt(item.total)}</td>
+                          <td className="px-4 py-3 text-sm text-center text-red-600 font-semibold">{fmt(item.total)}</td>
                         </tr>
                       ))
                     ) : null}
@@ -258,7 +258,7 @@ const ProfitLossPage: React.FC = () => {
                       <tr className="hover:bg-slate-50 transition-colors bg-orange-50/30">
                         <td className="px-4 py-3 text-sm text-slate-900 font-medium">ค่าใช้จ่ายจากการเบิกสินค้า</td>
                         <td className="px-4 py-3 text-sm text-center text-slate-600">-</td>
-                        <td className="px-4 py-3 text-sm text-right text-red-600 font-semibold">{fmt(data.expenses.withdrawal)}</td>
+                        <td className="px-4 py-3 text-sm text-center text-red-600 font-semibold">{fmt(data.expenses.withdrawal)}</td>
                       </tr>
                     )}
                     {(!data?.expenses.byCategory || data.expenses.byCategory.length === 0) && (!data || data.expenses.withdrawal === 0) && (
@@ -272,7 +272,7 @@ const ProfitLossPage: React.FC = () => {
                   <tr>
                     <td className="px-4 py-3 text-sm text-slate-900">รวมค่าใช้จ่าย</td>
                     <td className="px-4 py-3 text-sm text-center text-slate-600"></td>
-                    <td className="px-4 py-3 text-sm text-right text-red-800">{fmt(data.expenses.total)}</td>
+                    <td className="px-4 py-3 text-sm text-center text-red-800">{fmt(data.expenses.total)}</td>
                   </tr>
                 </tfoot>
               )}

@@ -441,17 +441,17 @@ const SalesPipelinePage: React.FC = () => {
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                       ชื่อ
                     </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                       ใบเสนอราคาทั้งหมด
                     </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                       เซ็นสำเร็จ
                     </th>
                     <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                      มูลค่า (บาท)
+                      มูลค่า
                     </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                      Conversion Rate (%)
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      Conversion Rate
                     </th>
                   </tr>
                 </thead>
@@ -465,16 +465,16 @@ const SalesPipelinePage: React.FC = () => {
                         <td className="px-4 py-3 text-sm text-slate-800 font-medium">
                           {person.name}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700 text-right">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {person.total_quotations.toLocaleString()}
                         </td>
-                        <td className="px-4 py-3 text-sm text-emerald-600 font-medium text-right">
+                        <td className="px-4 py-3 text-sm text-emerald-600 font-medium text-center">
                           {person.signed_count.toLocaleString()}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-900 font-medium text-right">
-                          {formatNumber(person.signed_value)}
+                          {formatNumber(person.signed_value)} บาท
                         </td>
-                        <td className="px-4 py-3 text-sm text-right">
+                        <td className="px-4 py-3 text-sm text-center">
                           <span
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               person.conversion_rate >= 50

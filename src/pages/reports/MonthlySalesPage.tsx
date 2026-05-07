@@ -252,7 +252,7 @@ const MonthlySalesPage: React.FC<MonthlySalesPageProps> = () => {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider sticky left-0 bg-slate-50 z-10 shadow-sm">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider sticky left-0 bg-slate-50 z-10 shadow-sm">
                   ลำดับ
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider sticky left-10 bg-slate-50 z-10 shadow-sm">
@@ -284,13 +284,13 @@ const MonthlySalesPage: React.FC<MonthlySalesPageProps> = () => {
                 <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   หลังหัก 10%
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   วันที่ทำ
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   จำนวน SALE
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   %com
                 </th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -362,13 +362,13 @@ const MonthlySalesPage: React.FC<MonthlySalesPageProps> = () => {
                         maximumFractionDigits: 2,
                       })}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-left">
                       {row.date}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-left">
                       {row.saleCount}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-left">
                       {row.comPercent}%
                     </td>
                     <td className="px-4 py-3 text-sm text-green-600 font-semibold text-right">

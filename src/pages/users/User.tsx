@@ -428,13 +428,13 @@ const Users: React.FC<UsersProps> = ({
                   <table className="min-w-full divide-y divide-slate-200">
                     <thead className="bg-slate-50">
                       <tr>
-                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ลำดับ</th>
-                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ชื่อจริง - นามสกุล</th>
-                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ชื่อเล่น</th>
-                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">อีเมล</th>
-                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">โทรศัพท์</th>
-                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">บทบาท</th>
-                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">จัดการ</th>
+                        <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ลำดับ</th>
+                        <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ชื่อจริง - นามสกุล</th>
+                        <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ชื่อเล่น</th>
+                        <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">อีเมล</th>
+                        <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">โทรศัพท์</th>
+                        <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">บทบาท</th>
+                        <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">จัดการ</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
@@ -450,8 +450,8 @@ const Users: React.FC<UsersProps> = ({
                         </tr>
                       )}
                       {paginatedUsers.map((user, index) => (
-                        <tr key={user.id} className="hover:bg-slate-50 border-b border-slate-200 [&>td]:text-center [&>td]:align-middle">
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                        <tr key={user.id} className="hover:bg-slate-50 border-b border-slate-200 [&>td]:align-top">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                             {(currentPage - 1) * itemsPerPage + index + 1}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
@@ -474,7 +474,7 @@ const Users: React.FC<UsersProps> = ({
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             <RoleBadge role={user.role} />
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center text-sm font-medium">
                             <div className="inline-block text-left">
                               <Button
                                 variant="icon"
@@ -542,31 +542,31 @@ const Users: React.FC<UsersProps> = ({
                     <tr>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap w-16"
+                        className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap w-16"
                       >
                         ลำดับ
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                        className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         ชื่อบทบาท
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase"
+                        className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                       >
                         รายละเอียด
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                        className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         จำนวนผู้ใช้งาน
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                        className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         จัดการ
                       </th>
@@ -592,9 +592,9 @@ const Users: React.FC<UsersProps> = ({
                       .map((role, idx) => (
                       <tr
                         key={role.id}
-                        className="hover:bg-slate-50 border-b border-slate-200 [&>td]:align-middle [&>td]:text-center"
+                        className="hover:bg-slate-50 border-b border-slate-200 [&>td]:align-top"
                       >
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                           {(roleCurrentPage - 1) * roleItemsPerPage + idx + 1}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
@@ -611,10 +611,10 @@ const Users: React.FC<UsersProps> = ({
                         <td className="px-4 py-3 text-sm text-slate-700 max-w-xl break-words whitespace-normal !text-left">
                           {role.description || '-'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                           {roleCounts[role.id] || 0}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-sm font-medium">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center text-sm font-medium">
                           <Button
                             data-role-id={role.id}
                             onClick={(e) => handleDropdownToggle(e, role.id)}

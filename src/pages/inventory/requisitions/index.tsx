@@ -308,7 +308,7 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -326,7 +326,7 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
                   <th className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase">
                     สถานะ
                   </th>
-                  <th scope="col" className="relative px-6 py-3">
+                  <th scope="col" className="relative px-6 py-3 text-center">
                     <span className="sr-only">จัดการ</span>
                   </th>
                 </tr>
@@ -344,7 +344,7 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
                   </tr>
                 ) : paginatedRequisitions.map((item, index) => (
                   <tr key={item.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td
@@ -366,7 +366,7 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
                       <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                         ${
                           item.status === RequisitionStatus.APPROVED
                             ? 'bg-green-100 text-green-800'
@@ -378,7 +378,7 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
                         {item.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
                       <div className="inline-block text-left">
                         <Button
                           data-req-id={item.id}

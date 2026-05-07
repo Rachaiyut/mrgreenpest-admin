@@ -306,10 +306,10 @@ const InventoryUsagePage: React.FC = () => {
                   <th className="px-5 py-3.5 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                     หน่วย
                   </th>
-                  <th className="px-5 py-3.5 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-5 py-3.5 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                     จำนวนที่ใช้
                   </th>
-                  <th className="px-5 py-3.5 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-5 py-3.5 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                     จำนวนครั้งเบิก
                   </th>
                   <th className="px-5 py-3.5 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
@@ -318,10 +318,10 @@ const InventoryUsagePage: React.FC = () => {
                   <th className="px-5 py-3.5 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                     มูลค่ารวม
                   </th>
-                  <th className="px-5 py-3.5 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-5 py-3.5 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                     คงเหลือ
                   </th>
-                  <th className="px-5 py-3.5 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                  <th className="px-5 py-3.5 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                     ขั้นต่ำ
                   </th>
                 </tr>
@@ -348,27 +348,27 @@ const InventoryUsagePage: React.FC = () => {
                         <td className="px-5 py-3.5 text-sm text-slate-600 whitespace-nowrap">
                           {row.unit_name}
                         </td>
-                        <td className="px-5 py-3.5 text-sm text-right text-slate-700 whitespace-nowrap">
-                          {formatNumber(row.total_used)}
+                        <td className="px-5 py-3.5 text-sm text-center text-slate-700 whitespace-nowrap">
+                          {Number(row.total_used).toLocaleString('th-TH', { maximumFractionDigits: 0 })}
                         </td>
-                        <td className="px-5 py-3.5 text-sm text-right text-slate-700 whitespace-nowrap">
+                        <td className="px-5 py-3.5 text-sm text-center text-slate-700 whitespace-nowrap">
                           {row.withdrawal_count.toLocaleString('th-TH')}
                         </td>
                         <td className="px-5 py-3.5 text-sm text-right text-slate-700 whitespace-nowrap">
-                          {formatNumber(row.cost_price)}
+                          {formatNumber(row.cost_price)} บาท
                         </td>
                         <td className="px-5 py-3.5 text-sm text-right text-slate-900 font-medium whitespace-nowrap">
-                          {formatNumber(row.total_cost)}
+                          {formatNumber(row.total_cost)} บาท
                         </td>
                         <td
-                          className={`px-5 py-3.5 text-sm text-right font-medium whitespace-nowrap ${
+                          className={`px-5 py-3.5 text-sm text-center font-medium whitespace-nowrap ${
                             isLowStock ? 'text-red-600' : 'text-slate-700'
                           }`}
                         >
-                          {formatNumber(row.current_stock)}
+                          {Number(row.current_stock).toLocaleString('th-TH', { maximumFractionDigits: 0 })}
                         </td>
-                        <td className="px-5 py-3.5 text-sm text-right text-slate-500 whitespace-nowrap">
-                          {formatNumber(row.min_stock)}
+                        <td className="px-5 py-3.5 text-sm text-center text-slate-500 whitespace-nowrap">
+                          {Number(row.min_stock).toLocaleString('th-TH', { maximumFractionDigits: 0 })}
                         </td>
                       </tr>
                     );
@@ -399,43 +399,6 @@ const InventoryUsagePage: React.FC = () => {
                   </tr>
                 )}
               </tbody>
-              {filteredItems.length > 0 && (
-                <tfoot className="bg-slate-50 font-semibold border-t-2 border-slate-200">
-                  <tr>
-                    <td
-                      colSpan={3}
-                      className="px-5 py-4 text-right text-sm text-slate-700"
-                    >
-                      รวมทั้งสิ้น
-                    </td>
-                    <td className="px-5 py-4 text-right text-sm text-slate-900 whitespace-nowrap">
-                      {formatNumber(
-                        filteredItems.reduce(
-                          (sum, item) => sum + item.total_used,
-                          0
-                        )
-                      )}
-                    </td>
-                    <td className="px-5 py-4 text-right text-sm text-slate-900 whitespace-nowrap">
-                      {filteredItems
-                        .reduce((sum, item) => sum + item.withdrawal_count, 0)
-                        .toLocaleString('th-TH')}
-                    </td>
-                    <td className="px-5 py-4 text-right text-sm text-slate-900 whitespace-nowrap">
-                      &mdash;
-                    </td>
-                    <td className="px-5 py-4 text-right text-sm text-emerald-700 font-bold whitespace-nowrap">
-                      {formatNumber(
-                        filteredItems.reduce(
-                          (sum, item) => sum + item.total_cost,
-                          0
-                        )
-                      )}
-                    </td>
-                    <td className="px-5 py-4" colSpan={2} />
-                  </tr>
-                </tfoot>
-              )}
             </table>
             {filteredItems.length > 0 && (
               <div className="mt-auto border-t border-slate-200">

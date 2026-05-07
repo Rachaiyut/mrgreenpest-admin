@@ -118,7 +118,7 @@ const PortalContracts: React.FC = () => {
                     <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">เลขที่สัญญา</th>
                     <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">เริ่มต้น</th>
                     <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">สิ้นสุด</th>
-                    <th className="text-right px-6 py-3 text-sm font-semibold text-slate-600">มูลค่า</th>
+                    <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">มูลค่า</th>
                     <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">สถานะ</th>
                     <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">ดาวน์โหลด</th>
                   </tr>
@@ -126,10 +126,10 @@ const PortalContracts: React.FC = () => {
                 <tbody>
                   {contracts.map((item) => (
                     <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="px-6 py-4 text-sm font-medium text-slate-800">{item.code || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{item.start_date ? dayjs(item.start_date).format('DD/MM/YYYY') : '-'}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{item.end_date ? dayjs(item.end_date).format('DD/MM/YYYY') : '-'}</td>
-                      <td className="px-6 py-4 text-sm text-right text-slate-800 font-medium">
+                      <td className="px-6 py-4 text-sm text-left font-medium text-slate-800">{item.code || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-left text-slate-600">{item.start_date ? dayjs(item.start_date).format('DD/MM/YYYY') : '-'}</td>
+                      <td className="px-6 py-4 text-sm text-left text-slate-600">{item.end_date ? dayjs(item.end_date).format('DD/MM/YYYY') : '-'}</td>
+                      <td className="px-6 py-4 text-sm text-center text-slate-800 font-medium">
                         {item.total_amount != null ? Number(item.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 }) : '-'}
                       </td>
                       <td className="px-6 py-4 text-center"><StatusBadge status={item.status} /></td>

@@ -789,13 +789,13 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-4 py-3 text-center w-16 text-sm font-semibold text-slate-600 uppercase">เลือก</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">งวดที่</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">รายละเอียด</th>
+                    <th className="px-4 py-3 text-left w-16 text-sm font-semibold text-slate-600 uppercase">เลือก</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">งวดที่</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">รายละเอียด</th>
                     {availableInstallments.some(i => i.percentage > 0) && (
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">เปอร์เซ็น</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">เปอร์เซ็น</th>
                     )}
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">ยอดชำระ (รวม VAT)</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">ยอดชำระ (รวม VAT)</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
@@ -1018,9 +1018,9 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">ช่องทางการชำระเงิน</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">จำนวนเงินที่รับ (บาท)</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">วันที่ชำระ</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">หลักฐานการชำระเงิน</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">จำนวนเงินที่รับ (บาท)</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">วันที่ชำระ</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">หลักฐานการชำระเงิน</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
@@ -1040,7 +1040,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                       ? new Date(p.paid_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })
                       : '-';
                     return (
-                      <tr key={p.id} className="[&>td]:text-center [&>td]:align-middle">
+                      <tr key={p.id} className="[&>td]:text-center [&>td]:align-top">
                         <td className="px-4 py-3 text-sm text-slate-700 !text-left">{method}</td>
                         <td className="px-4 py-3 text-sm font-bold text-emerald-600">
                           {Number(p.amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท

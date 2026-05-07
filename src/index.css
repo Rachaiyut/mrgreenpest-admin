@@ -83,11 +83,13 @@
     text-transform: uppercase;
     letter-spacing: 0.025em;
     white-space: nowrap;
+    vertical-align: top;
   }
   td {
     font-size: 1rem;      /* 16px */
     color: #334155;
     white-space: nowrap;
+    vertical-align: top;
   }
 
   *,

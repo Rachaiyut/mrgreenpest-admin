@@ -653,31 +653,31 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เลขที่ใบเสนอราคา
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เวอร์ชั่น
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ชื่อลูกค้า
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เบอร์โทรศัพท์
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     อ้างอิงใบประเมิน
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     อ้างอิงตารางงาน
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     อ้างอิงรายละเอียดงาน
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่เสนอราคา
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ใช้ได้ถึงวันที่
                   </th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -686,7 +686,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ผู้สร้าง
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -724,13 +724,13 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                     return (
                       <tr
                         key={q.id}
-                        className="hover:bg-slate-50 transition-colors [&>td]:align-middle [&>td]:text-center"
+                        className="hover:bg-slate-50 transition-colors [&>td]:align-top"
                       >
                         <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
                         <td
-                          className="px-4 py-3 text-sm font-bold text-primary hover:underline cursor-pointer text-center"
+                          className="px-4 py-3 text-sm font-bold text-primary hover:underline cursor-pointer text-left"
                           onClick={() => {
                             setSelectedQuotation(q);
                             setModalMode('detail');
@@ -743,22 +743,22 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         <td className="px-4 py-3 text-center text-sm text-slate-600">
                           {((q as unknown as Record<string, number>).revision) || 1}
                         </td>
-                        <td className="px-4 py-3 text-sm font-bold text-slate-800 text-center">
+                        <td className="px-4 py-3 text-sm font-bold text-slate-800 text-left">
                           <span className="font-semibold text-slate-800">{(q.customer_name || '-').replace(/\s*-\s*$/, '').trim()}</span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-left">
                           {formatPhoneNumber(phoneNumber)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-left">
                           {q['assessment']?.code || '-'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-center">
+                        <td className="px-4 py-3 text-sm text-left">
                           {(q as unknown as Record<string, unknown>).service_schedule
                             ? <span className="text-xs text-green-700 font-medium">{((q as unknown as Record<string, unknown>).service_schedule as Record<string, string>)?.name}</span>
                             : <span className="text-slate-400">-</span>
                           }
                         </td>
-                        <td className="px-4 py-3 text-sm text-center">
+                        <td className="px-4 py-3 text-sm text-left">
                           {(() => {
                             const templates = (q as unknown as Record<string, unknown>).service_procedure_templates as Array<Record<string, string>> | undefined;
                             const singleTemplate = (q as unknown as Record<string, unknown>).service_procedure_template as Record<string, string> | undefined;
@@ -771,10 +771,10 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                             return <span className="text-slate-400">-</span>;
                           })()}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-left">
                           {formatThaiDate(q.created_at)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-left">
                           {formatThaiDate(q.expires_at)}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700 text-right font-semibold">
@@ -788,7 +788,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                             status={q.status}
                           />
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-left">
                           {((q as unknown as Record<string, Record<string, string>>).creator)
                             ? `${((q as unknown as Record<string, Record<string, string>>).creator).first_name} ${((q as unknown as Record<string, Record<string, string>>).creator).last_name && ((q as unknown as Record<string, Record<string, string>>).creator).last_name !== '-' ? ((q as unknown as Record<string, Record<string, string>>).creator).last_name : ''}`.trim()
                             : '-'

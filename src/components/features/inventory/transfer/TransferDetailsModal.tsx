@@ -123,7 +123,7 @@ export const TransferDetailsModal: React.FC<TransferDetailsModalProps> = ({
             รายการสินค้า
           </h4>
           <div className="overflow-hidden border border-slate-200 rounded-lg max-h-96 overflow-y-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-center">
+            <table className="min-w-full divide-y divide-slate-200 text-left">
               <thead className="bg-slate-50 sticky top-0">
                 <tr>
                   <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase w-16">
@@ -159,7 +159,7 @@ export const TransferDetailsModal: React.FC<TransferDetailsModalProps> = ({
                     return (
                       <tr
                         key={`${transfer.id}-${productId}-${index}`}
-                        className="hover:bg-slate-50 [&>td]:align-middle"
+                        className="hover:bg-slate-50 [&>td]:align-top"
                       >
                         <td className="px-4 py-3 text-sm text-slate-500">
                           {index + 1}

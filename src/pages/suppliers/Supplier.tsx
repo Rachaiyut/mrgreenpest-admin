@@ -254,43 +254,43 @@ const Suppliers: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     รหัสผู้จัดจำหน่าย
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ชื่อผู้จัดจำหน่าย
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ประเภทผู้จัดจำหน่าย
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     เลขประจำตัวผู้เสียภาษี
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ชื่อผู้ติดต่อ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     เบอร์โทรศัพท์
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     อีเมล
                   </th>
@@ -317,8 +317,8 @@ const Suppliers: React.FC = () => {
                     </td>
                   </tr>
                 ) : suppliers.map((supplier, index) => (
-                  <tr key={supplier.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                  <tr key={supplier.id} className="hover:bg-slate-50 [&>td]:align-top">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
@@ -349,7 +349,7 @@ const Suppliers: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {supplier.email || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           supplier.is_active !== false

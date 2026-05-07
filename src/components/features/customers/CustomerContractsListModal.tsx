@@ -128,7 +128,7 @@ export const CustomerContractsListModal: React.FC<
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                       สถานะ
                     </th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                       จัดการ
                     </th>
                   </tr>

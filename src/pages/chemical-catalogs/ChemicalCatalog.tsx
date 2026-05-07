@@ -178,9 +178,9 @@ const ChemicalCatalogPage: React.FC = () => {
                 <thead className="bg-slate-50 sticky top-0 z-10">
                   <tr>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อ</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันที่สร้าง</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ผู้สร้าง</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อ</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันที่สร้าง</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ผู้สร้าง</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-24">จัดการ</th>
                   </tr>
                 </thead>
@@ -189,9 +189,9 @@ const ChemicalCatalogPage: React.FC = () => {
                     items.map((item, idx) => (
                       <tr
                         key={item.id}
-                        className={`hover:bg-slate-50/50 transition-colors [&>td]:text-center [&>td]:align-middle ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                        className={`hover:bg-slate-50/50 transition-colors [&>td]:align-top ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
                       >
-                        <td className="px-4 py-3 text-sm text-slate-500">
+                        <td className="px-4 py-3 text-sm text-slate-500 text-center">
                           {(currentPage - 1) * itemsPerPage + idx + 1}
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-slate-800">{item.name}</td>

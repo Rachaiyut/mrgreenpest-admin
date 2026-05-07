@@ -189,8 +189,8 @@ const Units: React.FC = () => {
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อหน่วยนับ</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">สัญลักษณ์</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อหน่วยนับ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">สัญลักษณ์</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-24">จัดการ</th>
                 </tr>
@@ -198,13 +198,13 @@ const Units: React.FC = () => {
               <tbody className="divide-y divide-slate-100 bg-white">
                 {units.length > 0 ? (
                   units.map((unit, idx) => (
-                    <tr key={unit.id} className={`hover:bg-slate-50/50 transition-colors [&>td]:text-center [&>td]:align-middle ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                      <td className="px-4 py-3 text-sm text-slate-500">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                    <tr key={unit.id} className={`hover:bg-slate-50/50 transition-colors [&>td]:align-top ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                      <td className="px-4 py-3 text-sm text-slate-500 text-center">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                       <td className="px-4 py-3 text-sm font-medium text-slate-800">{unit.name}</td>
                       <td className="px-4 py-3 text-sm text-slate-600">
                         <span className="inline-flex px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-xs font-medium">{unit.symbol}</span>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             unit.is_active !== false
@@ -215,7 +215,7 @@ const Units: React.FC = () => {
                           {unit.is_active !== false ? 'ใช้งาน' : 'ไม่ใช้งาน'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-center">
                         <button data-unit-id={unit.id} onClick={(e) => handleDropdownToggle(unit.id, e)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
                           <ManageIcon className="w-5 h-5" />
                         </button>
