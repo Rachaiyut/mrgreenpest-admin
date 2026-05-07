@@ -414,28 +414,28 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ลำดับ
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   เลขที่ใบกำกับภาษี / ใบเสร็จรับเงิน
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   อ้างอิงใบแจ้งหนี้
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ชื่อลูกค้า
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   เบอร์โทรศัพท์
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ประเภทลูกค้า
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   วันที่ชำระ
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   วิธีชำระเงิน
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   จำนวนเงิน
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
@@ -470,8 +470,8 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                   const customer =
                     r.customer || customers?.find((c) => c.id === r.customer_id);
                   return (
-                    <tr key={r.id} className="hover:bg-slate-50 transition-colors [&>td]:text-center [&>td]:align-middle">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    <tr key={r.id} className="hover:bg-slate-50 transition-colors [&>td]:align-top">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                         {(receiptPage - 1) * receiptItemsPerPage + index + 1}
                       </td>
                       <td
@@ -505,13 +505,13 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                           {getPaymentMethodLabel(r.payment_method)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
+                      <td className="px-4 py-3 text-sm text-slate-700 text-right">
                         {r.amount.toLocaleString('th-TH', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}{' '}บาท
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
                         <div className="flex items-center justify-center gap-2">
                           <Button
                             variant="primary"

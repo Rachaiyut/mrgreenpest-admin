@@ -419,7 +419,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
             </div>
 
             <div className="overflow-hidden border border-slate-200 rounded-lg shadow-sm">
-              <table className="min-w-full text-sm text-center">
+              <table className="min-w-full text-sm text-left">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
                     <th className="px-4 py-3 font-semibold text-slate-600 w-16">
@@ -454,16 +454,16 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                           key={item.id}
                           className="hover:bg-slate-50 transition-colors"
                         >
-                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-700 font-medium">
                             {index + 1}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-700 font-medium">
                             {product?.code || '-'}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-800 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-800 font-medium">
                             {product?.name || 'Unknown Product'}
                           </td>
-                          <td className="px-4 py-3 align-middle">
+                          <td className="px-4 py-3 align-top">
                             {isViewMode ? (
                               <span className="text-slate-700 font-medium">{item.quantityOrdered}</span>
                             ) : (
@@ -484,7 +484,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-3 align-middle">
+                          <td className="px-4 py-3 align-top">
                             {isViewMode ? (
                               <span className="text-slate-700 font-medium">{item.quantityReceived}</span>
                             ) : (
@@ -509,10 +509,10 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-700 font-medium">
                             {product?.unit?.name || 'หน่วย'}
                           </td>
-                          <td className="px-4 py-3 align-middle">
+                          <td className="px-4 py-3 align-top">
                             {!isViewMode && (
                               <button
                                 type="button"

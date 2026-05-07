@@ -277,19 +277,19 @@ const AccountPage: FC = () => {
 
         <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden relative">
           <div className="overflow-auto flex-1 relative">
-            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-center">
+            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-left">
               <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
                 <tr className="text-sm font-semibold text-slate-600">
-                  <th className="px-4 py-3 w-12">ลำดับ</th>
-                  <th className="px-4 py-3">เลขที่บัญชี</th>
-                  <th className="px-4 py-3">ชื่อบัญชี</th>
-                  <th className="px-4 py-3">ธนาคาร</th>
-                  <th className="px-4 py-3">สาขา</th>
-                  <th className="px-4 py-3">ประเภท</th>
-                  <th className="px-4 py-3">วงเงินจำกัด</th>
-                  <th className="px-4 py-3">ยอดคงเหลือ</th>
-                  <th className="px-4 py-3">สถานะ</th>
-                  <th className="px-4 py-3 w-32">จัดการ</th>
+                  <th className="px-4 py-3 text-center w-12">ลำดับ</th>
+                  <th className="px-4 py-3 text-left">เลขที่บัญชี</th>
+                  <th className="px-4 py-3 text-left">ชื่อบัญชี</th>
+                  <th className="px-4 py-3 text-left">ธนาคาร</th>
+                  <th className="px-4 py-3 text-left">สาขา</th>
+                  <th className="px-4 py-3 text-left">ประเภท</th>
+                  <th className="px-4 py-3 text-right">วงเงินจำกัด</th>
+                  <th className="px-4 py-3 text-right">ยอดคงเหลือ</th>
+                  <th className="px-4 py-3 text-center">สถานะ</th>
+                  <th className="px-4 py-3 text-center w-32">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -315,32 +315,32 @@ const AccountPage: FC = () => {
                 ) : (
                   accounts.map((a, i) => (
                     <tr key={a.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 text-slate-500 text-sm tabular-nums">
+                      <td className="px-4 py-3 text-center text-slate-500 text-sm tabular-nums">
                         {(page - 1) * limit + i + 1}
                       </td>
                       <td
-                        className="px-4 py-3 text-sm font-mono text-primary hover:underline cursor-pointer"
+                        className="px-4 py-3 text-left text-sm font-mono text-primary hover:underline cursor-pointer"
                         onClick={() => openHistory(a)}
                       >
                         {a.account_number}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">{a.account_name}</td>
-                      <td className="px-4 py-3 text-sm text-slate-700">{a.bank_name}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
+                      <td className="px-4 py-3 text-left text-sm text-slate-700">{a.account_name}</td>
+                      <td className="px-4 py-3 text-left text-sm text-slate-700">{a.bank_name}</td>
+                      <td className="px-4 py-3 text-left text-sm text-slate-600">
                         {a.branch_name || <span className="text-slate-300">-</span>}
                       </td>
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-4 py-3 text-left text-sm">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ACCOUNT_TYPE_COLOR[a.account_type] || 'bg-slate-100 text-slate-700'}`}>
                           {ACCOUNT_TYPE_LABEL[a.account_type] || a.account_type}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600 tabular-nums">
+                      <td className="px-4 py-3 text-right text-sm text-slate-600 tabular-nums">
                         {Number(a.credit_limit) > 0 ? fmtMoney(a.credit_limit) : <span className="text-slate-400">ไม่จำกัด</span>}
                       </td>
-                      <td className="px-4 py-3 text-sm font-semibold text-slate-800 tabular-nums">
+                      <td className="px-4 py-3 text-right text-sm font-semibold text-slate-800 tabular-nums">
                         {fmtMoney(a.current_balance)}
                       </td>
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-4 py-3 text-center text-sm">
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                             a.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
@@ -349,7 +349,7 @@ const AccountPage: FC = () => {
                           {a.is_active ? 'ใช้งาน' : 'ปิดบัญชี'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-4 py-3 text-center text-sm">
                         <div className="inline-block">
                           <Button
                             variant="icon"

@@ -278,49 +278,49 @@ const Notifications: React.FC<NotificationsProps> = () => {
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap sticky left-0 z-20 bg-slate-50 min-w-[64px] w-16">
                   ลำดับ
                 </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap sticky left-[64px] z-20 bg-slate-50 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap sticky left-[64px] z-20 bg-slate-50 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)]">
                   เลขที่สัญญา
                 </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">
+                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
                   ชื่อ-นามสกุล ลูกค้า
                 </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 min-w-[300px] md:min-w-[400px]">
+                <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[300px] md:min-w-[400px]">
                   ที่อยู่/เบอร์โทร
                 </th>
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
                   เหลือ (วัน)
                 </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
+                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-green-50">
                   เข้าตรวจล่าสุด
                 </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
+                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-green-50">
                   เข้าตรวจครั้งถัดไป
                 </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
+                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-green-50">
                   วันที่ลูกค้านัดล่วงหน้า
                 </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">
+                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
                   เริ่มสัญญา
                 </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">
+                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
                   หมดสัญญา
                 </th>
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
                   ครั้งที่ / ทั้งหมด
                 </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">
+                <th className="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">
                   ราคา
                 </th>
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">
                   งวดที่
                 </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">
+                <th className="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap bg-red-50">
                   จำนวนเงิน (Invoice)
                 </th>
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">
                   สถานะ (Invoice)
                 </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">
+                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-red-50">
                   กำหนดชำระ
                 </th>
               </tr>
@@ -347,10 +347,10 @@ const Notifications: React.FC<NotificationsProps> = () => {
                         : 'hover:bg-slate-50'
                     }`}
                   >
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-500 sticky left-0 z-10 min-w-[64px] w-16 ${stickyBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-top text-slate-500 sticky left-0 z-10 min-w-[64px] w-16 ${stickyBg}`}>
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-green-600 sticky left-[64px] z-10 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)] ${stickyBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-left align-top font-medium text-green-600 sticky left-[64px] z-10 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)] ${stickyBg}`}>
                       <button
                         type="button"
                         onClick={() => handleOpenContractPdf(row.contractUuid)}
@@ -364,7 +364,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                         {row.contractId}
                       </button>
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800">
+                    <td className="px-3 py-3 whitespace-nowrap text-left align-top font-medium text-slate-800">
                       {row.customerId ? (
                         <button
                           type="button"
@@ -378,7 +378,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                         row.customerName
                       )}
                     </td>
-                    <td className="px-3 py-3 text-center align-middle text-slate-600 min-w-[300px] md:min-w-[400px]">
+                    <td className="px-3 py-3 text-left align-top text-slate-600 min-w-[300px] md:min-w-[400px]">
                       <div className="leading-relaxed">
                         {row.address}
                       </div>
@@ -386,7 +386,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     </td>
 
                     {/* 🟢 Green Section: Service Info */}
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-bold ${greenBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-top font-bold ${greenBg}`}>
                       {row.daysRemaining === null ? (
                         <span className="text-slate-400">-</span>
                       ) : (
@@ -401,7 +401,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                         </span>
                       )}
                     </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${greenBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-left align-top text-slate-600 ${greenBg}`}>
                       {row.lastServiceDate !== '-' ? (
                         row.lastServiceReportId ? (
                           <button
@@ -423,7 +423,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                         '-'
                       )}
                     </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${greenBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-left align-top text-slate-600 ${greenBg}`}>
                       {(() => {
                         const display = row.nextServiceDisplay;
                         if (!display) return '-';
@@ -434,44 +434,44 @@ const Notifications: React.FC<NotificationsProps> = () => {
                         return display;
                       })()}
                     </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${greenBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-left align-top text-slate-600 ${greenBg}`}>
                       {row.customerAppointmentDate !== '-'
                         ? formatThaiDate(row.customerAppointmentDate)
                         : '-'}
                     </td>
 
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600">
+                    <td className="px-3 py-3 whitespace-nowrap text-left align-top text-slate-600">
                       {formatThaiDate(row.startDate)}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600">
+                    <td className="px-3 py-3 whitespace-nowrap text-left align-top text-slate-600">
                       {formatThaiDate(row.endDate)}
                     </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800 ${greenBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-top font-medium text-slate-800 ${greenBg}`}>
                       {row.visitNumber > 0 ? row.visitNumber : '-'}{' '}
                       <span className="text-slate-400 mx-1">/</span>{' '}
                       {row.total_visits || '-'}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800">
-                      {row.price.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <td className="px-3 py-3 whitespace-nowrap text-right align-top font-medium text-slate-800">
+                      {row.price.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                     </td>
 
                     {/* 🔴 Red Section: Invoice Info */}
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${yellowBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-top text-slate-600 ${yellowBg}`}>
                       {row.installment}
                     </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${yellowBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-right align-top text-slate-600 ${yellowBg}`}>
                       {row.invoiceAmount > 0
-                        ? row.invoiceAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        ? `${row.invoiceAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`
                         : '-'}
                     </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle ${yellowBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-top ${yellowBg}`}>
                       {row.invoiceStatus !== '-' ? (
                         <StatusBadge status={row.invoiceStatus} />
                       ) : (
                         '-'
                       )}
                     </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${yellowBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-left align-top text-slate-600 ${yellowBg}`}>
                       {row.invoiceDueDate !== '-'
                         ? formatThaiDate(row.invoiceDueDate)
                         : '-'}

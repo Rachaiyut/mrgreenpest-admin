@@ -111,7 +111,7 @@ export const RoleForm: FC<RoleFormProps> = ({
                     สิทธิ์การใช้งาน
                   </th>
                   {PERMISSION_ACTIONS.map((action) => (
-                    <th key={action.action} className="px-4 py-3 text-center font-medium text-slate-600 uppercase tracking-wider bg-slate-50">
+                    <th key={action.action} className="px-4 py-3 text-left font-medium text-slate-600 uppercase tracking-wider bg-slate-50">
                       {action.label}
                     </th>
                   ))}

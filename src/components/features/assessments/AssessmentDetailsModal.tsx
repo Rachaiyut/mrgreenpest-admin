@@ -198,7 +198,7 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
                 <table className="min-w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 text-slate-500">
-                      <th className="px-4 py-2.5 text-center text-xs font-medium w-16">งวดที่</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-medium w-16">งวดที่</th>
                       <th className="px-4 py-2.5 text-left text-xs font-medium">รายละเอียด</th>
                       <th className="px-4 py-2.5 text-right text-xs font-medium w-32">จำนวนเงิน</th>
                     </tr>

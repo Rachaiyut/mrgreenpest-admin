@@ -336,7 +336,7 @@ const Returns: React.FC<ReturnsProps> = ({
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ลำดับ
                   </th>
@@ -378,13 +378,13 @@ const Returns: React.FC<ReturnsProps> = ({
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     สถานะ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     จัดการ
                   </th>
@@ -410,7 +410,7 @@ const Returns: React.FC<ReturnsProps> = ({
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
                       <td
@@ -438,10 +438,10 @@ const Returns: React.FC<ReturnsProps> = ({
                           item.created_by ||
                           '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                         {getStatusBadge(item.status)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
                         <div className="inline-block text-left">
                           <Button
                             data-return-id={item.id}

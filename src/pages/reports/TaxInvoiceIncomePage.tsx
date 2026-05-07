@@ -209,7 +209,7 @@ const TaxInvoiceIncomePage: React.FC<TaxInvoiceIncomePageProps> = () => {
                 <th className="px-4 py-3 text-right text-xs font-semibold text-green-700 uppercase tracking-wider bg-green-50">
                   ยอดรับเงินสุทธิ
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   หัก ณ ที่จ่าย?
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -269,7 +269,7 @@ const TaxInvoiceIncomePage: React.FC<TaxInvoiceIncomePageProps> = () => {
                         minimumFractionDigits: 2,
                       })}
                     </td>
-                    <td className="px-4 py-3 text-sm text-center">
+                    <td className="px-4 py-3 text-sm text-left">
                       {row.whtDeducted ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                           ใช่

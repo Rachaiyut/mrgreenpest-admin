@@ -220,7 +220,7 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   ชื่อที่ใช้ออกใบกำกับภาษี
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   งวดที่ชำระ
                 </th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -235,7 +235,7 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
                 <th className="px-4 py-3 text-right text-xs font-semibold text-red-600 uppercase tracking-wider">
                   คงเหลือค้างชำระ
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   กำหนดชำระครั้งต่อไป
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -247,7 +247,7 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
                 <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   หักณที่จ่าย 3% หรือ1%
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   เช็คความถูกต้อง
                 </th>
               </tr>
@@ -271,7 +271,7 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
                     <td className="px-4 py-3 text-sm text-blue-600 hover:underline cursor-pointer">
                       {item.invoiceName}
                     </td>
-                    <td className="px-4 py-3 text-sm text-center text-slate-600">
+                    <td className="px-4 py-3 text-sm text-left text-slate-600">
                       {item.installment}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-slate-900">
@@ -294,7 +294,7 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
                         minimumFractionDigits: 2,
                       })}
                     </td>
-                    <td className="px-4 py-3 text-sm text-center text-slate-600">
+                    <td className="px-4 py-3 text-sm text-left text-slate-600">
                       {item.nextPaymentDue}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">
@@ -310,7 +310,7 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
                         minimumFractionDigits: 2,
                       })}
                     </td>
-                    <td className="px-4 py-3 text-sm text-center">
+                    <td className="px-4 py-3 text-sm text-left">
                       {item.isVerified ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                           ถูกต้อง

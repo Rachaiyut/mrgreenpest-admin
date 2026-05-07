@@ -321,10 +321,10 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr className="[&>th]:px-3 [&>th]:py-2 [&>th]:text-xs [&>th]:font-semibold [&>th]:text-slate-600 [&>th]:uppercase">
-                    <th className="text-center w-12">ลำดับ</th>
+                    <th className="text-left w-12">ลำดับ</th>
                     <th className="text-left">สินค้า</th>
-                    <th className="text-center w-20">จำนวน</th>
-                    <th className="text-center w-20">หน่วย</th>
+                    <th className="text-left w-20">จำนวน</th>
+                    <th className="text-left w-20">หน่วย</th>
                     <th className="text-right w-28">ราคา/หน่วย</th>
                     <th className="text-right w-28">รวม</th>
                   </tr>
@@ -376,7 +376,7 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr className="[&>th]:px-3 [&>th]:py-2 [&>th]:text-xs [&>th]:font-semibold [&>th]:text-slate-600 [&>th]:uppercase">
-                    <th className="text-center w-12">ลำดับ</th>
+                    <th className="text-left w-12">ลำดับ</th>
                     <th className="text-left">รายการ</th>
                     <th className="text-right w-32">จำนวนเงิน</th>
                   </tr>

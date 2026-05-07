@@ -379,39 +379,39 @@ const Product: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     {selectedType === 'SERVICE' ? 'รหัสบริการ' : 'รหัสสินค้า'}
                   </th>
                   {selectedType === 'PRODUCT' && (
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     รหัสบาร์โค้ด
                   </th>
                   )}
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     {selectedType === 'SERVICE' ? 'ชื่อบริการ' : 'ชื่อสินค้า'}
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     หมวดหมู่
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ประเภท
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ราคา/หน่วย
                   </th>
@@ -461,8 +461,8 @@ const Product: React.FC = () => {
                     </td>
                   </tr>
                 ) : products.map((product, index) => (
-                  <tr key={product.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                  <tr key={product.id} className="hover:bg-slate-50 [&>td]:align-top">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary">
@@ -488,7 +488,7 @@ const Product: React.FC = () => {
                       )}
                     </td>
                     {/* DF-10: show price not cost_price */}
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                       {Number(product.price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
                     </td>
                     {selectedType === 'PRODUCT' && (
@@ -496,12 +496,12 @@ const Product: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {Math.trunc(Number((product as unknown as Record<string, number>).stock_quantity ?? 0)).toLocaleString('th-TH')}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                       {product.min_stock}
                     </td>
                     </>
                     )}
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           product.is_active !== false
@@ -512,7 +512,7 @@ const Product: React.FC = () => {
                         {product.is_active !== false ? 'ใช้งาน' : 'ไม่ใช้งาน'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-sm font-medium">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
                       <div className="inline-block text-left">
                         <Button
                           data-product-id={product.id}

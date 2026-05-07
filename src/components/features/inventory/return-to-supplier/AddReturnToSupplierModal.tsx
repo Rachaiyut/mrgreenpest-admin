@@ -609,7 +609,7 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
             </div>
 
             <div className="overflow-hidden border border-slate-200 rounded-lg shadow-sm">
-              <table className="min-w-full text-sm text-center">
+              <table className="min-w-full text-sm text-left">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
                     <th className="px-4 py-3 font-semibold text-slate-600 w-16">ลำดับ</th>
@@ -636,19 +636,19 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
                           key={item.id}
                           className="hover:bg-slate-50 transition-colors"
                         >
-                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-700 font-medium">
                             {index + 1}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-700 font-medium">
                             {product?.code || '-'}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-800 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-800 font-medium">
                             {product?.name || 'Unknown Product'}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-700 font-medium">
                             {item.qtyReceived !== undefined ? item.qtyReceived : '-'}
                           </td>
-                          <td className="px-4 py-3 align-middle">
+                          <td className="px-4 py-3 align-top">
                             <span
                               className={`inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium ${
                                 currentStock > 0
@@ -659,7 +659,7 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
                               {currentStock}
                             </span>
                           </td>
-                          <td className="px-4 py-3 align-middle">
+                          <td className="px-4 py-3 align-top">
                             {isViewMode ? (
                               <span className="text-slate-700 font-medium">{item.quantity}</span>
                             ) : (
@@ -679,10 +679,10 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                          <td className="px-4 py-3 align-top text-slate-700 font-medium">
                             {product?.unit?.name || '-'}
                           </td>
-                          <td className="px-4 py-3 align-middle">
+                          <td className="px-4 py-3 align-top">
                             {!isViewMode && (
                               <button
                                 type="button"

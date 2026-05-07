@@ -329,25 +329,25 @@ const ArAgingPage: React.FC = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เบอร์โทร
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่ออก
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันครบกำหนด
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ยอดรวม
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-green-700 uppercase tracking-wider bg-green-50">
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-green-700 uppercase tracking-wider bg-green-50">
                     ชำระแล้ว
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-red-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-red-600 uppercase tracking-wider">
                     คงค้าง
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่ค้าง
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ช่วงอายุหนี้
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -374,25 +374,25 @@ const ArAgingPage: React.FC = () => {
                       <td className="px-4 py-3 text-sm text-slate-600">
                         {item.primary_phone || '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-center text-slate-600">
+                      <td className="px-4 py-3 text-sm text-left text-slate-600">
                         {formatDate(item.issued_at)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-center text-slate-600">
+                      <td className="px-4 py-3 text-sm text-left text-slate-600">
                         {formatDate(item.due_at)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-right text-slate-900">
+                      <td className="px-4 py-3 text-sm text-center text-slate-900">
                         {formatNumber(item.total)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-right bg-green-50/50 text-green-700 font-bold">
+                      <td className="px-4 py-3 text-sm text-center bg-green-50/50 text-green-700 font-bold">
                         {formatNumber(item.paid_amount)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-right text-red-600 font-medium">
+                      <td className="px-4 py-3 text-sm text-center text-red-600 font-medium">
                         {formatNumber(item.outstanding)}
                       </td>
                       <td className="px-4 py-3 text-sm text-center text-slate-600">
                         {item.days_overdue > 0 ? `${item.days_overdue} วัน` : '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-center">
+                      <td className="px-4 py-3 text-sm text-left">
                         {getAgingBadge(item.aging_bucket)}
                       </td>
                       <td className="px-4 py-3 text-sm text-center">
@@ -416,21 +416,21 @@ const ArAgingPage: React.FC = () => {
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-4 py-3 text-right text-slate-900"
+                      className="px-4 py-3 text-left text-slate-900"
                     >
                       รวมทั้งสิ้น
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-900">
+                    <td className="px-4 py-3 text-center text-slate-900">
                       {formatNumber(
                         items.reduce((sum, item) => sum + item.total, 0)
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right text-green-800">
+                    <td className="px-4 py-3 text-center text-green-800">
                       {formatNumber(
                         items.reduce((sum, item) => sum + item.paid_amount, 0)
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right text-red-800">
+                    <td className="px-4 py-3 text-center text-red-800">
                       {formatNumber(
                         items.reduce((sum, item) => sum + item.outstanding, 0)
                       )}

@@ -355,11 +355,11 @@ const ServiceSchedulePage: FC = () => {
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50 sticky top-0 z-10 border-b border-slate-200 shadow-sm">
                 <tr>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-1/4">ชื่อ</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-1/4">แพ็กเกจ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-1/4">ชื่อ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-1/4">แพ็กเกจ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-28">จำนวนครั้ง</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">วันที่สร้าง</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">ผู้สร้าง</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">วันที่สร้าง</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">ผู้สร้าง</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">จัดการ</th>
                 </tr>
               </thead>
@@ -387,10 +387,10 @@ const ServiceSchedulePage: FC = () => {
                   </tr>
                 ) : (
                   paginatedSchedules.map((schedule, index) => (
-                    <tr key={schedule.id} className={`hover:bg-slate-50/50 transition-colors [&>td]:text-center [&>td]:align-middle ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                      <td className="px-4 py-3 text-sm text-slate-700">{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                      <td className="px-4 py-3 text-sm text-slate-800 font-medium text-center">{schedule.name}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600 text-center">
+                    <tr key={schedule.id} className={`hover:bg-slate-50/50 transition-colors [&>td]:align-top ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                      <td className="px-4 py-3 text-sm text-slate-700 text-center">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                      <td className="px-4 py-3 text-sm text-slate-800 font-medium text-left">{schedule.name}</td>
+                      <td className="px-4 py-3 text-sm text-slate-600 text-left">
                         {schedule.package ? `${schedule.package.code} - ${schedule.package.name}` : '-'}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -398,10 +398,10 @@ const ServiceSchedulePage: FC = () => {
                           {schedule.details?.length || 0} ครั้ง
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center text-sm text-slate-500">
+                      <td className="px-4 py-3 text-left text-sm text-slate-500">
                         {formatThaiDate(schedule.created_at)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600 text-center">
+                      <td className="px-4 py-3 text-sm text-slate-600 text-left">
                         {schedule.creator ? `${schedule.creator.first_name} ${schedule.creator.last_name || ''}`.trim() : '-'}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -600,7 +600,7 @@ const ServiceSchedulePage: FC = () => {
                   <thead>
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b-2 border-green-500/30">
                       <th className="px-4 py-3 text-center font-semibold text-slate-600 text-xs uppercase tracking-wider w-16">ครั้งที่</th>
-                      <th className="px-4 py-3 text-center font-semibold text-slate-600 text-xs uppercase tracking-wider w-28">เดือน</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-600 text-xs uppercase tracking-wider w-28">เดือน</th>
                       <th className="px-4 py-3 text-left font-semibold text-slate-600 text-xs uppercase tracking-wider w-48">งานที่ปฏิบัติ</th>
                       <th className="px-4 py-3 text-left font-semibold text-slate-600 text-xs uppercase tracking-wider">รายละเอียดการทำบริการ</th>
                       {!isReadOnly && (
@@ -614,7 +614,7 @@ const ServiceSchedulePage: FC = () => {
                         <td className="px-4 py-3 text-center align-top">
                           <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-green-100 text-green-700 font-bold text-xs">{row.visit_no}</span>
                         </td>
-                        <td className="px-4 py-3 text-center align-top">
+                        <td className="px-4 py-3 text-left align-top">
                           {isReadOnly ? (
                             <span className="text-slate-700 font-medium">{row.month || '-'}</span>
                           ) : (

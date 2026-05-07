@@ -233,7 +233,7 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                     <th className="p-2 text-left font-medium text-slate-600">
                       สินค้า
                     </th>
-                    <th className="p-2 text-center font-medium text-slate-600">
+                    <th className="p-2 text-left font-medium text-slate-600">
                       จำนวนคงคลัง (รถ)
                     </th>
                     <th className="p-2 text-left font-medium text-slate-600">
@@ -256,17 +256,17 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                           key={item.product_id}
                           className="border-b border-slate-200 last:border-b-0"
                         >
-                          <td className="p-2 align-middle text-center text-slate-600">
+                          <td className="p-2 align-top text-center text-slate-600">
                             {index + 1}
                           </td>
-                          <td className="p-2 align-middle font-medium text-slate-800">
+                          <td className="p-2 align-top font-medium text-slate-800">
                             {product?.name || 'N/A'}
                           </td>
-                          <td className="p-2 align-middle text-center text-slate-600">
+                          <td className="p-2 align-top text-center text-slate-600">
                             {stockMap[formData.warehouse_id]?.[product.id] ??
                               '-'}
                           </td>
-                          <td className="p-2 align-middle">
+                          <td className="p-2 align-top">
                             <Input
                               type="number"
                               value={item.quantity}
@@ -296,7 +296,7 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                               required
                             />
                           </td>
-                          <td className="p-2 align-middle">
+                          <td className="p-2 align-top">
                             <Input
                               type="text"
                               value={item.reason}
@@ -312,7 +312,7 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                               required
                             />
                           </td>
-                          <td className="p-2 text-center align-middle">
+                          <td className="p-2 text-center align-top">
                             <Button
                               variant="ghost"
                               type="button"

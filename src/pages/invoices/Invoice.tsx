@@ -594,7 +594,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ลำดับ
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   เลขที่ใบแจ้งหนี้
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
@@ -603,16 +603,16 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ครั้งที่
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ชื่อลูกค้า
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   เบอร์โทรศัพท์
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ครบกำหนดชำระ
                 </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ยอดรวม
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
@@ -650,8 +650,8 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                   const customer =
                     i.customer || customers?.find((c) => c.id === i.customer_id);
                   return (
-                    <tr key={i.id} className="hover:bg-slate-50 transition-colors [&>td]:text-center [&>td]:align-middle">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    <tr key={i.id} className="hover:bg-slate-50 transition-colors [&>td]:align-top">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                         {(invoicePage - 1) * invoiceItemsPerPage + index + 1}
                       </td>
                       <td
@@ -684,16 +684,16 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatThaiDate(i.due_at)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
+                      <td className="px-4 py-3 text-sm text-slate-700 text-right">
                         {Number(i.total).toLocaleString('th-TH', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}{' '}บาท
                       </td>
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-4 py-3 text-sm text-center">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${InvoiceStatusColor[i.status as InvoiceStatus] || 'bg-slate-100 text-slate-600'}`}>{InvoiceStatusLabel[i.status as InvoiceStatus] || i.status}</span>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
                         <div className="flex items-center justify-center gap-2 whitespace-nowrap">
                           <Button
                             variant="primary"

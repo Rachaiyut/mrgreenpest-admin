@@ -254,7 +254,7 @@ const SalesSummaryPage: React.FC<SalesSummaryPageProps> = () => {
                 <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   ประเภท
                 </th>
-                <th className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   จำนวน (งาน)
                 </th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -268,7 +268,7 @@ const SalesSummaryPage: React.FC<SalesSummaryPageProps> = () => {
                   <td className="px-6 py-4 text-sm font-medium text-slate-800">
                     {item.type}
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-600 text-center">
+                  <td className="px-6 py-4 text-sm text-slate-600 text-left">
                     {item.count}
                   </td>
                   <td className="px-6 py-4 text-sm font-semibold text-green-600 text-right">
@@ -280,7 +280,7 @@ const SalesSummaryPage: React.FC<SalesSummaryPageProps> = () => {
               ))}
               <tr className="bg-slate-50 font-semibold">
                 <td className="px-6 py-4 text-sm text-slate-900">รวม</td>
-                <td className="px-6 py-4 text-sm text-slate-900 text-center">
+                <td className="px-6 py-4 text-sm text-slate-900 text-left">
                   {summaryByType.reduce((a, b) => a + b.count, 0)}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-900 text-right">
@@ -306,10 +306,10 @@ const SalesSummaryPage: React.FC<SalesSummaryPageProps> = () => {
                   <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รายชื่อ
                   </th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     % ขาย
                   </th>
-                  <th className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     % ปฏิบัติงาน
                   </th>
                 </tr>
@@ -321,12 +321,12 @@ const SalesSummaryPage: React.FC<SalesSummaryPageProps> = () => {
                       <td className="px-6 py-3 text-sm font-medium text-slate-800">
                         {item.name}
                       </td>
-                      <td className="px-6 py-3 text-sm text-slate-600 text-center">
+                      <td className="px-6 py-3 text-sm text-slate-600 text-left">
                         {item.salesPercent === 0
                           ? '-'
                           : item.salesPercent.toFixed(2) + '%'}
                       </td>
-                      <td className="px-6 py-3 text-sm text-slate-600 text-center">
+                      <td className="px-6 py-3 text-sm text-slate-600 text-left">
                         {item.opsPercent === 0
                           ? '-'
                           : item.opsPercent.toFixed(2) + '%'}

@@ -175,7 +175,7 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
       {/* Table */}
       <div className="rounded-lg border border-slate-200 overflow-hidden">
         <div className="overflow-auto max-h-[50vh]">
-          <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-center">
+          <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-left">
             <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
               <tr className="text-sm font-semibold text-slate-600">
                 <th className="px-4 py-2.5 w-12">#</th>

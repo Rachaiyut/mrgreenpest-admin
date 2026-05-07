@@ -147,21 +147,21 @@ const UpcomingVisitsTab: React.FC = () => {
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap sticky left-0 z-20 bg-slate-50 w-16">ลำดับ</th>
-                    <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap sticky left-16 z-20 bg-slate-50">เลขที่สัญญา</th>
-                    <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">ชื่อ-นามสกุล ลูกค้า</th>
-                    <th className="px-3 py-3 text-center font-semibold text-slate-600 min-w-[300px] md:min-w-[400px]">ที่อยู่/เบอร์โทร</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap sticky left-16 z-20 bg-slate-50">เลขที่สัญญา</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">ชื่อ-นามสกุล ลูกค้า</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[300px] md:min-w-[400px]">ที่อยู่/เบอร์โทร</th>
                     <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">เหลือ (วัน)</th>
-                    <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">เข้าตรวจล่าสุด</th>
-                    <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">เข้าตรวจครั้งถัดไป</th>
-                    <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">วันที่ลูกค้านัดล่วงหน้า</th>
-                    <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">เริ่มสัญญา</th>
-                    <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">หมดสัญญา</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-green-50">เข้าตรวจล่าสุด</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-green-50">เข้าตรวจครั้งถัดไป</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-green-50">วันที่ลูกค้านัดล่วงหน้า</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">เริ่มสัญญา</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">หมดสัญญา</th>
                     <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">ครั้งที่ / ทั้งหมด</th>
-                    <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">ราคา</th>
+                    <th className="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">ราคา</th>
                     <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">งวดที่</th>
-                    <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">จำนวนเงิน (Invoice)</th>
+                    <th className="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap bg-red-50">จำนวนเงิน (Invoice)</th>
                     <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">สถานะ (Invoice)</th>
-                    <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">กำหนดชำระ</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-red-50">กำหนดชำระ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
@@ -195,22 +195,22 @@ const UpcomingVisitsTab: React.FC = () => {
                           isVisitOverdue ? 'bg-red-200 hover:bg-red-300' : 'hover:bg-slate-50'
                         }`}
                       >
-                        <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-500 sticky left-0 z-10 w-16 ${stickyBg}`}>
+                        <td className={`px-3 py-3 whitespace-nowrap text-center align-top text-slate-500 sticky left-0 z-10 w-16 ${stickyBg}`}>
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
-                        <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-green-600 sticky left-16 z-10 ${stickyBg}`}>
+                        <td className={`px-3 py-3 whitespace-nowrap text-left align-top font-medium text-green-600 sticky left-16 z-10 ${stickyBg}`}>
                           {row.contractCode}
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800">
+                        <td className="px-3 py-3 whitespace-nowrap text-left align-top font-medium text-slate-800">
                           {row.customerName}
                         </td>
-                        <td className="px-3 py-3 text-center align-middle text-slate-600 min-w-[300px] md:min-w-[400px]">
+                        <td className="px-3 py-3 text-left align-top text-slate-600 min-w-[300px] md:min-w-[400px]">
                           <div className="leading-relaxed">{row.address}</div>
                           <div className="text-slate-400 mt-1">{row.phone}</div>
                         </td>
 
                         {/* 🟢 Green: Service Info */}
-                        <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-bold ${greenBg}`}>
+                        <td className={`px-3 py-3 whitespace-nowrap text-center align-top font-bold ${greenBg}`}>
                           {row.contractDaysRemaining === null ? (
                             <span className="text-slate-400">-</span>
                           ) : (
@@ -219,42 +219,42 @@ const UpcomingVisitsTab: React.FC = () => {
                             </span>
                           )}
                         </td>
-                        <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${greenBg}`}>
+                        <td className={`px-3 py-3 whitespace-nowrap text-left align-top text-slate-600 ${greenBg}`}>
                           {row.lastServiceDate !== '-' ? formatThaiDate(row.lastServiceDate) : '-'}
                         </td>
-                        <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${greenBg}`}>
+                        <td className={`px-3 py-3 whitespace-nowrap text-left align-top text-slate-600 ${greenBg}`}>
                           {renderNextServiceDisplay()}
                         </td>
-                        <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${greenBg}`}>
+                        <td className={`px-3 py-3 whitespace-nowrap text-left align-top text-slate-600 ${greenBg}`}>
                           {row.customerAppointmentDate !== '-' ? formatThaiDate(row.customerAppointmentDate) : '-'}
                         </td>
 
-                        <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600">
+                        <td className="px-3 py-3 whitespace-nowrap text-left align-top text-slate-600">
                           {row.startDate ? formatThaiDate(row.startDate) : '-'}
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600">
+                        <td className="px-3 py-3 whitespace-nowrap text-left align-top text-slate-600">
                           {row.endDate ? formatThaiDate(row.endDate) : '-'}
                         </td>
-                        <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800 ${greenBg}`}>
+                        <td className={`px-3 py-3 whitespace-nowrap text-center align-top font-medium text-slate-800 ${greenBg}`}>
                           {row.visitNumber > 0 ? row.visitNumber : '-'}
                           <span className="text-slate-400 mx-1">/</span>
                           {row.totalVisits || '-'}
                         </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800">
-                          {row.price.toLocaleString()}
+                        <td className="px-3 py-3 whitespace-nowrap text-right align-top font-medium text-slate-800">
+                          {row.price.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                         </td>
 
                         {/* 🔴 Red/Yellow: Invoice Info */}
-                        <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${yellowBg}`}>
+                        <td className={`px-3 py-3 whitespace-nowrap text-center align-top text-slate-600 ${yellowBg}`}>
                           {row.installment}
                         </td>
-                        <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${yellowBg}`}>
-                          {row.invoiceAmount > 0 ? row.invoiceAmount.toLocaleString() : '-'}
+                        <td className={`px-3 py-3 whitespace-nowrap text-right align-top text-slate-600 ${yellowBg}`}>
+                          {row.invoiceAmount > 0 ? `${row.invoiceAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท` : '-'}
                         </td>
-                        <td className={`px-3 py-3 whitespace-nowrap text-center align-middle ${yellowBg}`}>
+                        <td className={`px-3 py-3 whitespace-nowrap text-center align-top ${yellowBg}`}>
                           {row.invoiceStatus !== '-' ? <StatusBadge status={row.invoiceStatus} /> : '-'}
                         </td>
-                        <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${yellowBg}`}>
+                        <td className={`px-3 py-3 whitespace-nowrap text-left align-top text-slate-600 ${yellowBg}`}>
                           {row.invoiceDueDate !== '-' ? formatThaiDate(row.invoiceDueDate) : '-'}
                         </td>
                       </tr>

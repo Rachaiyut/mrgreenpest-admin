@@ -265,7 +265,7 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
                     <th className="p-2 text-left font-medium text-slate-600">
                       สินค้า
                     </th>
-                    <th className="p-2 text-center font-medium text-slate-600">
+                    <th className="p-2 text-left font-medium text-slate-600">
                       จำนวนคงคลัง (ต้นทาง)
                     </th>
                     <th className="p-2 text-left font-medium text-slate-600">
@@ -288,16 +288,16 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
                           key={item.product_id}
                           className="border-b border-slate-200 last:border-b-0"
                         >
-                          <td className="p-2 align-middle text-center text-slate-600">
+                          <td className="p-2 align-top text-center text-slate-600">
                             {index + 1}
                           </td>
-                          <td className="p-2 align-middle font-medium text-slate-800">
+                          <td className="p-2 align-top font-medium text-slate-800">
                             {product?.name || 'N/A'}
                           </td>
-                          <td className="p-2 align-middle text-center text-slate-600">
+                          <td className="p-2 align-top text-center text-slate-600">
                             {(product as unknown as Record<string, number>)?.stock ?? '-'}
                           </td>
-                          <td className="p-2 align-middle">
+                          <td className="p-2 align-top">
                             <Input
                               type="number"
                               value={item.qty || item.quantity}
@@ -320,10 +320,10 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
                               required
                             />
                           </td>
-                          <td className="p-2 align-middle text-slate-600">
+                          <td className="p-2 align-top text-slate-600">
                             {product?.unit?.name || '-'}
                           </td>
-                          <td className="p-2 text-center align-middle">
+                          <td className="p-2 text-center align-top">
                             <Button
                               variant="ghost"
                               type="button"

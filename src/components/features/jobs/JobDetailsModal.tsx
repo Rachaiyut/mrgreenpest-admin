@@ -162,7 +162,7 @@ const WorkAreaDetails: FC<{ area: AssessmentWorkArea }> = ({ area }) => {
                 <thead>
                   <tr className="bg-slate-50 text-slate-500">
                     <th className="px-3 py-2 text-left text-xs font-medium">รายการ</th>
-                    <th className="px-3 py-2 text-center text-xs font-medium">จำนวน</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium">จำนวน</th>
                     <th className="px-3 py-2 text-right text-xs font-medium">ราคา/หน่วย</th>
                     <th className="px-3 py-2 text-right text-xs font-medium">รวม</th>
                   </tr>
@@ -487,7 +487,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
                 <table className="min-w-full text-sm">
                   <thead>
                     <tr className="bg-slate-50 text-slate-500">
-                      <th className="px-4 py-2.5 text-center text-xs font-medium w-16">งวดที่</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-medium w-16">งวดที่</th>
                       <th className="px-4 py-2.5 text-left text-xs font-medium">รายละเอียด</th>
                       <th className="px-4 py-2.5 text-right text-xs font-medium w-32">จำนวนเงิน</th>
                     </tr>

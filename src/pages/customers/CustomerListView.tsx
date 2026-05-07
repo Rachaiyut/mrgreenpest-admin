@@ -37,7 +37,7 @@ const calculateDuration = (createdAt: string): string => {
 };
 
 const TH = (v: string) => (
-  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
     {v}
   </th>
 );
@@ -55,25 +55,27 @@ const CustomerListView: React.FC<{
     <table className="min-w-[1200px] w-full divide-y divide-slate-200 border-b border-slate-200">
       <thead className="bg-slate-50">
         <tr>
-          {TH('ลำดับ')}
+          <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
           {TH('รหัสลูกค้า')}
           {TH('ชื่อ')}
           {TH('ชื่อเล่น')}
           {TH('เบอร์โทรศัพท์')}
           {TH('ประเภท')}
-          <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-green-50">
+          <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-green-50">
             สัญญา
           </th>
-          <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-blue-50">
+          <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-blue-50">
             บริการล่าสุด
           </th>
-          <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-blue-50">
+          <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-blue-50">
             บริการถัดไป
           </th>
-          <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-red-50">
+          <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-red-50">
             ยอดค้างชำระ
           </th>
-          {TH('ระยะเวลา')}
+          <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+            ระยะเวลา
+          </th>
           <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
             สถานะ
           </th>
@@ -89,8 +91,8 @@ const CustomerListView: React.FC<{
           const expiringContracts = Number(customer.expiring_contracts_count) || 0;
 
           return (
-            <tr key={customer.id} className="hover:bg-slate-50 cursor-pointer [&>td]:text-center [&>td]:align-middle" onClick={(e) => { if (!(e.target as HTMLElement).closest('button')) handleDropdownToggle(e as React.MouseEvent<HTMLElement>, customer.id); }}>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+            <tr key={customer.id} className="hover:bg-slate-50 cursor-pointer [&>td]:align-top" onClick={(e) => { if (!(e.target as HTMLElement).closest('button')) handleDropdownToggle(e as React.MouseEvent<HTMLElement>, customer.id); }}>
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                 {(currentPage - 1) * itemsPerPage + index + 1}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary">
@@ -116,7 +118,7 @@ const CustomerListView: React.FC<{
                 </span>
               </td>
               {/* สัญญา */}
-              <td className="px-4 py-3 whitespace-nowrap text-center bg-green-50/50">
+              <td className="px-4 py-3 whitespace-nowrap text-left bg-green-50/50">
                 <div className="flex items-center justify-center gap-1">
                   <span className={`text-sm font-semibold ${activeContracts > 0 ? 'text-green-700' : 'text-slate-400'}`}>
                     {activeContracts}
@@ -140,14 +142,14 @@ const CustomerListView: React.FC<{
               <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-medium bg-red-50/50">
                 {outstandingAmount > 0 ? (
                   <span className="text-red-600">
-                    {outstandingAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
+                    {outstandingAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                   </span>
                 ) : (
                   <span className="text-green-600">-</span>
                 )}
               </td>
               {/* ระยะเวลา */}
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                 <span
                   className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700"
                   title={`สร้างเมื่อ: ${formatThaiDate(customer.created_at)}`}

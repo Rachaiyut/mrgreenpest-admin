@@ -290,19 +290,19 @@ const Packages: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     รหัสแพ็กเกจ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ชื่อแพ็กเกจ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     หมวดหมู่บริการ
                   </th>
@@ -320,13 +320,13 @@ const Packages: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ราคาแพ็กเกจ (มีปลวก)
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ราคาแพ็กเกจ (ไม่มีปลวก)
                   </th>
@@ -361,15 +361,15 @@ const Packages: React.FC = () => {
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td
-                      className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer text-center"
+                      className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer text-left"
                       onClick={() => handleViewDetails(pkg)}
                     >
                       {pkg.code || pkg.id}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-600 text-center">
+                    <td className="px-4 py-3 text-sm text-slate-600 text-left">
                       {pkg.name}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                       {pkg.category?.name ||
                         categoryMap.get(pkg.category_id) ||
                         '-'}
@@ -380,12 +380,12 @@ const Packages: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 text-center">
                       {pkg.contract_duration ? ContractDurationLabel[pkg.contract_duration] : '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-center">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-right">
                       {pkg.package_prices && pkg.package_prices.length > 0
                         ? `เริ่มต้น ${Math.min(...pkg.package_prices.map((c) => c.min_price_with_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`
                         : 'ตามเงื่อนไข'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-center">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-right">
                       {pkg.package_prices && pkg.package_prices.length > 0
                         ? `เริ่มต้น ${Math.min(...pkg.package_prices.map((c) => c.min_price_without_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`
                         : 'ตามเงื่อนไข'}

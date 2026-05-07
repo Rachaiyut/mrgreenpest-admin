@@ -688,9 +688,9 @@ const ServiceDetailPage: FC = () => {
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50 sticky top-0 z-10 border-b border-slate-200 shadow-sm">
                 <tr>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อ</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">วันที่สร้าง</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">ผู้สร้าง</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">วันที่สร้าง</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">ผู้สร้าง</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">จัดการ</th>
                 </tr>
               </thead>
@@ -718,13 +718,13 @@ const ServiceDetailPage: FC = () => {
                   </tr>
                 ) : (
                   paginatedDetails.map((detail, index) => (
-                    <tr key={detail.id} className={`hover:bg-slate-50/50 transition-colors [&>td]:text-center [&>td]:align-middle ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                      <td className="px-4 py-3 text-sm text-slate-700">{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                      <td className="px-4 py-3 text-sm text-slate-800 font-medium text-center">{detail.name}</td>
-                      <td className="px-4 py-3 text-center text-sm text-slate-500">
+                    <tr key={detail.id} className={`hover:bg-slate-50/50 transition-colors [&>td]:align-top ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                      <td className="px-4 py-3 text-sm text-slate-700 text-center">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                      <td className="px-4 py-3 text-sm text-slate-800 font-medium text-left">{detail.name}</td>
+                      <td className="px-4 py-3 text-left text-sm text-slate-500">
                         {formatThaiDate(detail.created_at)}
                       </td>
-                      <td className="px-4 py-3 text-center text-sm text-slate-500">
+                      <td className="px-4 py-3 text-left text-sm text-slate-500">
                         {detail.creator ? `${detail.creator.first_name} ${detail.creator.last_name}` : '-'}
                       </td>
                       <td className="px-4 py-3 text-center">

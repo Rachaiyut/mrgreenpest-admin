@@ -533,18 +533,18 @@ const Transfers: React.FC = () => {
 
         <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
           <div className="overflow-auto flex-1 relative">
-            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-center">
+            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-left">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
-                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่เอกสารโอนย้าย</th>
-                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่โอนย้าย</th>
-                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลังต้นทาง</th>
-                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลังปลายทาง</th>
-                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนสินค้า</th>
-                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
-                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้สร้าง</th>
-                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่เอกสารโอนย้าย</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่โอนย้าย</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลังต้นทาง</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลังปลายทาง</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนสินค้า</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้สร้าง</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -582,32 +582,32 @@ const Transfers: React.FC = () => {
                     ) || 0;
 
                   return (
-                    <tr key={transfer.id} className="hover:bg-slate-50 [&>td]:align-middle">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    <tr key={transfer.id} className="hover:bg-slate-50 [&>td]:align-top">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
                       <td
-                        className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
+                        className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer text-left"
                         onClick={() => handleViewDetails(transfer)}
                       >
                         {transfer.code || transfer.id}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                         {formatThaiDate(transfer.created_at)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                         {fromWarehouse || '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                         {toWarehouse || '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                         {totalQuantity}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap text-center">
                         <StatusBadge status={transfer.status} />
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                         {(() => {
                           const u = (transfer as { created_by_user?: { first_name?: string; last_name?: string; nick_name?: string } }).created_by_user;
                           if (!u) return 'ไม่กรอก';
@@ -615,7 +615,7 @@ const Transfers: React.FC = () => {
                           return full || u.nick_name || 'ไม่กรอก';
                         })()}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
                         <div className="inline-block">
                           <Button
                             data-transfer-id={transfer.id}

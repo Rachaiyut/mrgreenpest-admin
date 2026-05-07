@@ -326,7 +326,7 @@ const ContractExpirationPage: React.FC = () => {
                 <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   เหลืออีก (วัน)
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   มูลค่าสัญญา
                 </th>
               </tr>
@@ -376,7 +376,7 @@ const ContractExpirationPage: React.FC = () => {
                         {item.days_remaining} วัน
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm font-semibold text-slate-800 text-right">
+                    <td className="px-4 py-3 text-sm font-semibold text-slate-800 text-center">
                       {formatNumber(item.total_amount)}
                     </td>
                   </tr>

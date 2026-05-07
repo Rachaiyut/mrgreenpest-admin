@@ -940,7 +940,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         <th className="p-2 text-center font-medium text-slate-600">
                           สินค้า/บริการ
                         </th>
-                        <th className="p-2 text-center font-medium text-slate-600">
+                        <th className="p-2 text-left font-medium text-slate-600">
                           จำนวน
                         </th>
                         <th className="p-2 text-center font-medium text-slate-600">

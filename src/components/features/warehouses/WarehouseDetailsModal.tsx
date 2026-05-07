@@ -230,7 +230,7 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
           {activeTab === 'stock' && (
             <div className="overflow-hidden border border-slate-200 rounded-lg shadow-sm">
               <div className="max-h-[420px] overflow-auto">
-                <table className="min-w-full text-sm text-center">
+                <table className="min-w-full text-sm text-left">
                   <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
                     <tr>
                       <th className="px-4 py-3 font-semibold text-slate-600 w-16">ลำดับ</th>
@@ -253,19 +253,19 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
                             key={product.id}
                             className={`hover:bg-slate-50 transition-colors ${isLow ? 'bg-red-50/40' : ''}`}
                           >
-                            <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                            <td className="px-4 py-3 align-top text-slate-700 font-medium">
                               {index + 1}
                             </td>
-                            <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                            <td className="px-4 py-3 align-top text-slate-700 font-medium">
                               {product.code}
                             </td>
-                            <td className="px-4 py-3 align-middle text-slate-600">
+                            <td className="px-4 py-3 align-top text-slate-600">
                               {product.barcode || '-'}
                             </td>
-                            <td className="px-4 py-3 align-middle text-slate-800 font-medium">
+                            <td className="px-4 py-3 align-top text-slate-800 font-medium">
                               {product.name}
                             </td>
-                            <td className="px-4 py-3 align-middle">
+                            <td className="px-4 py-3 align-top">
                               <span
                                 className={`inline-flex items-center justify-center min-w-[2.5rem] px-2.5 py-0.5 rounded-full text-sm font-semibold ${
                                   isLow
@@ -276,10 +276,10 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
                                 {stock}
                               </span>
                             </td>
-                            <td className="px-4 py-3 align-middle text-slate-600">
+                            <td className="px-4 py-3 align-top text-slate-600">
                               {minStock || '-'}
                             </td>
-                            <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                            <td className="px-4 py-3 align-top text-slate-700 font-medium">
                               {product.unit?.name || '-'}
                             </td>
                           </tr>
@@ -313,7 +313,7 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
                 {loadingTx ? (
                   <div className="text-center py-10 text-slate-500">กำลังโหลด...</div>
                 ) : (
-                  <table className="min-w-full text-sm text-center">
+                  <table className="min-w-full text-sm text-left">
                     <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
                       <tr>
                         <th className="px-4 py-3 font-semibold text-slate-600 whitespace-nowrap">วันที่</th>
@@ -336,31 +336,31 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
                           const isIncoming = tx.to_warehouse_id === warehouse.id;
                           return (
                             <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
-                              <td className="px-4 py-3 align-middle text-xs text-slate-500 whitespace-nowrap">
+                              <td className="px-4 py-3 align-top text-xs text-slate-500 whitespace-nowrap">
                                 {formatDate(tx.created_at)}
                               </td>
-                              <td className="px-4 py-3 align-middle whitespace-nowrap">
+                              <td className="px-4 py-3 align-top whitespace-nowrap">
                                 <span
                                   className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${typeInfo.color}`}
                                 >
                                   {typeInfo.label}
                                 </span>
                               </td>
-                              <td className="px-4 py-3 align-middle text-slate-700">
+                              <td className="px-4 py-3 align-top text-slate-700">
                                 {tx.product?.name || '-'}
                               </td>
                               <td
-                                className={`px-4 py-3 align-middle font-semibold ${
+                                className={`px-4 py-3 align-top font-semibold ${
                                   isIncoming ? 'text-green-600' : 'text-red-600'
                                 }`}
                               >
                                 {isIncoming ? '+' : '-'}
                                 {tx.quantity}
                               </td>
-                              <td className="px-4 py-3 align-middle text-xs text-slate-500 whitespace-nowrap">
+                              <td className="px-4 py-3 align-top text-xs text-slate-500 whitespace-nowrap">
                                 {tx.ref_no || '-'}
                               </td>
-                              <td className="px-4 py-3 align-middle text-xs text-slate-500">
+                              <td className="px-4 py-3 align-top text-xs text-slate-500">
                                 {tx.fromWarehouse && tx.from_warehouse_id !== warehouse.id && (
                                   <span>จาก: {tx.fromWarehouse.name}</span>
                                 )}
@@ -369,7 +369,7 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
                                 )}
                                 {!tx.fromWarehouse && !tx.toWarehouse && '-'}
                               </td>
-                              <td className="px-4 py-3 align-middle text-xs text-slate-500 max-w-32 truncate">
+                              <td className="px-4 py-3 align-top text-xs text-slate-500 max-w-32 truncate">
                                 {tx.remark || '-'}
                               </td>
                             </tr>

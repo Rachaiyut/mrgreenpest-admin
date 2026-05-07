@@ -277,25 +277,25 @@ const Categories: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     อักษรย่อหมวดหมู่
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ชื่อหมวดหมู่
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ประเภทหมวดหมู่
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     รายละเอียด
                   </th>
@@ -329,8 +329,8 @@ const Categories: React.FC = () => {
                     </td>
                   </tr>
                 ) : categories.map((category, index) => (
-                  <tr key={category.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                  <tr key={category.id} className="hover:bg-slate-50 [&>td]:align-top">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                       {(currentPage - 1) * pageSize + index + 1}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
@@ -345,7 +345,7 @@ const Categories: React.FC = () => {
                     <td className="px-4 py-3 text-sm text-slate-700 truncate max-w-sm">
                       {category.description || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           category.is_active !== false

@@ -317,7 +317,7 @@ const PackageForm: FC<PackageFormProps> = ({
                 </colgroup>
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-3 py-3 text-center text-sm font-semibold text-slate-600">#</th>
+                    <th className="px-3 py-3 text-left text-sm font-semibold text-slate-600">#</th>
                     <th className="px-3 py-3 text-left text-sm font-semibold text-slate-600">พื้นที่</th>
                     <th className="px-3 py-3 text-left text-sm font-semibold text-slate-600">หน่วย</th>
                     <th className="px-3 py-3 text-right text-sm font-semibold text-blue-600">ราคาเสนอ (มีปลวก)</th>

@@ -691,10 +691,10 @@ const Warehouse: React.FC = () => {
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">รหัส</th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ชื่อคลัง/รถ</th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ประเภท</th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ที่ตั้ง/ทะเบียน</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">รหัส</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ชื่อคลัง/รถ</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ประเภท</th>
+                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ที่ตั้ง/ทะเบียน</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
                 </tr>
@@ -713,9 +713,9 @@ const Warehouse: React.FC = () => {
                   warehouses.map((warehouse, index) => (
                     <tr
                       key={warehouse.id}
-                      className="hover:bg-slate-50 transition-colors [&>td]:text-center [&>td]:align-middle"
+                      className="hover:bg-slate-50 transition-colors [&>td]:align-top"
                     >
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary">
@@ -755,7 +755,7 @@ const Warehouse: React.FC = () => {
                           status={warehouse.status || Status.Draft}
                         />
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
                         <Button
                           data-warehouse-id={warehouse.id}
                           onClick={(e) => handleDropdownToggle(e, warehouse.id)}

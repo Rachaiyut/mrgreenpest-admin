@@ -625,7 +625,7 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -637,13 +637,13 @@ const Reports: React.FC<ReportsProps> = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     หน่วย
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     คงเหลือ
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เกณฑ์ต่ำสุด
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
                 </tr>
@@ -651,7 +651,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={`${r.warehouse}-${r.product}`}>
-                    <td className="px-4 py-3 text-sm text-slate-700">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">
@@ -663,13 +663,13 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.unit}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.quantity}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.threshold}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm text-center">
                       {r.low ? (
                         <StatusBadge status={Status.Failed} />
                       ) : (
@@ -701,7 +701,7 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -716,13 +716,13 @@ const Reports: React.FC<ReportsProps> = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จำนวนรายการ
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รวมจำนวน
                   </th>
                 </tr>
@@ -730,7 +730,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-700">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -743,13 +743,13 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.date}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm text-center">
                       <StatusBadge status={r.status} />
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.itemsCount}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.totalQty}
                     </td>
                   </tr>
@@ -777,7 +777,7 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -795,16 +795,16 @@ const Reports: React.FC<ReportsProps> = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จำนวนรายการ
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รวมจำนวน
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รวมค่าใช้จ่าย
                   </th>
                 </tr>
@@ -812,7 +812,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-700">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -826,16 +826,16 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.date}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm text-center">
                       <StatusBadge status={r.status} />
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.itemsCount}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.totalQty}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.expensesTotal.toFixed(2)}
                     </td>
                   </tr>
@@ -863,7 +863,7 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -878,13 +878,13 @@ const Reports: React.FC<ReportsProps> = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จำนวนรายการ
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รวมจำนวน
                   </th>
                 </tr>
@@ -892,7 +892,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-700">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -903,13 +903,13 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.date}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm text-center">
                       <StatusBadge status={r.status} />
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.itemsCount}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.totalQty}
                     </td>
                   </tr>
@@ -937,7 +937,7 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -949,13 +949,13 @@ const Reports: React.FC<ReportsProps> = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จำนวนรายการ
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ผลรวมปรับปรุง
                   </th>
                 </tr>
@@ -963,7 +963,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-700">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -973,13 +973,13 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.date}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm text-center">
                       <StatusBadge status={r.status} />
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.itemsCount}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.totalDelta}
                     </td>
                   </tr>
@@ -1007,7 +1007,7 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -1022,13 +1022,13 @@ const Reports: React.FC<ReportsProps> = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จำนวนรายการ
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รวมจำนวน
                   </th>
                 </tr>
@@ -1036,7 +1036,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-700">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -1047,13 +1047,13 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.date}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm text-center">
                       <StatusBadge status={r.status} />
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.itemsCount}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.totalQty}
                     </td>
                   </tr>
@@ -1081,7 +1081,7 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -1093,7 +1093,7 @@ const Reports: React.FC<ReportsProps> = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่รายงาน
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -1104,7 +1104,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-700">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -1114,7 +1114,7 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.reportDate}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm text-center">
                       <StatusBadge status={r.status} />
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -1162,7 +1162,7 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -1177,10 +1177,10 @@ const Reports: React.FC<ReportsProps> = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     กำหนดชำระ
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ยอดรวม
                   </th>
                 </tr>
@@ -1188,7 +1188,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-700">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -1201,10 +1201,10 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.dueAt}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm text-center">
                       <StatusBadge status={r.status} />
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.total.toFixed(2)}
                     </td>
                   </tr>
@@ -1232,7 +1232,7 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -1247,7 +1247,7 @@ const Reports: React.FC<ReportsProps> = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่ชำระ
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จำนวนเงิน
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -1258,7 +1258,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-700">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -1271,7 +1271,7 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.paidAt}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center">
                       {r.amount.toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">
@@ -1302,7 +1302,7 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -1317,7 +1317,7 @@ const Reports: React.FC<ReportsProps> = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่สร้าง
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จัดการ
                   </th>
                 </tr>
@@ -1325,7 +1325,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-700">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -1338,7 +1338,7 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.createdAt}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm text-center">
                       <Button
                         onClick={() => handleViewCustomer(r.id)}
                         className="px-3 py-1.5 rounded-md bg-primary text-white text-xs font-semibold"

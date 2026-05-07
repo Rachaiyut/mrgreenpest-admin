@@ -352,7 +352,7 @@ const TechnicianPerformancePage: React.FC = () => {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   ลำดับ
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -361,22 +361,22 @@ const TechnicianPerformancePage: React.FC = () => {
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   ชื่อช่าง
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   งานทั้งหมด
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   สำเร็จ
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   กำลังดำเนินการ
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   ยกเลิก
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   อัตราสำเร็จ (%)
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   เวลาเฉลี่ย (นาที)
                 </th>
               </tr>
@@ -427,16 +427,16 @@ const TechnicianPerformancePage: React.FC = () => {
                     <td className="px-4 py-3 text-sm text-slate-700 font-medium">
                       {item.tech_name}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right font-medium">
+                    <td className="px-4 py-3 text-sm text-slate-900 text-center font-medium">
                       {item.total_jobs.toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-sm text-green-600 text-right font-medium">
+                    <td className="px-4 py-3 text-sm text-green-600 text-center font-medium">
                       {item.completed_jobs.toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-sm text-yellow-600 text-right font-medium">
+                    <td className="px-4 py-3 text-sm text-yellow-600 text-center font-medium">
                       {item.in_progress_jobs.toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-sm text-red-600 text-right font-medium">
+                    <td className="px-4 py-3 text-sm text-red-600 text-center font-medium">
                       {item.cancelled_jobs.toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-sm text-center">
@@ -446,7 +446,7 @@ const TechnicianPerformancePage: React.FC = () => {
                         {item.completion_rate.toFixed(1)}%
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 text-right">
+                    <td className="px-4 py-3 text-sm text-slate-700 text-center">
                       {item.avg_duration_minutes.toLocaleString(undefined, {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 1,
@@ -470,20 +470,20 @@ const TechnicianPerformancePage: React.FC = () => {
                 <tr>
                   <td
                     colSpan={3}
-                    className="px-4 py-3 text-right text-slate-900"
+                    className="px-4 py-3 text-left text-slate-900"
                   >
                     รวมทั้งสิ้น
                   </td>
-                  <td className="px-4 py-3 text-right text-slate-900">
+                  <td className="px-4 py-3 text-center text-slate-900">
                     {totalAllJobs.toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-right text-green-700">
+                  <td className="px-4 py-3 text-center text-green-700">
                     {totalCompleted.toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-right text-yellow-700">
+                  <td className="px-4 py-3 text-center text-yellow-700">
                     {totalInProgress.toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-right text-red-700">
+                  <td className="px-4 py-3 text-center text-red-700">
                     {totalCancelled.toLocaleString()}
                   </td>
                   <td className="px-4 py-3 text-center">
