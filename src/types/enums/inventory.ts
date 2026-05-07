@@ -11,6 +11,34 @@ export enum VehicleStatus {
   BLOCK = 'BLOCK',
 }
 
+/**
+ * Document-level state of a withdrawal slip.
+ *  - DRAFT     ยังกรอกไม่เสร็จ
+ *  - SUBMITTED ส่งเข้าระบบแล้ว (state การอนุมัติเก็บที่ items/expenses)
+ *  - CANCELLED ผู้ใช้กดยกเลิกใบ
+ */
+export enum WithdrawalLifecycle {
+  DRAFT = 'DRAFT',
+  SUBMITTED = 'SUBMITTED',
+  CANCELLED = 'CANCELLED',
+}
+
+/**
+ * Per-line approval state. Applies to withdrawal_items และ withdrawal_expenses.
+ * CANCELLED ถูกตั้งเมื่อใบเบิกถูกยกเลิก
+ */
+export enum WithdrawalLineStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+/**
+ * @deprecated kept for backward compat while pages migrate to
+ * WithdrawalLifecycle / WithdrawalLineStatus.
+ */
 export enum WithdrawalStatus {
   DRAFT = 'DRAFT',
   PENDING = 'PENDING',

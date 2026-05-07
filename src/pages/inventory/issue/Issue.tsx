@@ -22,7 +22,7 @@ import {
   Warehouse as WarehouseType,
 } from '@/src/types/entity/app.interface';
 
-import { WithdrawalStatus } from '@/src/types/enums/inventory';
+import { WithdrawalLifecycle, WithdrawalLineStatus } from '@/src/types/enums/inventory';
 
 // ===== Context =====
 import { useData } from '../../../contexts/DataContext';
@@ -92,7 +92,9 @@ const Issue: FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchDebounced, setSearchDebounced] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [lifecycleFilter, setLifecycleFilter] = useState('all');
+  const [stockStatusFilter, setStockStatusFilter] = useState('all');
+  const [expenseStatusFilter, setExpenseStatusFilter] = useState('all');
   const creatorSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -126,7 +128,9 @@ const Issue: FC = () => {
           page: currentPage,
           limit: itemsPerPage,
           ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
-          ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+          ...(lifecycleFilter !== 'all' ? { lifecycle: lifecycleFilter } : {}),
+          ...(stockStatusFilter !== 'all' ? { stock_status: stockStatusFilter } : {}),
+          ...(expenseStatusFilter !== 'all' ? { expense_status: expenseStatusFilter } : {}),
         }),
         UserApi.getAll(),
         WarehouseApi.getWarehouses(),
@@ -151,7 +155,7 @@ const Issue: FC = () => {
       setIsLoading(false); // หยุดหมุน
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, itemsPerPage, searchDebounced, statusFilter]);
+  }, [currentPage, itemsPerPage, searchDebounced, lifecycleFilter, stockStatusFilter, expenseStatusFilter]);
 
   // 2. เรียกใช้ fetchAllData ตอนโหลดหน้าครั้งแรก
   useEffect(() => {
@@ -381,14 +385,21 @@ const Issue: FC = () => {
     }
   };
 
-  const handleApprovalAction = async (action: 'approve' | 'reject', overrideId?: string) => {
+  const handleApprovalAction = async (
+    action: 'approve' | 'reject',
+    overrideId?: string,
+    category?: 'STOCK' | 'EXPENSE',
+  ) => {
     const targetId = overrideId ?? openDropdownId;
     const withdrawal = withdrawals.find((w) => w.id === targetId);
     if (!withdrawal) return;
     setOpenDropdownId(null);
 
     if (action === 'approve') {
-      const hasExpense = (withdrawal.expenses?.length || 0) > 0;
+      // ถ้าระบุ category = EXPENSE → ตัดเงินบัญชี (ต้องเลือกบัญชี)
+      // ถ้าระบุ category = STOCK → ไม่ต้องถามบัญชี (ตัดเฉพาะ stock)
+      const hasExpense = category === 'EXPENSE'
+        || (category === undefined && (withdrawal.expenses?.length || 0) > 0);
       const totalExpense = (withdrawal.expenses || []).reduce(
         (s, e) => s + Number(e.amount || 0),
         0,
@@ -576,7 +587,7 @@ const Issue: FC = () => {
           await Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดบัญชีได้', 'error');
           return;
         }
-        await submitApproval(withdrawal.id, 'APPROVED', '', accountId || undefined);
+        await submitApproval(withdrawal.id, 'APPROVED', '', accountId || undefined, category);
         return;
       }
 
@@ -606,7 +617,12 @@ const Issue: FC = () => {
         ]) +
         renderItemList(
           items.map((it: any) => ({
-            name: it.product?.name || it.name || '-',
+            name:
+              it.product?.name
+              || it.product_name
+              || productMap.get(it.product_id)?.name
+              || it.name
+              || '-',
             right: `${Number(it.quantity || 0)} ชิ้น`,
             rightColor: '#64748b',
           })),
@@ -623,7 +639,7 @@ const Issue: FC = () => {
         confirmButtonColor: '#10b981',
       });
       if (!r.isConfirmed) return;
-      await submitApproval(withdrawal.id, 'APPROVED', '');
+      await submitApproval(withdrawal.id, 'APPROVED', '', undefined, category);
     } else {
       const r = await Swal.fire({
         icon: 'warning',
@@ -639,7 +655,7 @@ const Issue: FC = () => {
         inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
       });
       if (!r.isConfirmed || !r.value) return;
-      await submitApproval(withdrawal.id, 'REJECTED', r.value.trim());
+      await submitApproval(withdrawal.id, 'REJECTED', r.value.trim(), undefined, category);
     }
   };
 
@@ -648,12 +664,14 @@ const Issue: FC = () => {
     status: 'APPROVED' | 'REJECTED',
     remarks: string,
     accountId?: string,
+    category?: 'STOCK' | 'EXPENSE',
   ) => {
     try {
       await IssueNoteApi.approve(withdrawalId, {
         status,
         remark: remarks,
         ...(accountId ? { account_id: accountId } : {}),
+        ...(category ? { category } : {}),
       });
       await fetchAllData();
       Swal.fire({
@@ -686,18 +704,10 @@ const Issue: FC = () => {
       }
     }
     if (!target) return;
-    if (target.status !== WithdrawalStatus.PENDING) {
-      const withdrawalStatusLabel: Record<string, string> = {
-        DRAFT: 'ฉบับร่าง',
-        PENDING: 'รออนุมัติ',
-        APPROVED: 'อนุมัติแล้ว',
-        REJECTED: 'ไม่อนุมัติ',
-        PARTIALLY_APPROVED: 'อนุมัติบางส่วน',
-        COMPLETED: 'เสร็จสิ้น',
-        CANCELLED: 'ยกเลิก',
-      };
-      const statusText = withdrawalStatusLabel[String(target.status).toUpperCase()] || target.status;
-      Swal.fire('ใบเบิกไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${statusText}`, 'info');
+    const hasPendingLine = (target.items || []).some((i) => i.status === WithdrawalLineStatus.PENDING)
+      || (target.expenses || []).some((e) => e.status === WithdrawalLineStatus.PENDING);
+    if (target.lifecycle !== WithdrawalLifecycle.SUBMITTED || !hasPendingLine) {
+      Swal.fire('ใบเบิกไม่มีรายการที่รออนุมัติ', 'อาจถูกอนุมัติ/ยกเลิก หรือยังเป็นฉบับร่าง', 'info');
       return;
     }
     // give React a tick to update state if we just injected the record
@@ -706,18 +716,29 @@ const Issue: FC = () => {
 
   const handleCancel = async (withdrawalId: string) => {
     const withdrawalToUpdate = withdrawals.find((w) => w.id === withdrawalId);
-    if (withdrawalToUpdate) {
-      await onUpdateWithdrawal({
-        ...withdrawalToUpdate,
-        expenses: (withdrawalToUpdate.expenses || []).map((exp: any) => ({
-          ...exp,
-          type: exp.type || 'INCOME',
-        })),
-        status: WithdrawalStatus.CANCELLED,
-        notes: 'ยกเลิกโดยผู้ใช้',
-      });
-    }
     setOpenDropdownId(null);
+    if (!withdrawalToUpdate) return;
+
+    const r = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันการยกเลิกใบเบิก',
+      html: `ใบเบิก <strong>${withdrawalToUpdate.code || withdrawalToUpdate.id}</strong>`,
+      input: 'textarea',
+      inputLabel: 'เหตุผลการยกเลิก',
+      inputPlaceholder: 'กรอกเหตุผล...',
+      showCancelButton: true,
+      confirmButtonText: 'ยกเลิกใบเบิก',
+      cancelButtonText: 'ปิด',
+      confirmButtonColor: '#ef4444',
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
+    });
+    if (!r.isConfirmed || !r.value) return;
+
+    await onUpdateWithdrawal({
+      id: withdrawalToUpdate.id,
+      lifecycle: WithdrawalLifecycle.CANCELLED,
+      cancellation_reason: r.value.trim(),
+    } as any);
   };
 
   useEffect(() => {
@@ -749,9 +770,22 @@ const Issue: FC = () => {
     };
   }, [openDropdownId]);
 
-  const getActionItems = (withdrawal: WithdrawalType) => {
-    const actions = [
+  type ActionEntry =
+    | {
+        kind: 'item';
+        label: string;
+        icon: typeof EyeIcon;
+        color: string;
+        hoverBg: string;
+        onClick: () => void;
+      }
+    | { kind: 'header'; label: string }
+    | { kind: 'divider' };
+
+  const getActionItems = (withdrawal: WithdrawalType): ActionEntry[] => {
+    const actions: ActionEntry[] = [
       {
+        kind: 'item',
         label: 'ดูรายละเอียด',
         icon: EyeIcon,
         color: 'text-slate-700',
@@ -760,13 +794,13 @@ const Issue: FC = () => {
       },
     ];
 
-    if (
-      withdrawal.status === WithdrawalStatus.DRAFT ||
-      withdrawal.status === WithdrawalStatus.PENDING ||
-      withdrawal.status === Status.Draft ||
-      withdrawal.status === Status.PendingApproval
-    ) {
+    const isDraft = withdrawal.lifecycle === WithdrawalLifecycle.DRAFT;
+    const isSubmitted = withdrawal.lifecycle === WithdrawalLifecycle.SUBMITTED;
+
+    // แก้ไขได้เฉพาะตอน DRAFT — ส่งแล้วห้ามแก้ (ใช้ flow approve/reject แทน)
+    if (isDraft) {
       actions.push({
+        kind: 'item',
         label: 'แก้ไข',
         icon: PencilIcon,
         color: 'text-blue-600',
@@ -775,40 +809,73 @@ const Issue: FC = () => {
       });
     }
 
-    if (
-      withdrawal.status === WithdrawalStatus.PENDING ||
-      withdrawal.status === Status.PendingApproval
-    ) {
-      const canApprove =
-        hasPermission('APPROVE_STOCK_ISSUE_NOTE') ||
-        hasPermission('APPROVE_EXPENSE_ISSUE_NOTE');
+    if (isSubmitted) {
+      const canApproveStock = hasPermission('APPROVE_STOCK_ISSUE_NOTE');
+      const canApproveExpense = hasPermission('APPROVE_EXPENSE_ISSUE_NOTE');
+      const stockPending = (withdrawal.items || []).some((i) => i.status === WithdrawalLineStatus.PENDING);
+      const expensePending = (withdrawal.expenses || []).some((e) => e.status === WithdrawalLineStatus.PENDING);
+      const showStockActions = categoryTab !== 'expense';
+      const showExpenseActions = categoryTab !== 'stock';
+      const stockGroup = stockPending && canApproveStock && showStockActions;
+      const expenseGroup = expensePending && canApproveExpense && showExpenseActions;
 
-      if (canApprove) {
+      if (stockGroup) {
         actions.push(
+          { kind: 'divider' },
+          { kind: 'header', label: 'สินค้า / สารเคมี' },
           {
+            kind: 'item',
             label: 'อนุมัติ',
             icon: DocumentCheckIcon,
             color: 'text-green-600',
             hoverBg: 'hover:bg-green-50',
-            onClick: () => handleApprovalAction('approve'),
+            onClick: () => handleApprovalAction('approve', undefined, 'STOCK'),
           },
           {
+            kind: 'item',
             label: 'ไม่อนุมัติ',
             icon: XCircleIcon,
             color: 'text-red-600',
             hoverBg: 'hover:bg-red-50',
-            onClick: () => handleApprovalAction('reject'),
+            onClick: () => handleApprovalAction('reject', undefined, 'STOCK'),
           },
         );
       }
 
-      actions.push({
-        label: 'ยกเลิก',
-        icon: TrashIcon,
-        color: 'text-red-600',
-        hoverBg: 'hover:bg-red-50',
-        onClick: () => handleCancel(withdrawal.id),
-      });
+      if (expenseGroup) {
+        actions.push(
+          { kind: 'divider' },
+          { kind: 'header', label: 'ค่าใช้จ่าย' },
+          {
+            kind: 'item',
+            label: 'อนุมัติ',
+            icon: DocumentCheckIcon,
+            color: 'text-green-600',
+            hoverBg: 'hover:bg-green-50',
+            onClick: () => handleApprovalAction('approve', undefined, 'EXPENSE'),
+          },
+          {
+            kind: 'item',
+            label: 'ไม่อนุมัติ',
+            icon: XCircleIcon,
+            color: 'text-red-600',
+            hoverBg: 'hover:bg-red-50',
+            onClick: () => handleApprovalAction('reject', undefined, 'EXPENSE'),
+          },
+        );
+      }
+
+      actions.push(
+        { kind: 'divider' },
+        {
+          kind: 'item',
+          label: 'ยกเลิก',
+          icon: TrashIcon,
+          color: 'text-red-600',
+          hoverBg: 'hover:bg-red-50',
+          onClick: () => handleCancel(withdrawal.id),
+        },
+      );
     }
 
     return actions;
@@ -874,21 +941,40 @@ const Issue: FC = () => {
             )}
             <div className="w-full sm:w-auto">
               <DropdownSelect
-                value={statusFilter}
-                onChange={(val) => {
-                  setStatusFilter(val);
-                  setCurrentPage(1);
-                }}
+                value={lifecycleFilter}
+                onChange={(val) => { setLifecycleFilter(val); setCurrentPage(1); }}
                 className="w-full sm:w-fit text-sm"
                 options={[
-                  { value: 'all', label: 'สถานะทั้งหมด' },
+                  { value: 'all', label: 'สถานะใบทั้งหมด' },
                   { value: 'DRAFT', label: 'ฉบับร่าง' },
-                  { value: 'PENDING', label: 'รออนุมัติ' },
-                  { value: 'APPROVED', label: 'อนุมัติแล้ว' },
-                  { value: 'PARTIALLY_APPROVED', label: 'อนุมัติบางส่วน' },
-                  { value: 'REJECTED', label: 'ไม่อนุมัติ' },
-                  { value: 'COMPLETED', label: 'เสร็จสิ้น' },
+                  { value: 'SUBMITTED', label: 'ส่งแล้ว' },
                   { value: 'CANCELLED', label: 'ยกเลิก' },
+                ]}
+              />
+            </div>
+            <div className="w-full sm:w-auto">
+              <DropdownSelect
+                value={stockStatusFilter}
+                onChange={(val) => { setStockStatusFilter(val); setCurrentPage(1); }}
+                className="w-full sm:w-fit text-sm"
+                options={[
+                  { value: 'all', label: 'สถานะสินค้าทั้งหมด' },
+                  { value: 'PENDING', label: 'สินค้า: รออนุมัติ' },
+                  { value: 'APPROVED', label: 'สินค้า: อนุมัติแล้ว' },
+                  { value: 'REJECTED', label: 'สินค้า: ไม่อนุมัติ' },
+                ]}
+              />
+            </div>
+            <div className="w-full sm:w-auto">
+              <DropdownSelect
+                value={expenseStatusFilter}
+                onChange={(val) => { setExpenseStatusFilter(val); setCurrentPage(1); }}
+                className="w-full sm:w-fit text-sm"
+                options={[
+                  { value: 'all', label: 'สถานะค่าใช้จ่ายทั้งหมด' },
+                  { value: 'PENDING', label: 'ค่าใช้จ่าย: รออนุมัติ' },
+                  { value: 'APPROVED', label: 'ค่าใช้จ่าย: อนุมัติแล้ว' },
+                  { value: 'REJECTED', label: 'ค่าใช้จ่าย: ไม่อนุมัติ' },
                 ]}
               />
             </div>
@@ -978,7 +1064,7 @@ const Issue: FC = () => {
                       scope="col"
                       className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase lg:table-cell hidden whitespace-nowrap"
                     >
-                      จำนวนรายการ
+                      จำนวนรายการสินค้า
                     </th>
                   )}
                   {categoryTab !== 'stock' && (
@@ -986,7 +1072,7 @@ const Issue: FC = () => {
                       scope="col"
                       className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                     >
-                      จำนวนเงินที่เบิก
+                      รวมจำนวนเงินที่เบิก
                     </th>
                   )}
                   {categoryTab !== 'stock' && (
@@ -1007,8 +1093,24 @@ const Issue: FC = () => {
                     scope="col"
                     className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
-                    สถานะ
+                    สถานะใบ
                   </th>
+                  {categoryTab !== 'expense' && (
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    >
+                      สถานะสินค้า
+                    </th>
+                  )}
+                  {categoryTab !== 'stock' && (
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    >
+                      สถานะค่าใช้จ่าย
+                    </th>
+                  )}
                   <th
                     scope="col"
                     className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
@@ -1021,7 +1123,7 @@ const Issue: FC = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={10} className="p-0 border-b-0 h-0">
+                    <td colSpan={12} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
                         <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                         <p className="text-base font-medium">กำลังโหลดข้อมูลการเบิก...</p>
@@ -1030,7 +1132,7 @@ const Issue: FC = () => {
                   </tr>
                 ) : paginatedWithdrawals.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="p-0 border-b-0 h-0">
+                    <td colSpan={12} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                         <DocumentCheckIcon className="w-12 h-12 text-slate-300 mb-3 opacity-50" />
                         <p className="text-lg font-medium">ไม่พบข้อมูลใบเบิกสินค้า</p>
@@ -1071,8 +1173,8 @@ const Issue: FC = () => {
                     const hasExpenses = (withdrawal.expenses?.length || 0) > 0;
                     const colSpan =
                       6 +
-                      (categoryTab !== 'expense' ? 1 : 0) +
-                      (categoryTab !== 'stock' ? 2 : 0);
+                      (categoryTab !== 'expense' ? 2 : 0) +
+                      (categoryTab !== 'stock' ? 3 : 0);
                     const fmtMoney = (v: number) =>
                       `${v.toLocaleString('th-TH', {
                         minimumFractionDigits: 2,
@@ -1114,13 +1216,13 @@ const Issue: FC = () => {
                               : '-'}
                           </td>
                           {categoryTab !== 'expense' && (
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center lg:table-cell hidden">
-                              {totalItemsCount}
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 lg:table-cell hidden">
+                              {withdrawal.items?.length || 0}
                             </td>
                           )}
                           {categoryTab !== 'stock' && (
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
-                              {totalAmount.toLocaleString('th-TH', {
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                              {totalExpenseAmount.toLocaleString('th-TH', {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                               })}{' '}บาท
@@ -1149,9 +1251,27 @@ const Issue: FC = () => {
                               return looksLikeUuid ? 'ไม่กรอก' : withdrawal.created_by || '-';
                             })()}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-center">
-                            <StatusBadge status={withdrawal.status} />
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <StatusBadge status={withdrawal.lifecycle} />
                           </td>
+                          {categoryTab !== 'expense' && (
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {hasItems ? (
+                                <StatusBadge status={(withdrawal.items || [])[0]?.status || 'PENDING'} />
+                              ) : (
+                                <span className="text-slate-400 text-xs">—</span>
+                              )}
+                            </td>
+                          )}
+                          {categoryTab !== 'stock' && (
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {hasExpenses ? (
+                                <StatusBadge status={(withdrawal.expenses || [])[0]?.status || 'PENDING'} />
+                              ) : (
+                                <span className="text-slate-400 text-xs">—</span>
+                              )}
+                            </td>
+                          )}
                           <td
                             className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center"
                             onClick={(e) => e.stopPropagation()}
@@ -1348,20 +1468,36 @@ const Issue: FC = () => {
                 );
                 if (!withdrawal) return null;
 
-                return getActionItems(withdrawal).map((action, index) => (
-                  <button
-                    key={index}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      action.onClick();
-                    }}
-                    className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
-                    role="menuitem"
-                  >
-                    <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                    <span>{action.label}</span>
-                  </button>
-                ));
+                return getActionItems(withdrawal).map((action, index) => {
+                  if (action.kind === 'divider') {
+                    return <div key={`d-${index}`} className="my-1 border-t border-slate-100" role="none" />;
+                  }
+                  if (action.kind === 'header') {
+                    return (
+                      <div
+                        key={`h-${index}`}
+                        className="px-4 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400"
+                        role="none"
+                      >
+                        {action.label}
+                      </div>
+                    );
+                  }
+                  return (
+                    <button
+                      key={index}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        action.onClick();
+                      }}
+                      className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
+                      role="menuitem"
+                    >
+                      <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
+                      <span>{action.label}</span>
+                    </button>
+                  );
+                });
               })()}
             </div>
           </div>,

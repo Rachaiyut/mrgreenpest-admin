@@ -170,12 +170,6 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                   scope="col"
                   className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase"
                 >
-                  ลำดับ
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase"
-                >
                   รหัสสินค้า
                 </th>
                 <th

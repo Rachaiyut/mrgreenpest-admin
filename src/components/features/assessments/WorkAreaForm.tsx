@@ -931,22 +931,22 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   <table className="min-w-full text-sm">
                     <thead className="bg-slate-50">
                       <tr>
-                        <th className="p-2 text-left font-medium text-slate-600 w-10">
+                        <th className="p-2 text-center font-medium text-slate-600 w-10">
                           ลำดับ
                         </th>
-                        <th className="p-2 text-left font-medium text-slate-600">
+                        <th className="p-2 text-center font-medium text-slate-600">
                           รหัสสินค้า
                         </th>
-                        <th className="p-2 text-left font-medium text-slate-600">
+                        <th className="p-2 text-center font-medium text-slate-600">
                           สินค้า/บริการ
                         </th>
                         <th className="p-2 text-left font-medium text-slate-600">
                           จำนวน
                         </th>
-                        <th className="p-2 text-left font-medium text-slate-600">
+                        <th className="p-2 text-center font-medium text-slate-600">
                           หน่วย
                         </th>
-                        <th className="p-2 text-right font-medium text-slate-600">
+                        <th className="p-2 text-center font-medium text-slate-600">
                           ราคารวม
                         </th>
                         {!readOnly && <th className="p-2 w-10"></th>}
@@ -961,10 +961,10 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                               <td className="p-1 text-center text-slate-600">
                                 {itemIndex + 1}
                               </td>
-                              <td className="p-1 text-slate-600">
+                              <td className="p-1 text-center text-slate-600">
                                 {product?.code}
                               </td>
-                              <td className="p-1 font-medium text-slate-800">
+                              <td className="p-1 text-center font-medium text-slate-800">
                                 {product?.name || item.product_name}
                               </td>
                               <td className="p-1 w-24">
@@ -983,10 +983,10 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                   disabled={readOnly}
                                 />
                               </td>
-                              <td className="p-1 text-slate-600">
+                              <td className="p-1 text-center text-slate-600">
                                 {(item as unknown as Record<string, string>).unit || product?.unit?.name || '-'}
                               </td>
-                              <td className="p-1 w-32 text-right text-slate-800">
+                              <td className="p-1 w-32 text-center text-slate-800">
                                 {(
                                   (item.product_price || 0) *
                                   (item.quantity || 0)

@@ -17,22 +17,25 @@ import { DropdownSelect } from '../../../components/common/DropdownSelect';
 import { formatThaiDate } from '../../../utils/date';
 import { AdjustmentModal } from '../../../components/features/inventory/adjustment/AdjustmentModal';
 import { StockAdjustment as StockAdjustmentType } from '@/src/types/entity/app.interface';
-import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { Input } from '../../../components/common/FormControls';
 import { SearchableSelect } from '../../../components/common/SearchableSelect';
 import { StatusBadge } from '../../../components/common/StatusBadge';
 
-import { useData } from '../../../contexts/DataContext';
 import { StockAdjustmentApi } from '../../../api/stock-adjustment';
+import { WarehouseApi } from '../../../api/warehouse';
+import { ProductApi } from '../../../api/product';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
+import {
+  Warehouse as WarehouseType,
+  Product as ProductType,
+} from '@/src/types/entity/app.interface';
 
 const StockAdjustment: React.FC = () => {
-  // ดึงเฉพาะ master data ที่ใช้ใน modal — list ของใบ adjustment fetch เองในหน้านี้
-  const {
-    warehouses,
-    products,
-    warehouseStocks: stockMap,
-  } = useData();
+  // หน้านี้ fetch master data เองทั้งหมด — ไม่อ่านจาก DataContext เพื่อกัน race
+  // condition ที่ context limit แค่ 10 record (ทำให้ dropdown ขึ้นไม่ครบ)
+  const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
+  const [products, setProducts] = useState<ProductType[]>([]);
+  const [stockMap, setStockMap] = useState<Record<string, Record<string, number>>>({});
 
   const [adjustments, setAdjustments] = useState<StockAdjustmentType[]>([]);
   const [totalItemsServer, setTotalItemsServer] = useState(0);
@@ -56,9 +59,6 @@ const StockAdjustment: React.FC = () => {
     left: number;
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [adjustmentToDelete, setAdjustmentToDelete] =
-    useState<StockAdjustmentType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
 
@@ -91,6 +91,45 @@ const StockAdjustment: React.FC = () => {
   useEffect(() => {
     fetchList();
   }, [fetchList]);
+
+  // Fetch master data ตอน mount (เพื่อให้ dropdown / modal มีข้อมูลครบ)
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const [whRes, prodRes, stockRes] = await Promise.all([
+          WarehouseApi.getWarehouses({ limit: 100 }),
+          ProductApi.getProducts({ limit: 100, is_active: true }),
+          WarehouseApi.getWarehousesWithItems(),
+        ]);
+        if (!active) return;
+        if (whRes?.data) setWarehouses(whRes.data);
+        if (prodRes?.data) setProducts(prodRes.data);
+
+        const map: Record<string, Record<string, number>> = {};
+        const list = (stockRes as any)?.data || stockRes || [];
+        if (Array.isArray(list)) {
+          list.forEach((wh: any) => {
+            map[wh.id] = {};
+            const balances =
+              wh.stock || wh.stocks || wh.stockBalances || wh.stock_balances
+              || wh.stocks_balances || wh.items || [];
+            balances.forEach((b: any) => {
+              const pid = b.product_id || b.productId;
+              const qty = Number(b.quantity || 0);
+              if (pid) map[wh.id][pid] = qty;
+            });
+          });
+        }
+        setStockMap(map);
+      } catch (err) {
+        console.error('Failed to fetch master data', err);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Debounce searchQuery → searchDebounced
   useEffect(() => {
@@ -127,14 +166,14 @@ const StockAdjustment: React.FC = () => {
     }
   };
 
-  const onDeleteAdjustment = async (id: string) => {
+  const onDeleteAdjustment = async (id: string, reason?: string) => {
     try {
-      await StockAdjustmentApi.delete(id);
-      Swal.fire({ icon: 'success', title: 'ลบเรียบร้อย', timer: 1200, showConfirmButton: false });
+      await StockAdjustmentApi.delete(id, reason);
+      Swal.fire({ icon: 'success', title: 'ยกเลิกเรียบร้อย', timer: 1200, showConfirmButton: false });
       await fetchList();
     } catch (err) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถลบได้', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถยกเลิกได้', 'error');
     }
   };
 
@@ -160,18 +199,30 @@ const StockAdjustment: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (adjustment: StockAdjustmentType) => {
-    setAdjustmentToDelete(adjustment);
-    setIsDeleteModalOpen(true);
+  const handleDelete = async (adjustment: StockAdjustmentType) => {
     setOpenDropdownId(null);
-  };
-
-  const handleConfirmDelete = () => {
-    if (adjustmentToDelete) {
-      onDeleteAdjustment(adjustmentToDelete.id);
+    const code = (adjustment as { adjustment_code?: string }).adjustment_code || adjustment.id;
+    const r = await Swal.fire({
+      title: 'ยืนยันการยกเลิก',
+      html: `คุณแน่ใจหรือไม่ว่าต้องการยกเลิกใบปรับปรุงสต็อก <strong>${code}</strong>?`,
+      icon: 'warning',
+      input: 'textarea',
+      inputLabel: 'เหตุผลในการยกเลิก',
+      inputPlaceholder: 'กรุณาระบุเหตุผล...',
+      inputAttributes: { 'aria-label': 'เหตุผลในการยกเลิก' },
+      inputValidator: (value) => {
+        if (!value || !value.trim()) return 'กรุณาระบุเหตุผลในการยกเลิก';
+        return null;
+      },
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันการยกเลิก',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+    });
+    if (r.isConfirmed) {
+      onDeleteAdjustment(adjustment.id, r.value);
     }
-    setIsDeleteModalOpen(false);
-    setAdjustmentToDelete(null);
   };
 
   const handleDropdownToggle = (
@@ -571,21 +622,6 @@ const StockAdjustment: React.FC = () => {
         warehouses={warehouses}
         products={products}
         stockMap={stockMap}
-      />
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="ยืนยันการลบ"
-        message={
-          <p>
-            คุณแน่ใจหรือไม่ว่าต้องการลบใบปรับปรุงสต็อก{' '}
-            <strong>{adjustmentToDelete?.id}</strong>?
-            การกระทำนี้ไม่สามารถย้อนกลับได้
-          </p>
-        }
-        confirmButtonText="ยืนยันการลบ"
-        confirmButtonClass="bg-danger hover:bg-danger/90"
       />
     </div>
   );

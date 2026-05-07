@@ -158,7 +158,7 @@ const Reports: React.FC<ReportsProps> = () => {
         ? userById.get(w.recipient_id) || w.recipient_id
         : '-',
       date: formatThaiDate(w.created_at),
-      status: w.status,
+      status: w.lifecycle,
       itemsCount: w.items.length,
       totalQty: w.items.reduce((acc, it) => acc + Number(it.quantity || 0), 0),
       expensesTotal: (w.expenses || []).reduce(

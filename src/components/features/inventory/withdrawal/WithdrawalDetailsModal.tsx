@@ -116,9 +116,9 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-500">สถานะ</dt>
+              <dt className="font-medium text-slate-500">สถานะใบ</dt>
               <dd className="mt-1">
-                <StatusBadge status={withdrawal.status} />
+                <StatusBadge status={withdrawal.lifecycle} />
               </dd>
             </div>
             <div>
@@ -209,13 +209,26 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
                 </dd>
               </div>
             )}
+            {withdrawal.cancellation_reason && (
+              <div className="md:col-span-3">
+                <dt className="font-medium text-slate-500">เหตุผลการยกเลิก</dt>
+                <dd className="mt-1 text-red-700 bg-red-50 p-2 rounded-md">
+                  {withdrawal.cancellation_reason}
+                </dd>
+              </div>
+            )}
           </dl>
         </div>
 
         <div>
-          <h4 className="text-base font-semibold text-slate-800 mb-3">
-            รายการสินค้า/อุปกรณ์ที่เบิก
-          </h4>
+          <div className="flex items-center gap-2 mb-3">
+            <h4 className="text-base font-semibold text-slate-800">
+              รายการสินค้า/อุปกรณ์ที่เบิก
+            </h4>
+            {(withdrawal.items || []).length > 0 && (
+              <StatusBadge status={(withdrawal.items || [])[0]?.status || 'PENDING'} />
+            )}
+          </div>
           <div className="overflow-hidden border border-slate-200 rounded-lg max-h-60 overflow-y-auto">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0">
@@ -303,9 +316,12 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
 
         {withdrawal.expenses && withdrawal.expenses.length > 0 && (
           <div>
-            <h4 className="text-base font-semibold text-slate-800 mb-3">
-              รายการค่าใช้จ่ายเพิ่มเติม
-            </h4>
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-base font-semibold text-slate-800">
+                รายการค่าใช้จ่ายเพิ่มเติม
+              </h4>
+              <StatusBadge status={(withdrawal.expenses || [])[0]?.status || 'PENDING'} />
+            </div>
             <div className="overflow-hidden border border-slate-200 rounded-lg max-h-60 overflow-y-auto">
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50 sticky top-0">

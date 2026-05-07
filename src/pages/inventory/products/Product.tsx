@@ -381,7 +381,7 @@ const Product: React.FC = () => {
                     scope="col"
                     className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
-                    รหัสสินค้า
+                    {selectedType === 'SERVICE' ? 'รหัสบริการ' : 'รหัสสินค้า'}
                   </th>
                   {selectedType === 'PRODUCT' && (
                   <th
@@ -395,7 +395,7 @@ const Product: React.FC = () => {
                     scope="col"
                     className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
-                    ชื่อสินค้า/บริการ
+                    {selectedType === 'SERVICE' ? 'ชื่อบริการ' : 'ชื่อสินค้า'}
                   </th>
                   <th
                     scope="col"
@@ -493,8 +493,8 @@ const Product: React.FC = () => {
                     </td>
                     {selectedType === 'PRODUCT' && (
                     <>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
-                      {(product as unknown as Record<string, number>).stock_quantity ?? 0}
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      {Math.trunc(Number((product as unknown as Record<string, number>).stock_quantity ?? 0)).toLocaleString('th-TH')}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                       {product.min_stock}
