@@ -1043,7 +1043,7 @@ const Issue: FC = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider xl:table-cell hidden whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ลำดับ
                   </th>
@@ -1189,7 +1189,7 @@ const Issue: FC = () => {
                           className={`hover:bg-slate-50 [&>td]:align-top ${isAllTab ? 'cursor-pointer' : ''}`}
                           onClick={isAllTab ? () => toggleExpanded(withdrawal.id) : undefined}
                         >
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center xl:table-cell hidden">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                             {isAllTab ? (
                               <div className="inline-flex items-center gap-1">
                                 {isExpanded ? (
