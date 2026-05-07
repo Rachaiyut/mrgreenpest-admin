@@ -9,6 +9,7 @@ interface StatusBadgeProps {
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   // ===== สถานะทั่วไป =====
   DRAFT:              { label: 'ฉบับร่าง',           color: 'bg-slate-100 text-slate-600' },
+  SUBMITTED:          { label: 'ส่งแล้ว',           color: 'bg-blue-100 text-blue-700' },
   PENDING:            { label: 'รออนุมัติ',          color: 'bg-yellow-100 text-yellow-700' },
   PENDING_APPROVAL:   { label: 'รออนุมัติ',         color: 'bg-orange-100 text-orange-700' },
   PENDING_SIGNATURE:  { label: 'รอเซ็น',           color: 'bg-amber-100 text-amber-700' },

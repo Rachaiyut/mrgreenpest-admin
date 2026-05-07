@@ -2,6 +2,8 @@ import {
   VehicleStatus,
   WarehouseType,
   WithdrawalStatus,
+  WithdrawalLifecycle,
+  WithdrawalLineStatus,
   ProductReturnStatus,
   StockAdjustmentStatus,
   TransferStatus,
@@ -87,13 +89,19 @@ export interface WithdrawalItem {
   product_name?: string;
   quantity: number;
   unit?: string;
+  status?: WithdrawalLineStatus | null;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface WithdrawalExpense {
+  id?: string;
+  withdrawal_id?: string;
   description: string;
   amount: number;
+  status?: WithdrawalLineStatus | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Withdrawal extends IBase {
@@ -103,7 +111,7 @@ export interface Withdrawal extends IBase {
   assessment_id?: string;
   contract_id?: string;
   purpose?: string;
-  status: WithdrawalStatus | Status;
+  lifecycle: WithdrawalLifecycle;
   notes?: string;
   created_by: string;
   updated_by?: string;
@@ -114,6 +122,8 @@ export interface Withdrawal extends IBase {
   to_warehouse_id?: string;
   issue_date?: string;
   reference_ids?: string[];
+  /** @deprecated kept temporarily; UI ใหม่ควรอ่าน lifecycle + items[].status / expenses[].status */
+  status?: WithdrawalStatus | Status;
 }
 
 export interface GoodsReceiptItem {
