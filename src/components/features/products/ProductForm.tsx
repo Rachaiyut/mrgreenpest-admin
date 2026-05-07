@@ -163,13 +163,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
         {/* Type + Code/Barcode */}
         <div className="space-y-4 md:col-span-2">
           <FormField label="ประเภท">
-            <div className="flex rounded-lg bg-slate-100 p-1 w-full">
-              <label className="relative flex-1 cursor-pointer">
-                <input type="radio" className="sr-only peer" checked={selectedType === CategoryType.PRODUCT} onChange={() => { setSelectedType(CategoryType.PRODUCT); setFormData((prev) => ({ ...prev, category_id: '' })); }} />
+            <div className={`flex rounded-lg bg-slate-100 p-1 w-full ${mode === 'edit' ? 'opacity-60' : ''}`}>
+              <label className={`relative flex-1 ${mode === 'edit' ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                <input type="radio" className="sr-only peer" checked={selectedType === CategoryType.PRODUCT} disabled={mode === 'edit'} onChange={() => { setSelectedType(CategoryType.PRODUCT); setFormData((prev) => ({ ...prev, category_id: '' })); }} />
                 <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">สินค้า</span>
               </label>
-              <label className="relative flex-1 cursor-pointer">
-                <input type="radio" className="sr-only peer" checked={selectedType === CategoryType.SERVICE} onChange={() => { setSelectedType(CategoryType.SERVICE); setFormData((prev) => ({ ...prev, category_id: '' })); }} />
+              <label className={`relative flex-1 ${mode === 'edit' ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                <input type="radio" className="sr-only peer" checked={selectedType === CategoryType.SERVICE} disabled={mode === 'edit'} onChange={() => { setSelectedType(CategoryType.SERVICE); setFormData((prev) => ({ ...prev, category_id: '' })); }} />
                 <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">บริการ</span>
               </label>
             </div>
