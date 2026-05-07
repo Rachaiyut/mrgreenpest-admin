@@ -1093,14 +1093,15 @@ const Issue: FC = () => {
                     scope="col"
                     className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
-                    สถานะใบ
+                    สถานะใบเบิก
                   </th>
                   {categoryTab !== 'expense' && (
                     <th
                       scope="col"
                       className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                     >
-                      สถานะสินค้า
+                      <div>สถานะเบิก</div>
+                      <div>สินค้า/สารเคมี</div>
                     </th>
                   )}
                   {categoryTab !== 'stock' && (
@@ -1108,7 +1109,8 @@ const Issue: FC = () => {
                       scope="col"
                       className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                     >
-                      สถานะค่าใช้จ่าย
+                      <div>สถานะเบิก</div>
+                      <div>ค่าใช้จ่าย</div>
                     </th>
                   )}
                   <th
