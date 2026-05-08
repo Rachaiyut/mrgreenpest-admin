@@ -57,7 +57,7 @@ const CustomerListView: React.FC<{
         <tr>
           <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
           {TH('รหัสลูกค้า')}
-          {TH('ชื่อ')}
+          {TH('ชื่อลูกค้า')}
           {TH('ชื่อเล่น')}
           {TH('เบอร์โทรศัพท์')}
           {TH('ประเภท')}
@@ -108,8 +108,8 @@ const CustomerListView: React.FC<{
               <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary">
                 {customer.code}
               </td>
-              <td className="px-4 py-3">
-                <span className="font-medium text-slate-900 whitespace-normal break-words">
+              <td className="px-4 py-3 whitespace-nowrap">
+                <span className="font-medium text-slate-900">
                   {[customer.first_name, customer.last_name]
                     .map((p: string | undefined) => (typeof p === 'string' ? p.trim() : ''))
                     .filter((p: string) => p && p !== '-')
