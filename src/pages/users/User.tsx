@@ -18,13 +18,11 @@ import {
   DocumentCheckIcon,
 } from '../../assets/icons/Icons';
 import { RoleModal } from '../../components/features/users/RoleModal';
-import { AddUserModal } from '../../components/features/users/AddUserModal';
 import { Pagination } from '../../components/common/Pagination';
-import { UserDetailsModal } from '../../components/features/users/UserDetailsModal';
+import { UserModal } from '../../components/features/users/UserModal';
 import { RoleDetailsModal } from '../../components/features/users/RoleDetailsModal'; // Keep for now or remove?
 import { Input, Button } from '../../components/common/FormControls';
 import { DropdownSelect } from '../../components/common/DropdownSelect';
-import { EditUserModal } from '../../components/features/users/EditUserModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { UserWalletModal } from '../../components/features/users/UserWalletModal';
 import { RoleApi, Role } from '../../api/role';
@@ -768,24 +766,28 @@ const Users: React.FC<UsersProps> = ({
         roleId={roleToEditId}
         onSuccess={() => fetchRoles()}
       />
-      <AddUserModal
+      <UserModal
         isOpen={isAddUserModalOpen}
         onClose={() => setIsAddUserModalOpen(false)}
+        mode="create"
+        roles={roles as { id: string; name: string }[]}
         onCreateUser={handleCreateUser}
         onUpdateUser={handleUpdateUser}
-        roles={roles as { id: string; name: string }[]}
       />
-      <EditUserModal
+      <UserModal
         isOpen={isEditUserModalOpen}
         onClose={() => setIsEditUserModalOpen(false)}
+        mode="edit"
         user={userToEdit}
-        onUpdateUser={handleUpdateUser}
         roles={roles as { id: string; name: string }[]}
+        onUpdateUser={handleUpdateUser}
       />
-      <UserDetailsModal
+      <UserModal
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
+        mode="view"
         user={selectedUser}
+        roles={roles as { id: string; name: string }[]}
       />
       <RoleDetailsModal
         isOpen={isRoleDetailsModalOpen}
