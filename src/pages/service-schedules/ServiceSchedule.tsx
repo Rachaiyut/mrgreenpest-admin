@@ -375,7 +375,7 @@ const ServiceSchedulePage: FC = () => {
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50 sticky top-0 z-10 border-b border-slate-200 shadow-sm">
                 <tr>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-1/4">ชื่อ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-1/4">ชื่อตาราง</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-1/4">แพ็กเกจ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-28">จำนวนครั้ง</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">วันที่สร้าง</th>

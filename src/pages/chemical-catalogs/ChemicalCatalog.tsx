@@ -178,7 +178,7 @@ const ChemicalCatalogPage: React.FC = () => {
                 <thead className="bg-slate-50 sticky top-0 z-10">
                   <tr>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อ</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อสารเคมี</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันที่สร้าง</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ผู้สร้าง</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-24">จัดการ</th>

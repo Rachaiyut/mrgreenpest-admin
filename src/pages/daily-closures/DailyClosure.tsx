@@ -376,7 +376,7 @@ const DailyClosure: React.FC = () => {
                       หัวหน้าทีม
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      ลูกค้า
+                      ชื่อลูกค้า
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       สถานะ
