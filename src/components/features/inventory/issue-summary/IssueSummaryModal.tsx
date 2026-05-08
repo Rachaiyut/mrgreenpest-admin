@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal } from '../../../common/Modal';
 import { Button } from '../../../common/FormControls';
 import { IssueSummaryForm } from './IssueSummaryForm';
@@ -44,28 +44,50 @@ export const IssueSummaryModal: React.FC<IssueSummaryModalProps> = ({
   stockMap = new Map(),
 }) => {
   const isEditMode = mode === 'edit';
+  const [isOverStock, setIsOverStock] = useState(false);
 
   const getTitle = () => {
     if (isEditMode) return 'แก้ไขสรุปเบิกสินค้า/อุปกรณ์';
     return 'สร้างสรุปเบิกสินค้า/อุปกรณ์';
   };
 
+  const overStockTitle = isOverStock
+    ? 'ไม่สามารถบันทึกได้ เนื่องจากมีสินค้าที่เบิกเกินสต๊อกในคลัง'
+    : undefined;
+
   const footer = (
-    <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 w-full sm:justify-end">
-      <Button variant="secondary" onClick={onClose} type="button" className="w-full sm:w-auto">
-        ยกเลิก
-      </Button>
-      <Button
-        variant="outline"
-        type="button"
-        className="w-full sm:w-auto"
-        onClick={() => document.getElementById('issue-summary-draft-btn')?.click()}
-      >
-        บันทึกฉบับร่าง
-      </Button>
-      <Button variant="primary" type="submit" form="issue-summary-form" className="w-full sm:w-auto">
-        {isEditMode ? 'บันทึกการแก้ไข' : 'บันทึกและตัดสต็อก'}
-      </Button>
+    <div className="flex flex-col gap-2 w-full">
+      {isOverStock && (
+        <div className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 flex items-center gap-2">
+          <span>⚠️</span>
+          <span>มีสินค้าที่เบิกเกินสต๊อกในคลัง — กรุณาแก้ไขจำนวนก่อนบันทึก</span>
+        </div>
+      )}
+      <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 w-full sm:justify-end">
+        <Button variant="secondary" onClick={onClose} type="button" className="w-full sm:w-auto">
+          ยกเลิก
+        </Button>
+        <Button
+          variant="outline"
+          type="button"
+          className="w-full sm:w-auto"
+          onClick={() => document.getElementById('issue-summary-draft-btn')?.click()}
+          disabled={isOverStock}
+          title={overStockTitle}
+        >
+          บันทึกฉบับร่าง
+        </Button>
+        <Button
+          variant="primary"
+          type="submit"
+          form="issue-summary-form"
+          className="w-full sm:w-auto"
+          disabled={isOverStock}
+          title={overStockTitle}
+        >
+          {isEditMode ? 'บันทึกการแก้ไข' : 'บันทึกและตัดสต็อก'}
+        </Button>
+      </div>
     </div>
   );
 
@@ -89,6 +111,7 @@ export const IssueSummaryModal: React.FC<IssueSummaryModalProps> = ({
         stockMap={stockMap}
         onSubmit={onSubmit}
         onCancel={onClose}
+        onOverStockChange={setIsOverStock}
       />
     </Modal>
   );

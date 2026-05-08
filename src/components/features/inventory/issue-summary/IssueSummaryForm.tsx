@@ -39,7 +39,6 @@ import { ReferenceSelectionModal } from '../../../common/ReferenceSelectionModal
 import { JobApi } from '../../../../api/job';
 import { UserApi } from '../../../../api/user';
 import { WarehouseApi } from '../../../../api/warehouse';
-import { VehicleApi } from '../../../../api/vehicle';
 
 // ===== Assets =====
 import {
@@ -68,6 +67,7 @@ export interface IssueSummaryFormProps {
   stockMap?: Map<string, Map<string, number>>;
   onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
+  onOverStockChange?: (overStock: boolean) => void;
 }
 
 export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
@@ -82,6 +82,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   stockMap = new Map(),
   onSubmit,
   onCancel,
+  onOverStockChange,
 }) => {
   const isEditMode = mode === 'edit';
 
@@ -120,7 +121,6 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   const [fetchedJobs, setFetchedJobs] = useState<JobType[]>([]);
   const jobSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [destinationLimits, setDestinationLimits] = useState<Map<string, number>>(new Map());
   const [localStockMap, setLocalStockMap] = useState<Map<string, Map<string, number>>>(new Map());
   const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
 
@@ -233,26 +233,6 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
     }
   }, [warehouses]);
 
-  const fetchVehicleLimits = useCallback(async (selectedWarehouseId: string) => {
-    try {
-      const res = await VehicleApi.getVehicleStockLimit(selectedWarehouseId);
-      const limitMap = new Map<string, number>();
-
-      const limitsData = Array.isArray(res) ? res : (res as unknown as Record<string, unknown[]>)?.data || [];
-
-      if (limitsData && limitsData.length > 0) {
-        limitsData.forEach((limit: Record<string, unknown>) => {
-          limitMap.set(String(limit.product_id), Number(limit.max_return_qty));
-        });
-      }
-
-      setDestinationLimits(limitMap);
-    } catch (error) {
-      console.error('Failed to fetch vehicle limits', error);
-      setDestinationLimits(new Map());
-    }
-  }, []);
-
   const fetchJobs = useCallback(async (customerIds: string[] = [], search?: string) => {
     try {
       const queryParams: any = { limit: 20 };
@@ -338,7 +318,6 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
         setRecipientId(loggedInUser.id);
       }
 
-      setDestinationLimits(new Map());
       setIsSubmitting(false);
       fetchWarehouses();
     }
@@ -358,15 +337,6 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCustomerIds, fetchJobs, isOpen]);
-
-  // Vehicle limits (edit mode keeps this; create mode also benefits)
-  useEffect(() => {
-    if (warehouseId) {
-      fetchVehicleLimits(warehouseId);
-    } else {
-      setDestinationLimits(new Map());
-    }
-  }, [warehouseId, fetchVehicleLimits]);
 
   useEffect(() => {
     if (requesterId) {
@@ -393,18 +363,17 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
     return totalExpenses > selectedRequester.creditLimit;
   }, [totalExpenses, selectedRequester, walletInfo]);
 
-  const isAnyItemOverLimit = useMemo(() => {
+  const isAnyItemOverStock = useMemo(() => {
     if (!warehouseId) return false;
     return items.some((item) => {
       const available = effectiveStockMap.get(warehouseId)?.get(item.product_id) || 0;
-      if (item.quantity > available) return true;
-
-      const limit = destinationLimits.get(item.product_id);
-      if (limit !== undefined && item.quantity > limit) return true;
-
-      return false;
+      return available > 0 && item.quantity > available;
     });
-  }, [items, warehouseId, effectiveStockMap, destinationLimits]);
+  }, [items, warehouseId, effectiveStockMap]);
+
+  useEffect(() => {
+    onOverStockChange?.(isAnyItemOverStock);
+  }, [isAnyItemOverStock, onOverStockChange]);
 
   const selectedCustomers = useMemo(
     () => customers.filter((c) => selectedCustomerIds.includes(c.id)),
@@ -477,13 +446,22 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
     if (invalidItems.length > 0)
       return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกจำนวนสินค้าให้ถูกต้อง' });
 
-    // Validate: if over limit, must have job + notes
-    if (isOverLimit || isAnyItemOverLimit) {
+    // Block submission if any item exceeds available stock
+    if (isAnyItemOverStock) {
+      return Swal.fire({
+        icon: 'error',
+        title: 'ไม่สามารถบันทึกได้',
+        text: 'มีสินค้าที่เบิกเกินสต๊อกในคลัง กรุณาแก้ไขจำนวนให้ไม่เกินจำนวนคงเหลือ',
+      });
+    }
+
+    // Validate: if expense over wallet limit, must have job + notes
+    if (isOverLimit) {
       if (!jobId || !notes.trim()) {
         return Swal.fire({
           icon: 'warning',
           title: 'กรุณาตรวจสอบ',
-          text: 'กรุณากรอก "เอกสารอ้างอิง (ใบงาน)" และ "หมายเหตุ" เนื่องจากมีการเบิกสินค้าหรือใช้เงินเกินโควต้า',
+          text: 'กรุณากรอก "เอกสารอ้างอิง (ใบงาน)" และ "หมายเหตุ" เนื่องจากมีการใช้เงินเกินโควต้า',
         });
       }
     }
@@ -501,8 +479,8 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
         // Edit mode: use the status dropdown value
         finalStatus = currentStatus;
       } else {
-        // Create mode: auto-compute based on limits
-        finalStatus = isOverLimit || isAnyItemOverLimit ? 'PENDING' : 'COMPLETED';
+        // Create mode: PENDING if expense over wallet limit, else COMPLETED
+        finalStatus = isOverLimit ? 'PENDING' : 'COMPLETED';
       }
 
       const payload: any = {
@@ -516,8 +494,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
         purpose: isEditMode ? undefined : 'เบิกสินค้า/อุปกรณ์',
         notes: notes || undefined,
         // ส่ง notes เป็น over_limit_reason เมื่อเกินลิมิต (backend require field นี้)
-        over_limit_reason:
-          (isOverLimit || isAnyItemOverLimit) && notes.trim() ? notes.trim() : undefined,
+        over_limit_reason: isOverLimit && notes.trim() ? notes.trim() : undefined,
         status: finalStatus,
         items: items as IssueItemSummaryType[],
         expenses: validExpenses.map((item) => ({
@@ -611,7 +588,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
               </div>
               <h3 className="text-lg font-bold text-slate-800">การเคลื่อนย้ายสินค้า</h3>
               <div className="ml-auto">
-              <div className={`flex items-center gap-2 bg-white px-3 py-2 rounded-lg border hover:border-slate-400 transition-colors cursor-pointer ${formErrors.issueDate ? 'border-red-500' : !issueDate ? 'border-red-300' : 'border-slate-300'}`}>
+              <div className={`flex items-center gap-2 bg-white px-3 py-2 rounded-lg border hover:border-slate-400 transition-colors cursor-pointer ${formErrors.issueDate ? 'border-red-500' : 'border-slate-300'}`}>
                 <CalendarDaysIcon className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 <DatePicker
                   selected={issueDate}
@@ -769,17 +746,16 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                       const available = sourceWarehouse?.id
                         ? effectiveStockMap.get(sourceWarehouse.id)?.get(item.product_id) || 0
                         : 0;
-                      const limit = destinationLimits.get(item.product_id);
 
                       const isOverStock = available > 0 && item.quantity > available;
-                      const isOverLimitObj = limit !== undefined && item.quantity > limit;
-                      const hasWarning = isOverStock || isOverLimitObj;
 
                       return (
                         <div
                           key={index}
-                          className={`px-5 py-4 rounded-xl border transition-all duration-200 flex items-center bg-white shadow-sm hover:shadow-md ${
-                            hasWarning ? 'border-red-300 bg-red-50/30' : 'border-slate-200 hover:border-indigo-200'
+                          className={`px-5 py-4 rounded-xl border transition-all duration-200 bg-white shadow-sm hover:shadow-md ${
+                            isOverStock
+                              ? 'border-red-300 bg-red-50/30'
+                              : 'border-slate-200 hover:border-indigo-200'
                           }`}
                         >
                           <div className="grid grid-cols-12 gap-4 items-center w-full">
@@ -789,26 +765,35 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                               </span>
                             </div>
                             <div className="col-span-3">
-                              <span className="font-semibold text-slate-800 text-base truncate block pr-2" title={item.product_name}>
+                              <span
+                                className="font-semibold text-slate-800 text-base truncate block pr-2"
+                                title={item.product_name}
+                              >
                                 {item.product_name || 'Unknown Product'}
                               </span>
                             </div>
 
                             <div className="flex items-center justify-center col-span-2">
-                              <span className={`text-base font-bold ${available === 0 ? 'text-red-500' : 'text-slate-700'}`}>
+                              <span
+                                className={`text-base font-bold ${
+                                  available === 0 ? 'text-red-500' : 'text-slate-700'
+                                }`}
+                              >
                                 {available.toLocaleString()}
                               </span>
                             </div>
 
-                            <div className="col-span-4 flex items-center justify-center relative">
+                            <div className="col-span-4 flex items-center justify-center">
                               <div className="relative flex items-center w-full max-w-[140px] group">
                                 <Input
                                   type="number"
                                   min="1"
                                   value={item.quantity}
-                                  onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
+                                  onChange={(e) =>
+                                    handleItemChange(index, 'quantity', Number(e.target.value))
+                                  }
                                   className={`w-full text-center h-11 text-base font-bold rounded-lg pr-10 transition-all ${
-                                    hasWarning
+                                    isOverStock
                                       ? 'border-red-400 text-red-600 focus:border-red-500 focus:ring-red-200 bg-red-50'
                                       : 'border-slate-300 text-emerald-700 focus:border-emerald-500 focus:ring-emerald-200 bg-slate-50 group-hover:bg-white'
                                   }`}
@@ -817,16 +802,6 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                                   {item.unit}
                                 </span>
                               </div>
-                              {isOverStock && (
-                                <span className="text-xs font-bold absolute -bottom-6 whitespace-nowrap text-red-500 flex items-center gap-1">
-                                  <XCircleIcon className="w-4 h-4" /> เกินสต๊อก
-                                </span>
-                              )}
-                              {!isOverStock && isOverLimitObj && (
-                                <span className="text-xs font-bold absolute -bottom-6 whitespace-nowrap text-amber-500 flex items-center gap-1">
-                                  <XCircleIcon className="w-4 h-4" /> เกินโควต้า
-                                </span>
-                              )}
                             </div>
 
                             <div className="col-span-1 flex justify-center">
@@ -839,6 +814,24 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                               </button>
                             </div>
                           </div>
+
+                          {isOverStock && (
+                            <div className="mt-3 flex items-center gap-2 bg-gradient-to-r from-red-50 to-red-50/50 border-l-4 border-red-500 px-3 py-2 rounded-r-md">
+                              <div className="flex-shrink-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                                <XCircleIcon className="w-3.5 h-3.5" />
+                              </div>
+                              <div className="flex-1 text-xs">
+                                <span className="font-bold text-red-700">เกินสต๊อก</span>
+                                <span className="text-slate-600 ml-1.5">
+                                  ของในคลังเหลือ{' '}
+                                  <span className="font-bold text-red-700">
+                                    {available.toLocaleString()}
+                                  </span>{' '}
+                                  {item.unit}
+                                </span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1061,7 +1054,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
           {/* Card 5: Reference Card */}
           <div
             className={`rounded-xl border shadow-sm relative z-0 transition-all flex flex-col ${
-              isOverLimit || isAnyItemOverLimit ? 'border-amber-400 ring-1 ring-amber-100 bg-amber-50/10' : 'bg-white border-slate-200'
+              isOverLimit ? 'border-amber-400 ring-1 ring-amber-100 bg-amber-50/10' : 'bg-white border-slate-200'
             }`}
           >
             <div className="p-5 border-b border-slate-100 flex items-center gap-2">
@@ -1075,12 +1068,12 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
             </div>
             <div className="p-5">
 
-            {(isOverLimit || isAnyItemOverLimit) && (
+            {isOverLimit && (
               <div className="mb-5 text-sm font-semibold text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-start gap-2">
                 <span className="mt-0.5">⚠️</span>
                 <span>
                   จำเป็นต้องกรอก <strong>"เอกสารอ้างอิง"</strong> และ <strong>"หมายเหตุ"</strong>{' '}
-                  เนื่องจากมีการเบิกสินค้าหรือขอเบิกเงินเกินโควต้าที่ได้รับ
+                  เนื่องจากมีการขอเบิกเงินเกินโควต้าที่ได้รับ
                 </span>
               </div>
             )}
@@ -1088,7 +1081,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
             <div className="space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">
-                  เอกสารอ้างอิง {(isOverLimit || isAnyItemOverLimit) && <span className="text-red-500">*</span>}
+                  เอกสารอ้างอิง {isOverLimit && <span className="text-red-500">*</span>}
                 </label>
                 <div className="mb-2 relative z-20">
                   <div className="w-full">
@@ -1119,14 +1112,14 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">
-                  หมายเหตุ (Notes) {(isOverLimit || isAnyItemOverLimit) && <span className="text-red-500">*</span>}
+                  หมายเหตุ (Notes) {isOverLimit && <span className="text-red-500">*</span>}
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={4}
                   className={`w-full border rounded-xl p-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none shadow-sm transition-colors ${
-                    (isOverLimit || isAnyItemOverLimit) && !notes.trim()
+                    isOverLimit && !notes.trim()
                       ? 'border-amber-300 bg-white placeholder:text-amber-400/70'
                       : 'border-slate-300 bg-white placeholder:text-slate-400'
                   }`}
