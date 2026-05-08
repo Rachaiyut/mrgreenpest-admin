@@ -81,7 +81,7 @@ export const UnitModal: FC<UnitModalProps> = ({
             required
           />
         </FormField>
-        <FormField label="อักษรย่อ" htmlFor="unit-symbol">
+        <FormField label="ตัวย่อ" htmlFor="unit-symbol">
           <Input
             id="unit-symbol"
             value={symbol}
