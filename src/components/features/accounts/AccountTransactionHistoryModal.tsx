@@ -10,7 +10,7 @@ import {
   AccountTransactionType,
 } from '../../../types/entity/account.interface';
 import { LoadingIcon, DocumentCheckIcon } from '../../../assets/icons/Icons';
-import { formatThaiDate } from '../../../utils/date';
+import { formatThaiDateTime } from '../../../utils/date';
 
 interface Props {
   isOpen: boolean;
@@ -87,6 +87,8 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
         account_id: account.id,
         page,
         limit,
+        sort_by: 'created_at',
+        sort_order: 'DESC',
         ...(typeFilter !== 'all' ? { type: typeFilter } : {}),
       });
       setTransactions(res.data || []);
@@ -178,8 +180,8 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
           <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-left">
             <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
               <tr className="text-sm font-semibold text-slate-600">
-                <th className="px-4 py-2.5 w-12">#</th>
-                <th className="px-4 py-2.5">วันที่</th>
+                <th className="px-4 py-2.5 w-16">ลำดับ</th>
+                <th className="px-4 py-2.5">วันที่และเวลา</th>
                 <th className="px-4 py-2.5">ประเภท</th>
                 <th className="px-4 py-2.5">รายละเอียด</th>
                 <th className="px-4 py-2.5">อ้างอิง</th>
@@ -214,8 +216,8 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
                       <td className={`px-4 py-2.5 text-sm text-slate-500 tabular-nums ${meta.accentClass}`}>
                         {(page - 1) * limit + i + 1}
                       </td>
-                      <td className="px-4 py-2.5 text-sm text-slate-700">
-                        {t.transaction_date ? formatThaiDate(t.transaction_date) : '-'}
+                      <td className="px-4 py-2.5 text-sm text-slate-700 whitespace-nowrap">
+                        {formatThaiDateTime(t.created_at || t.transaction_date)}
                       </td>
                       <td className="px-4 py-2.5 text-sm">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${meta.badgeClass}`}>

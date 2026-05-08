@@ -12,15 +12,18 @@ export const formatThaiDate = (isoString: string | Date | undefined): string => 
 export const formatThaiDateTime = (isoString: string | undefined): string => {
   if (!isoString) return '-';
   const date = new Date(isoString);
-  return (
-    date.toLocaleString('th-TH', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }) + ' น.'
-  );
+  if (isNaN(date.getTime())) return '-';
+  const datePart = date.toLocaleDateString('th-TH', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const timePart = date.toLocaleTimeString('th-TH', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  return `${datePart}, เวลา ${timePart} น.`;
 };
 
 /**
