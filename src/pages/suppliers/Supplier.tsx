@@ -53,7 +53,7 @@ const Suppliers: React.FC = () => {
     null
   );
 
-  const [typeFilter, setTypeFilter] = useState<SupplierType>();
+  const [typeFilter, setTypeFilter] = useState<SupplierType | ''>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
   const handleItemsPerPageChange = (size: number) => {
@@ -109,7 +109,7 @@ const Suppliers: React.FC = () => {
         page: currentPage,
         limit: itemsPerPage,
         search: searchQuery,
-        type: typeFilter,
+        ...(typeFilter ? { type: typeFilter } : {}),
         sort_by: 'created_at',
         sort_order: 'desc',
         ...(statusFilter !== '' ? { is_active: statusFilter === 'true' } : {}),
@@ -202,7 +202,7 @@ const Suppliers: React.FC = () => {
               <DropdownSelect
                 value={typeFilter}
                 onChange={(val) => {
-                  setTypeFilter(val as SupplierType);
+                  setTypeFilter(val as SupplierType | '');
                   setCurrentPage(1);
                 }}
                 className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"

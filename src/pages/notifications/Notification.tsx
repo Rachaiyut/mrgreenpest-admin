@@ -1,24 +1,18 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
-import { StatusBadge } from '../../components/common/StatusBadge';
 import { Input } from '../../components/common/FormControls';
 import { DropdownSelect } from '../../components/common/DropdownSelect';
-import { formatThaiDate } from '../../utils/date';
-import { MagnifyingGlassIcon, CalendarIcon, LoadingIcon } from '../../assets/icons/Icons';
 import { NotificationApi } from '../../api/notification';
-import { ContractApi } from '../../api/contract';
-import { ServiceReportApi } from '../../api/service-report';
-import { Pagination } from '../../components/common/Pagination';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import UpcomingVisitsTab from './UpcomingVisitsTab';
+import NotificationsTable, { isContractExpired, NotificationRow } from './NotificationsTable';
 
 type TabKey = 'contracts' | 'upcoming-visits';
 
 interface NotificationsProps {}
 
 const Notifications: React.FC<NotificationsProps> = () => {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab: TabKey = searchParams.get('tab') === 'contracts' ? 'contracts' : 'upcoming-visits';
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
@@ -43,55 +37,6 @@ const Notifications: React.FC<NotificationsProps> = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null);
-
-  const openBlobInNewTab = (blob: Blob) => {
-    const url = URL.createObjectURL(blob);
-    const win = window.open(url, '_blank');
-    if (!win) {
-      const a = document.createElement('a');
-      a.href = url;
-      a.target = '_blank';
-      a.rel = 'noopener';
-      a.click();
-    }
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
-  };
-
-  const handleOpenContractPdf = async (contractUuid: string) => {
-    if (!contractUuid || pdfLoadingId) return;
-    setPdfLoadingId(`contract:${contractUuid}`);
-    try {
-      const blob = await ContractApi.getPdf(contractUuid);
-      openBlobInNewTab(blob);
-    } catch (err) {
-      console.error('Failed to load contract PDF:', err);
-      alert('ไม่สามารถโหลด PDF สัญญาได้ กรุณาลองใหม่');
-    } finally {
-      setPdfLoadingId(null);
-    }
-  };
-
-  const handleCreateAppointment = (customerId: string | null, contractUuid: string | null) => {
-    if (!customerId) return;
-    const params = new URLSearchParams({ openCreateModal: '1', customerId });
-    if (contractUuid) params.set('contractId', contractUuid);
-    navigate(`/field-operations?${params.toString()}`);
-  };
-
-  const handleOpenServiceReportPdf = async (reportId: string) => {
-    if (!reportId || pdfLoadingId) return;
-    setPdfLoadingId(`report:${reportId}`);
-    try {
-      const blob = await ServiceReportApi.getServiceReportPdfById(reportId);
-      openBlobInNewTab(blob);
-    } catch (err) {
-      console.error('Failed to load service report PDF:', err);
-      alert('ไม่สามารถโหลด Service Report ได้ กรุณาลองใหม่');
-    } finally {
-      setPdfLoadingId(null);
-    }
-  };
 
   // Debounce search
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -139,30 +84,17 @@ const Notifications: React.FC<NotificationsProps> = () => {
     fetchData();
   }, [currentPage, itemsPerPage, debouncedSearch, filterType, startDate, endDate, invoiceStatus]);
 
-  const filteredData = useMemo(() => {
+  const filteredData: NotificationRow[] = useMemo(() => {
     return data.map((item) => ({
-      contractUuid: item.contract_id,
-      contractId: item.contract_code || item.contract_id,
+      contractUuid: item.contract_id || null,
+      contractCode: item.contract_code || item.contract_id || '-',
       customerId: item.customer_id || null,
-      customerName: item.customer_name,
-      nickname: item.nickname || '-',
-      address: item.address,
+      customerName: item.customer_name || '-',
+      address: item.address || '-',
       phone: item.phone || item.primary_phone || '-',
-      contractDetails: item.contract_details,
-      durationYears: item.duration_years,
-      total_visits: item.total_visits,
-      startDate: item.start_date,
-      endDate: item.end_date,
-      buildingType: item.building_type || 'บ้านเดี่ยว',
-      price: Number(item.price) || 0,
-      installment: item.installment,
-      invoiceAmount: Number(item.invoice_amount) || 0,
-      invoiceStatus: item.invoice_status,
-      invoiceDueDate: item.invoice_due_date,
-      paymentMethod: item.payment_method || '-',
-      amountPaid: Number(item.amount_paid) || 0,
-      paidDate: item.paid_date || '-',
-      visitNumber: Number(item.visit_number) || 0,
+      contractDaysRemaining: item.days_remaining === null || item.days_remaining === undefined
+        ? null
+        : Number(item.days_remaining),
       lastServiceDate: item.last_service_date || '-',
       lastServiceReportId: item.last_service_report_id || null,
       nextServiceDate: item.next_service_date
@@ -170,9 +102,18 @@ const Notifications: React.FC<NotificationsProps> = () => {
         : null,
       nextServiceDisplay: item.next_service_date,
       customerAppointmentDate: item.customer_appointment_date || '-',
-      daysRemaining: item.days_remaining === null || item.days_remaining === undefined
+      startDate: item.start_date,
+      endDate: item.end_date,
+      visitNumber: Number(item.visit_number) || 0,
+      totalVisits: item.total_visits || 0,
+      price: Number(item.price) || 0,
+      installment: item.installment || '-',
+      totalInstallments: item.total_installments === null || item.total_installments === undefined
         ? null
-        : Number(item.days_remaining),
+        : Number(item.total_installments),
+      invoiceAmount: Number(item.invoice_amount) || 0,
+      invoiceStatus: item.invoice_status || '-',
+      invoiceDueDate: item.invoice_due_date || '-',
     }));
   }, [data]);
 
@@ -257,243 +198,17 @@ const Notifications: React.FC<NotificationsProps> = () => {
         </div>
       </Card>
 
-      <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
-        {loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-500 py-12">
-            <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
-            <p className="text-base font-medium">กำลังโหลดข้อมูล...</p>
-          </div>
-        ) : filteredData.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-12">
-            <CalendarIcon className="h-12 w-12 mb-3" />
-            <p className="text-base font-medium text-slate-500">ไม่พบข้อมูลการแจ้งเตือน</p>
-            <p className="text-sm mt-1">ลองเปลี่ยนตัวกรองหรือคำค้นหา</p>
-          </div>
-        ) : (
-        <>
-        <div className="flex-1 overflow-x-auto overflow-y-auto border-b border-slate-200">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap sticky left-0 z-20 bg-slate-50 min-w-[64px] w-16">
-                  ลำดับ
-                </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap sticky left-[64px] z-20 bg-slate-50 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)]">
-                  เลขที่สัญญา
-                </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
-                  ชื่อ-นามสกุล ลูกค้า
-                </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[300px] md:min-w-[400px]">
-                  ที่อยู่/เบอร์โทร
-                </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
-                  เหลือ (วัน)
-                </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-green-50">
-                  เข้าตรวจล่าสุด
-                </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-green-50">
-                  เข้าตรวจครั้งถัดไป
-                </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-green-50">
-                  วันที่ลูกค้านัดล่วงหน้า
-                </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
-                  เริ่มสัญญา
-                </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
-                  หมดสัญญา
-                </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
-                  ครั้งที่ / ทั้งหมด
-                </th>
-                <th className="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">
-                  ราคา
-                </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">
-                  งวดที่
-                </th>
-                <th className="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap bg-red-50">
-                  จำนวนเงิน (Invoice)
-                </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">
-                  สถานะ (Invoice)
-                </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-red-50">
-                  กำหนดชำระ
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {filteredData.map((row, index) => {
-                const isExpired = row.daysRemaining !== null && row.daysRemaining < 0;
-                const cellTransition = 'transition-colors duration-200 ease-out';
-                const stickyBg = isExpired
-                  ? `bg-red-200 group-hover:bg-red-300 ${cellTransition}`
-                  : `bg-white group-hover:bg-slate-50 ${cellTransition}`;
-                const greenBg = isExpired
-                  ? `bg-red-200 group-hover:bg-red-300 ${cellTransition}`
-                  : `bg-green-50/50 group-hover:bg-green-100/60 ${cellTransition}`;
-                const yellowBg = isExpired
-                  ? `bg-red-200 group-hover:bg-red-300 ${cellTransition}`
-                  : `bg-yellow-50 group-hover:bg-yellow-100 ${cellTransition}`;
-                return (
-                  <tr
-                    key={row.contractId}
-                    className={`group border-b border-slate-200 transition-colors duration-200 ease-out ${
-                      isExpired
-                        ? 'bg-red-200 hover:bg-red-300'
-                        : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-top text-slate-500 sticky left-0 z-10 min-w-[64px] w-16 ${stickyBg}`}>
-                      {(currentPage - 1) * itemsPerPage + index + 1}
-                    </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-left align-top font-medium text-green-600 sticky left-[64px] z-10 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.08)] ${stickyBg}`}>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenContractPdf(row.contractUuid)}
-                        disabled={!row.contractUuid || pdfLoadingId === `contract:${row.contractUuid}`}
-                        className="inline-flex items-center gap-1.5 hover:underline hover:text-green-700 disabled:opacity-60 disabled:cursor-wait"
-                        title="คลิกเพื่อดูสัญญา PDF"
-                      >
-                        {pdfLoadingId === `contract:${row.contractUuid}` && (
-                          <LoadingIcon className="w-4 h-4 animate-spin" />
-                        )}
-                        {row.contractId}
-                      </button>
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-left align-top font-medium text-slate-800">
-                      {row.customerId ? (
-                        <button
-                          type="button"
-                          onClick={() => handleCreateAppointment(row.customerId, row.contractUuid)}
-                          className="hover:underline hover:text-primary"
-                          title="คลิกเพื่อสร้างนัดหมายให้ลูกค้านี้"
-                        >
-                          {row.customerName}
-                        </button>
-                      ) : (
-                        row.customerName
-                      )}
-                    </td>
-                    <td className="px-3 py-3 text-left align-top text-slate-600 min-w-[300px] md:min-w-[400px]">
-                      <div className="leading-relaxed">
-                        {row.address}
-                      </div>
-                      <div className="text-slate-400 mt-1">{row.phone}</div>
-                    </td>
-
-                    {/* 🟢 Green Section: Service Info */}
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-top font-bold ${greenBg}`}>
-                      {row.daysRemaining === null ? (
-                        <span className="text-slate-400">-</span>
-                      ) : (
-                        <span
-                          className={
-                            row.daysRemaining < 30
-                              ? 'text-red-600'
-                              : 'text-green-600'
-                          }
-                        >
-                          {row.daysRemaining}
-                        </span>
-                      )}
-                    </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-left align-top text-slate-600 ${greenBg}`}>
-                      {row.lastServiceDate !== '-' ? (
-                        row.lastServiceReportId ? (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenServiceReportPdf(row.lastServiceReportId)}
-                            disabled={pdfLoadingId === `report:${row.lastServiceReportId}`}
-                            className="inline-flex items-center gap-1.5 text-green-600 hover:underline hover:text-green-700 disabled:opacity-60 disabled:cursor-wait"
-                            title="คลิกเพื่อดู Service Report PDF"
-                          >
-                            {pdfLoadingId === `report:${row.lastServiceReportId}` && (
-                              <LoadingIcon className="w-4 h-4 animate-spin" />
-                            )}
-                            {formatThaiDate(row.lastServiceDate)}
-                          </button>
-                        ) : (
-                          formatThaiDate(row.lastServiceDate)
-                        )
-                      ) : (
-                        '-'
-                      )}
-                    </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-left align-top text-slate-600 ${greenBg}`}>
-                      {(() => {
-                        const display = row.nextServiceDisplay;
-                        if (!display) return '-';
-                        const d = new Date(display);
-                        if (!isNaN(d.getTime()) && String(display).includes('-')) {
-                          return formatThaiDate(display);
-                        }
-                        return display;
-                      })()}
-                    </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-left align-top text-slate-600 ${greenBg}`}>
-                      {row.customerAppointmentDate !== '-'
-                        ? formatThaiDate(row.customerAppointmentDate)
-                        : '-'}
-                    </td>
-
-                    <td className="px-3 py-3 whitespace-nowrap text-left align-top text-slate-600">
-                      {formatThaiDate(row.startDate)}
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-left align-top text-slate-600">
-                      {formatThaiDate(row.endDate)}
-                    </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-top font-medium text-slate-800 ${greenBg}`}>
-                      {row.visitNumber > 0 ? row.visitNumber : '-'}{' '}
-                      <span className="text-slate-400 mx-1">/</span>{' '}
-                      {row.total_visits || '-'}
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-right align-top font-medium text-slate-800">
-                      {row.price.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
-                    </td>
-
-                    {/* 🔴 Red Section: Invoice Info */}
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-top text-slate-600 ${yellowBg}`}>
-                      {row.installment}
-                    </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-right align-top text-slate-600 ${yellowBg}`}>
-                      {row.invoiceAmount > 0
-                        ? `${row.invoiceAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`
-                        : '-'}
-                    </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-top ${yellowBg}`}>
-                      {row.invoiceStatus !== '-' ? (
-                        <StatusBadge status={row.invoiceStatus} />
-                      ) : (
-                        '-'
-                      )}
-                    </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-left align-top text-slate-600 ${yellowBg}`}>
-                      {row.invoiceDueDate !== '-'
-                        ? formatThaiDate(row.invoiceDueDate)
-                        : '-'}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-auto border-t border-slate-200">
-          <Pagination
-            currentPage={currentPage}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
-          />
-        </div>
-        </>
-        )}
-      </div>
+      <NotificationsTable
+        rows={filteredData}
+        loading={loading}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        totalItems={totalItems}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+        emptyTitle="ไม่พบข้อมูลการแจ้งเตือน"
+        isExpiredRow={isContractExpired}
+      />
       </>
       )}
     </div>

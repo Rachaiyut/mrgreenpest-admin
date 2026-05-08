@@ -62,7 +62,7 @@ const Product: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await CategoryApi.getCategories({});
+      const response = await CategoryApi.getCategories({ is_active: true });
       setCategories(response.data);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
@@ -71,7 +71,7 @@ const Product: React.FC = () => {
 
   const fetchUnits = async () => {
     try {
-      const response = await UnitApi.getUnit({ limit: 10, is_active: true });
+      const response = await UnitApi.getUnit({ limit: 100, is_active: true });
       setUnits(response.data);
     } catch (error) {
       console.error('Failed to fetch units:', error);
@@ -183,9 +183,17 @@ const Product: React.FC = () => {
       return true;
     } catch (error: any) {
       console.error('Failed to save:', error);
-      const errMsg = error?.response?.data?.message
+      const errorMessageMap: Record<string, string> = {
+        'cost_price must not be less than 0': 'ราคาต้นทุนไม่ควรต่ำกว่า 0',
+        'min_stock must not be less than 0': 'สต็อกสินค้าขั้นต่ำไม่ควรต่ำกว่า 0',
+      };
+      const rawMsg = error?.response?.data?.message
         || (error?.response?.data?.errors && Object.values(error.response.data.errors).join(', '))
         || 'ไม่สามารถบันทึกได้';
+      const errMsg = Object.entries(errorMessageMap).reduce(
+        (msg, [en, th]) => msg.replace(en, th),
+        rawMsg,
+      );
       Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: errMsg });
       return false;
     }

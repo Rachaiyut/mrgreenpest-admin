@@ -155,6 +155,7 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
             type="button"
             onClick={() => {
               setWarehouseType('คลัง');
+              setForm(initialState);
               setErrors({});
             }}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
@@ -172,6 +173,7 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
             type="button"
             onClick={() => {
               setWarehouseType('รถ');
+              setForm(initialState);
               setErrors({});
             }}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all flex items-center justify-center gap-2 ${

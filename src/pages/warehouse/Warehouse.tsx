@@ -52,7 +52,7 @@ const Warehouse: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   // State
-  const [typeFilter, setTypeFilter] = useState<'all' | 'main' | 'sub'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'main' | 'vehicle'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'ACTIVE' | 'INACTIVE'>('all');
   const [activeTab, setActiveTab] = useState<'all' | 'warehouse' | 'vehicle'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -121,7 +121,7 @@ const Warehouse: React.FC = () => {
         query.type = WarehouseTypeEnum.VEHICLE;
       } else {
         if (typeFilter === 'main') query.type = WarehouseTypeEnum.MAIN;
-        if (typeFilter === 'sub') query.type = WarehouseTypeEnum.SUB;
+        if (typeFilter === 'vehicle') query.type = WarehouseTypeEnum.VEHICLE;
       }
 
       if (statusFilter !== 'all') query.status = statusFilter;
@@ -574,7 +574,7 @@ const Warehouse: React.FC = () => {
                 <TruckIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm text-amber-600 font-medium whitespace-nowrap">คลังย่อย</p>
+                <p className="text-xs sm:text-sm text-amber-600 font-medium whitespace-nowrap">รถบริการ</p>
                 <p className="text-2xl font-bold text-amber-800">{warehouseStats?.mobile}</p>
               </div>
             </div>
@@ -614,14 +614,14 @@ const Warehouse: React.FC = () => {
             <DropdownSelect
               value={typeFilter}
               onChange={(val) => {
-                setTypeFilter(val as 'all' | 'main' | 'sub');
+                setTypeFilter(val as 'all' | 'main' | 'vehicle');
                 setCurrentPage(1);
               }}
               className="w-full sm:w-48 flex-shrink-0"
               options={[
                 { value: 'all', label: 'ประเภททั้งหมด' },
                 { value: 'main', label: 'คลังหลัก' },
-                { value: 'sub', label: 'คลังย่อย' },
+                { value: 'vehicle', label: 'รถบริการ' },
               ]}
             />
             <DropdownSelect
@@ -730,7 +730,7 @@ const Warehouse: React.FC = () => {
                         >
                           {warehouse.type === WarehouseTypeEnum.MAIN
                             ? 'คลังหลัก'
-                            : 'คลังย่อย'}
+                            : 'รถบริการ'}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">

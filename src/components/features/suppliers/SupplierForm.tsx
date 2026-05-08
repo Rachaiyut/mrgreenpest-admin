@@ -104,13 +104,25 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
           {errors.tax_id && <p className="text-red-500 text-xs mt-1">{errors.tax_id}</p>}
         </FormField>
         <FormField label="ประเภทผู้จัดจำหน่าย">
-          <div className="flex rounded-lg bg-slate-100 p-1 w-full">
-            <label className="relative flex-1 cursor-pointer">
-              <input type="radio" className="sr-only peer" checked={supplierType === 'บุคคลธรรมดา'} onChange={() => setSupplierType('บุคคลธรรมดา')} />
+          <div className={`flex rounded-lg bg-slate-100 p-1 w-full ${mode === 'edit' ? 'opacity-60' : ''}`}>
+            <label className={`relative flex-1 ${mode === 'edit' ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+              <input
+                type="radio"
+                className="sr-only peer"
+                checked={supplierType === 'บุคคลธรรมดา'}
+                onChange={() => setSupplierType('บุคคลธรรมดา')}
+                disabled={mode === 'edit'}
+              />
               <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">บุคคลธรรมดา</span>
             </label>
-            <label className="relative flex-1 cursor-pointer">
-              <input type="radio" className="sr-only peer" checked={supplierType === 'นิติบุคคล'} onChange={() => setSupplierType('นิติบุคคล')} />
+            <label className={`relative flex-1 ${mode === 'edit' ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+              <input
+                type="radio"
+                className="sr-only peer"
+                checked={supplierType === 'นิติบุคคล'}
+                onChange={() => setSupplierType('นิติบุคคล')}
+                disabled={mode === 'edit'}
+              />
               <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">นิติบุคคล</span>
             </label>
           </div>
