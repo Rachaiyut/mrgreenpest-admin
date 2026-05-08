@@ -737,11 +737,11 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
               </div>
             </div>
 
-            {/* Section toggles */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">ประเภทการเบิก</label>
-              <div className="flex items-center gap-6">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
+            {/* Section Toggles */}
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h3 className="text-lg font-bold text-slate-800 mb-5">ประเภทการเบิก</h3>
+              <div className="flex items-center gap-10">
+                <label className="flex items-center gap-3 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={enableGoods}
@@ -750,11 +750,11 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                       if (!e.target.checked) setGoodsItems([]);
                       setEnableGoods(e.target.checked);
                     }}
-                    className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+                    className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
                   />
-                  <span className="text-sm font-medium text-slate-700">รายการสินค้า</span>
+                  <span className="text-base font-semibold text-slate-700">รายการสินค้า</span>
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer select-none">
+                <label className="flex items-center gap-3 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={enableExpense}
@@ -763,9 +763,9 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                       if (!e.target.checked) setExpenseItems([]);
                       setEnableExpense(e.target.checked);
                     }}
-                    className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+                    className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
                   />
-                  <span className="text-sm font-medium text-slate-700">การเงิน & ค่าใช้จ่าย</span>
+                  <span className="text-base font-semibold text-slate-700">การเงินและค่าใช้จ่าย</span>
                 </label>
               </div>
             </div>
@@ -805,7 +805,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     </div>
                   ) : (
                     <div className="space-y-3 mt-2">
-                      <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 text-sm font-semibold text-slate-500 items-center">
+                      <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 bg-slate-50/80 rounded-lg text-sm font-bold text-slate-800 tracking-wide border border-slate-100 items-center">
                         <div className="col-span-1">รหัส</div>
                         <div className="col-span-3">สินค้า</div>
                         <div className="col-span-2 text-center">คงเหลือ</div>
@@ -840,7 +840,12 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                                 </span>
                               </div>
                               <div className="col-span-3">
-                                <span className="font-bold text-slate-800 text-sm">{product?.name || 'Unknown Product'}</span>
+                                <span
+                                  className="font-semibold text-slate-800 text-base truncate block pr-2"
+                                  title={product?.name}
+                                >
+                                  {product?.name || 'Unknown Product'}
+                                </span>
                               </div>
                               <div className="col-span-2 text-center">
                                 <span className={`text-base font-bold ${available === 0 ? 'text-red-500' : 'text-slate-700'}`}>
@@ -853,7 +858,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                                 </span>
                               </div>
                               <div className="col-span-3 flex items-center justify-center">
-                                <div className="relative flex items-center w-full max-w-[130px]">
+                                <div className="relative flex items-center w-full max-w-[140px]">
                                   <Input
                                     type="number"
                                     min="1"
@@ -861,7 +866,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                                     onChange={(e) =>
                                       handleGoodsItemChange(item.id, 'quantity', Number(e.target.value))
                                     }
-                                    className={`w-full text-center h-10 text-base font-bold rounded-lg pr-12 ${
+                                    className={`w-full text-center h-11 text-base font-bold rounded-lg pr-10 ${
                                       hasWarning
                                         ? 'border-red-400 text-red-600 bg-red-50'
                                         : 'border-slate-300 text-slate-800 bg-white'
@@ -878,7 +883,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                                   onClick={() => handleRemoveGoodsItem(item.id)}
                                   className="text-red-400 hover:text-red-600 p-2 rounded-lg transition-colors"
                                 >
-                                  <TrashIcon className="w-5 h-5" />
+                                  <TrashIcon className="w-6 h-6" />
                                 </button>
                               </div>
                             </div>
@@ -887,29 +892,31 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                             <div className="md:hidden flex flex-col gap-3">
                               <div className="flex items-start justify-between">
                                 <div className="flex-1 min-w-0">
-                                  <span className="font-mono text-xs font-bold text-green-600 block">
+                                  <span className="font-mono text-sm font-bold text-green-600 block">
                                     {product?.code || item.productId.substring(0, 8)}
                                   </span>
-                                  <span className="font-bold text-slate-800 text-sm block mt-0.5">{product?.name || 'Unknown Product'}</span>
+                                  <span className="font-semibold text-slate-800 text-base block mt-0.5">
+                                    {product?.name || 'Unknown Product'}
+                                  </span>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveGoodsItem(item.id)}
                                   className="text-red-400 hover:text-red-600 p-1.5 rounded-lg transition-colors -mr-1.5 -mt-1.5"
                                 >
-                                  <TrashIcon className="w-5 h-5" />
+                                  <TrashIcon className="w-6 h-6" />
                                 </button>
                               </div>
                               <div className="flex items-center gap-4 text-sm">
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-slate-500">คงเหลือ:</span>
-                                  <span className={`font-bold ${available === 0 ? 'text-red-500' : 'text-slate-700'}`}>
+                                  <span className={`text-base font-bold ${available === 0 ? 'text-red-500' : 'text-slate-700'}`}>
                                     {available.toLocaleString()}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-slate-500">จำกัด:</span>
-                                  <span className="font-bold text-blue-600">
+                                  <span className="text-base font-bold text-blue-600">
                                     {limit !== undefined ? limit.toLocaleString() : '-'}
                                   </span>
                                 </div>
@@ -924,7 +931,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                                     onChange={(e) =>
                                       handleGoodsItemChange(item.id, 'quantity', Number(e.target.value))
                                     }
-                                    className={`w-full text-center h-10 text-base font-bold rounded-lg pr-12 ${
+                                    className={`w-full text-center h-11 text-base font-bold rounded-lg pr-10 ${
                                       hasWarning
                                         ? 'border-red-400 text-red-600 bg-red-50'
                                         : 'border-slate-300 text-slate-800 bg-white'
