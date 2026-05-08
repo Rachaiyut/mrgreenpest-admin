@@ -109,6 +109,37 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
   const goodsFormRef = useRef<HTMLFormElement>(null);
   const sourceSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const vehicleSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Backend search สำหรับ dropdown ผู้เบิก / ผู้รับเงิน
+  const searchUsers = useCallback(async (search: string) => {
+    const q = (search || '').trim();
+    if (!q) return;
+    try {
+      const res = await UserApi.getAll({ search: q, limit: 10, page: 1 });
+      const items = res?.data || [];
+      if (!items.length) return;
+      const opts = items.map((u: User) => ({
+        value: String(u.id),
+        label: `${u.first_name} ${u.last_name}${u.nick_name ? ` (${u.nick_name})` : ''}`,
+      }));
+      setUserOptionsExtra((prev) => {
+        const seen = new Set(prev.map((o) => o.value));
+        const merged = [...prev];
+        opts.forEach((o) => {
+          if (!seen.has(o.value)) merged.push(o);
+        });
+        return merged;
+      });
+    } catch (err) {
+      console.error('Failed to search users', err);
+    }
+  }, []);
+
+  const debouncedSearchUsers = useCallback((q: string) => {
+    if (userSearchTimerRef.current) clearTimeout(userSearchTimerRef.current);
+    userSearchTimerRef.current = setTimeout(() => searchUsers(q), 300);
+  }, [searchUsers]);
 
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
@@ -523,6 +554,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
     [expenseItems],
   );
   const isOverLimit = useMemo(() => {
+    // walletInfo.balance = "ยอดเบิกสะสม" (used); เกินวงเงินเมื่อ used + ขอเบิกใหม่ > limit
     if (walletInfo && typeof walletInfo.balance === 'number') {
       return walletInfo.balance + totalExpenses > walletInfo.expense_limit;
     }
@@ -681,6 +713,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                       setRequesterId(v);
                       setErrors((prev) => ({ ...prev, requesterId: undefined }));
                     }}
+                    onSearchChange={debouncedSearchUsers}
                     options={requesterOptions}
                     placeholder="ค้นหาชื่อผู้เบิก"
                     disabled={isRequesterLocked}
@@ -695,6 +728,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                       if (isRequesterLocked) return;
                       setRecipientId(v);
                     }}
+                    onSearchChange={debouncedSearchUsers}
                     options={recipientOptions}
                     placeholder={enableExpense ? 'ค้นหาชื่อผู้รับเงิน' : ''}
                     disabled={!enableExpense || isRequesterLocked}
@@ -983,17 +1017,23 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                       </span>
                     </div>
                     <div className="flex items-end justify-between mb-2 gap-2">
-                      <span className="text-sm font-medium text-slate-500 shrink-0">คงเหลือปัจจุบัน</span>
+                      <span className="text-sm font-medium text-slate-500 shrink-0">ยอดเบิกสะสม</span>
                       <span className="text-sm sm:text-base font-semibold text-slate-700 text-right">{walletInfo.balance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
+                    </div>
+                    <div className="flex items-end justify-between mb-2 gap-2">
+                      <span className="text-sm font-medium text-slate-500 shrink-0">เหลือเบิกได้</span>
+                      <span className="text-sm sm:text-base font-semibold text-emerald-700 text-right">
+                        {Math.max(0, walletInfo.expense_limit - walletInfo.balance).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+                      </span>
                     </div>
                     {totalExpenses > 0 && (
                       <div className="flex items-end justify-between mb-2 gap-2">
-                        <span className="text-sm font-medium text-slate-500 shrink-0">รวมที่ต้องการเบิกครั้งนี้</span>
+                        <span className="text-sm font-medium text-slate-500 shrink-0">ขอเบิกครั้งนี้</span>
                         <span className="text-sm sm:text-base font-bold text-amber-600 text-right">+{totalExpenses.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
                       </div>
                     )}
                     <div className="flex items-end justify-between mt-3 pt-3 border-t border-slate-100 mb-2 gap-2">
-                      <span className="text-sm font-bold text-slate-600 shrink-0">ยอดเงินรวม</span>
+                      <span className="text-sm font-bold text-slate-600 shrink-0">รวมยอดเบิกหลังครั้งนี้</span>
                       <span className={`text-lg sm:text-xl font-black text-right ${isOverLimit ? 'text-red-600' : 'text-emerald-600'}`}>
                         {(walletInfo.balance + totalExpenses).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                       </span>

@@ -2,7 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { User } from '@/src/types/entity/app.interface';
 import { FormField, Input, Button } from '../../common/FormControls';
-import { formatThaiDateTime } from '../../../utils/date';
+import { formatDateShort, toLocalISODate } from '../../../utils/date';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { PencilIcon, WalletIcon } from '../../../assets/icons/Icons';
 import { UserApi } from '../../../api/user';
 
@@ -51,12 +52,9 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
     }
   };
 
-  const balance = useMemo(() => {
-    if (wallet && 'balance' in wallet) {
-      return wallet.expense_limit;
-    }
-    return 0;
-  }, [wallet]);
+  const expenseLimit = Number(wallet?.expense_limit ?? 0);
+  const usedAmount = Number(wallet?.balance ?? 0);
+  const remaining = Math.max(0, expenseLimit - usedAmount);
 
   const sortedTransactions = useMemo(() => {
     if (!wallet || !wallet.transactions) return [];
@@ -127,15 +125,8 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
       }
     >
       <div className="space-y-5">
-        {/* ── Section 1: วงเงินการเบิก (centered + edit button top-right) ── */}
-        <div className="p-4 bg-primary/10 rounded-lg text-center relative">
-          <p className="text-sm font-medium text-primary/80">วงเงินการเบิก</p>
-          <p className="text-4xl font-bold text-primary">
-            {balance.toLocaleString('th-TH', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}{' '}บาท
-          </p>
+        {/* ── Section 1: วงเงิน + ยอดเบิกสะสม + คงเหลือ ── */}
+        <div className="p-4 bg-primary/10 rounded-lg relative">
           <button
             onClick={() => setShowLimitForm(!showLimitForm)}
             className="absolute top-4 right-4 text-primary hover:text-primary/80 flex items-center gap-1 text-sm font-medium"
@@ -143,6 +134,26 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
             <PencilIcon className="w-4 h-4" />
             แก้ไขวงเงิน
           </button>
+          <div className="text-center mb-3">
+            <p className="text-sm font-medium text-primary/80">วงเงินการเบิก</p>
+            <p className="text-4xl font-bold text-primary">
+              {expenseLimit.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}บาท
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-primary/20">
+            <div className="text-center">
+              <p className="text-xs font-medium text-slate-500">ยอดเบิกสะสม</p>
+              <p className="text-lg font-bold text-amber-600">
+                {usedAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}บาท
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs font-medium text-slate-500">เหลือเบิกได้</p>
+              <p className={`text-lg font-bold ${remaining === 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                {remaining.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}บาท
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* ── Section 2: ฟอร์มแก้ไขวงเงิน (toggle) ───────────────── */}
@@ -207,20 +218,30 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
             <div className="flex flex-wrap items-end gap-3">
               <div className="flex-1 min-w-[140px]">
                 <label className="block text-xs font-medium text-slate-600 mb-1">จากวันที่</label>
-                <Input
-                  type="date"
-                  value={filterFrom}
-                  onChange={(e) => setFilterFrom(e.target.value)}
-                  className="h-9 text-sm"
+                <DatePicker
+                  selected={filterFrom ? new Date(filterFrom) : null}
+                  onChange={(d: Date | null) => setFilterFrom(toLocalISODate(d))}
+                  dateFormat="dd/MM/yyyy"
+                  locale="th"
+                  placeholderText="วว/ดด/ปปปป"
+                  isClearable
+                  className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-9"
+                  wrapperClassName="w-full"
                 />
               </div>
               <div className="flex-1 min-w-[140px]">
                 <label className="block text-xs font-medium text-slate-600 mb-1">ถึงวันที่</label>
-                <Input
-                  type="date"
-                  value={filterTo}
-                  onChange={(e) => setFilterTo(e.target.value)}
-                  className="h-9 text-sm"
+                <DatePicker
+                  selected={filterTo ? new Date(filterTo) : null}
+                  onChange={(d: Date | null) =>
+                    setFilterTo(d ? d.toISOString().substring(0, 10) : '')
+                  }
+                  dateFormat="dd/MM/yyyy"
+                  locale="th"
+                  placeholderText="วว/ดด/ปปปป"
+                  isClearable
+                  className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-9"
+                  wrapperClassName="w-full"
                 />
               </div>
               {(filterFrom || filterTo) && (
@@ -259,7 +280,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                   paginatedTransactions.map((txn: any) => (
                     <tr key={txn.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                        {formatThaiDateTime(txn.date)}
+                        {formatDateShort(txn.date)}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-800">
                         {txn.description}
