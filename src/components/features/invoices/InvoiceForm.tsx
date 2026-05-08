@@ -140,6 +140,8 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     return [];
   });
 
+  const [formErrors, setFormErrors] = useState<{ customer?: string; installment?: string; adhocDescription?: string; adhocAmount?: string }>({});
+
   // -- Initialization & Effects --
   useEffect(() => {
     if (mode === 'create' && !formData.dueDate) {
@@ -453,10 +455,11 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
   const handleSelectInstallment = (inst: any) => {
     setIsAdhocMode(false);
-    setFormData(prev => ({ 
-      ...prev, 
+    if (formErrors.installment) setFormErrors(prev => ({ ...prev, installment: undefined }));
+    setFormData(prev => ({
+      ...prev,
       term: inst.term,
-      selectedScheduleId: inst.id 
+      selectedScheduleId: inst.id
     }));
     
     setItems([{
@@ -511,15 +514,17 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
   const submitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSaving) return;
-    if (!formData.customerId) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกลูกค้า' });
+    const errors: { customer?: string; installment?: string; adhocDescription?: string; adhocAmount?: string } = {};
+    if (!formData.customerId) errors.customer = 'กรุณาเลือกลูกค้า';
+    if (!isAdhocMode && !isFullPayment && availableInstallments.length > 0 && !formData.selectedScheduleId) errors.installment = 'กรุณาเลือกงวดที่ต้องการเรียกเก็บเงิน';
+    if (isAdhocMode && !adhocData.description?.trim()) errors.adhocDescription = 'กรุณากรอกรายละเอียด';
+    if (isAdhocMode && (!adhocData.amount || adhocData.amount <= 0)) errors.adhocAmount = 'กรุณากรอกจำนวนเงิน';
+    if (errors.customer || errors.installment || errors.adhocDescription || errors.adhocAmount) {
+      setFormErrors(errors);
+      setTimeout(() => document.querySelector('.text-red-500.text-xs')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
       return;
     }
-
-    if (!isAdhocMode && !isFullPayment && availableInstallments.length > 0 && !formData.selectedScheduleId) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกงวดที่ต้องการเรียกเก็บเงิน หรือ กดปุ่ม "สร้างบิลพิเศษ"' });
-      return;
-    }
+    setFormErrors({});
 
     setIsSaving(true);
     try {
@@ -665,7 +670,10 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
               <FormField label="ลูกค้า *">
                 <SearchableSelect
                   value={formData.customerId}
-                  onChange={(val) => setFormData(prev => ({ ...prev, customerId: val }))}
+                  onChange={(val) => {
+                    setFormData(prev => ({ ...prev, customerId: val }));
+                    if (formErrors.customer) setFormErrors(prev => ({ ...prev, customer: undefined }));
+                  }}
                   onSearchChange={handleCustomerSearch}
                   options={(() => {
                     const list = [...customers, ...searchedCustomers];
@@ -681,9 +689,11 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                   })()}
                   placeholder="เลือกลูกค้า"
                   searchPlaceholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์"
-                  required
                   className="bg-white h-11"
                 />
+                {formErrors.customer && (
+                  <p className="text-red-500 text-xs mt-1">{formErrors.customer}</p>
+                )}
               </FormField>
 
               {formData.customerId ? (
@@ -839,6 +849,9 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 </tbody>
               </table>
             </div>
+            {formErrors.installment && (
+              <p className="text-red-500 text-xs mt-2">{formErrors.installment}</p>
+            )}
 
             {/* กำหนดยอดเอง — แสดงเมื่อเลือกงวดแล้ว */}
             {formData.selectedScheduleId && (
@@ -913,11 +926,16 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 <FormField label="รายละเอียดที่ต้องการแสดงในบิล *">
                   <Input
                     value={adhocData.description}
-                    onChange={(e) => setAdhocData(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) => {
+                      setAdhocData(prev => ({ ...prev, description: e.target.value }));
+                      if (formErrors.adhocDescription) setFormErrors(prev => ({ ...prev, adhocDescription: undefined }));
+                    }}
                     placeholder="เช่น ค่าบริการติดตั้งเพิ่มเติม, ค่าอุปกรณ์นอกเหนือสัญญา..."
                     className="bg-white h-11 text-base border-slate-300 focus:ring-primary focus:border-primary"
-                    required
                   />
+                  {formErrors.adhocDescription && (
+                    <p className="text-red-500 text-xs mt-1">{formErrors.adhocDescription}</p>
+                  )}
                 </FormField>
               </div>
               
@@ -928,13 +946,18 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                       type="number"
                       min="0"
                       value={adhocData.amount || ''}
-                      onChange={(e) => setAdhocData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                      onChange={(e) => {
+                        setAdhocData(prev => ({ ...prev, amount: Number(e.target.value) }));
+                        if (formErrors.adhocAmount) setFormErrors(prev => ({ ...prev, adhocAmount: undefined }));
+                      }}
                       className="bg-white h-11 text-right pr-12 text-lg font-bold text-slate-900 border-slate-300 focus:ring-primary focus:border-primary shadow-sm"
                       placeholder="0.00"
-                      required
                     />
                     <div className="absolute right-4 top-2.5 text-slate-400 font-bold">บาท</div>
                   </div>
+                  {formErrors.adhocAmount && (
+                    <p className="text-red-500 text-xs mt-1">{formErrors.adhocAmount}</p>
+                  )}
                 </FormField>
               </div>
             </div>

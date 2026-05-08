@@ -38,6 +38,7 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
   const [items, setItems] = useState<ProductReturnItem[]>([]);
   const [formData, setFormData] = useState<Partial<ReturnType>>({});
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
@@ -66,6 +67,7 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
     if (returnItem) {
       setFormData(returnItem);
       setItems(returnItem.items.map((item) => ({ ...item })));
+      setErrors({});
     }
   }, [returnItem]);
 
@@ -99,12 +101,27 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (items.length === 0) newErrors.items = 'กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ';
+    items.forEach((item) => {
+      if (item.quantity <= 0) newErrors[`quantity_${item.product_id}`] = 'กรุณากรอกจำนวน';
+      if (!item.reason.trim()) newErrors[`reason_${item.product_id}`] = 'กรุณากรอกเหตุผล';
+    });
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!isFormValid) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องมีสินค้าที่คืนอย่างน้อย 1 รายการพร้อมกรอกจำนวนและเหตุผล' });
-      return;
-    }
+    if (!validate()) return;
     if (returnItem) {
       const updatedReturn: ReturnType = {
         ...returnItem,
@@ -213,16 +230,16 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
               <h4 className="text-base font-semibold text-slate-800">
                 รายการสินค้า
               </h4>
-              <Button
+              <button
                 type="button"
-                onClick={() => setIsProductModalOpen(true)}
-                variant="primary"
-                className="text-sm px-3"
+                onClick={() => { setIsProductModalOpen(true); if (errors.items) setErrors((prev) => { const next = { ...prev }; delete next.items; return next; }); }}
+                className="flex items-center gap-1.5 px-4 py-2 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all text-sm font-medium"
               >
                 <PlusIcon className="h-5 w-5" />
                 เพิ่มสินค้า
-              </Button>
+              </button>
             </div>
+            {errors.items && <p className="text-red-500 text-xs mb-2">{errors.items}</p>}
             <div className="overflow-x-auto border border-slate-200 rounded-md">
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-50">
@@ -286,6 +303,7 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                                   'quantity',
                                   validatedQuantity
                                 );
+                                if (errors[`quantity_${item.product_id}`]) setErrors((prev) => { const next = { ...prev }; delete next[`quantity_${item.product_id}`]; return next; });
                               }}
                               className="w-24 h-10"
                               min="1"
@@ -295,22 +313,25 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                               }
                               required
                             />
+                            {errors[`quantity_${item.product_id}`] && <p className="text-red-500 text-xs mt-1">{errors[`quantity_${item.product_id}`]}</p>}
                           </td>
                           <td className="p-2 align-top">
                             <Input
                               type="text"
                               value={item.reason}
-                              onChange={(e) =>
+                              onChange={(e) => {
                                 handleItemChange(
                                   item.product_id,
                                   'reason',
                                   e.target.value
-                                )
-                              }
+                                );
+                                if (errors[`reason_${item.product_id}`]) setErrors((prev) => { const next = { ...prev }; delete next[`reason_${item.product_id}`]; return next; });
+                              }}
                               className="w-full h-10"
                               placeholder="เหตุผลในการคืนสินค้า"
                               required
                             />
+                            {errors[`reason_${item.product_id}`] && <p className="text-red-500 text-xs mt-1">{errors[`reason_${item.product_id}`]}</p>}
                           </td>
                           <td className="p-2 text-center align-top">
                             <Button

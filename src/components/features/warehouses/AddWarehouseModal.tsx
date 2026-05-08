@@ -89,7 +89,13 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
     e.preventDefault();
     const validationErrors = validate();
     setErrors(validationErrors);
-    if (Object.keys(validationErrors).length > 0) return;
+    if (Object.keys(validationErrors).length > 0) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
+    }
 
     const payload: Record<string, unknown> = {
       name: form.name.trim(),
@@ -109,12 +115,8 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
     onClose();
   };
 
-  const inputClass = (hasError: boolean, withIcon = false) =>
-    `w-full border rounded-lg ${withIcon ? 'pl-9 ' : ''}p-2.5 text-sm focus:outline-none focus:ring-2 transition-all placeholder:text-slate-300 ${
-      hasError
-        ? 'border-red-400 focus:ring-red-200 focus:border-red-500'
-        : 'border-slate-300 focus:ring-primary/20 focus:border-primary'
-    }`;
+  const inputClass = (_hasError: boolean, withIcon = false) =>
+    `w-full border rounded-lg ${withIcon ? 'pl-9 ' : ''}p-2.5 text-sm focus:outline-none focus:ring-2 transition-all placeholder:text-slate-300 border-slate-300 focus:ring-primary/20 focus:border-primary`;
 
   return (
     <Modal

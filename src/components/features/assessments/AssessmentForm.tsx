@@ -273,7 +273,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         sequence: customer.sequence_no ? String(customer.sequence_no) : '',
         google_map_link: customer.google_map_link || '',
       }));
-      setErrors((prev) => ({ ...prev, customer_id: '', address: '' }));
+      setErrors((prev) => ({ ...prev, customer_id: '', address: '', google_map_link: '' }));
     }
   };
 
@@ -300,6 +300,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       if (updatedArea.building_type) delete newErrs[`area_${index}_building_type`];
       if (updatedArea.service_system) delete newErrs[`area_${index}_service_system`];
       if (updatedArea.category_services?.length) delete newErrs[`area_${index}_category_services`];
+      if (updatedArea.area_size && updatedArea.area_size > 0) delete newErrs[`area_${index}_area_size`];
       if (updatedArea.package_price_id) delete newErrs[`area_${index}_package`];
       return newErrs;
     });
@@ -452,6 +453,13 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
     }
   }, [paymentCondition, totalEstimatedCost]);
 
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const el = document.querySelector('.text-red-500.text-xs');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+  };
+
   const validateStep = (): boolean => {
     if (currentStep === 0) {
       const newErrors: Record<string, string> = {};
@@ -461,7 +469,8 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       if (!formData.address?.trim()) newErrors.address = 'กรุณากรอกที่อยู่';
       if (!formData.google_map_link?.trim()) newErrors.google_map_link = 'กรุณากรอก Link Google Map';
       setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
+      if (Object.keys(newErrors).length > 0) { scrollToFirstError(); return false; }
+      return true;
     }
 
     if (currentStep === 1) {
@@ -473,10 +482,11 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         if (!area.building_type) { newErrors[`area_${index}_building_type`] = 'กรุณากรอกประเภทสิ่งปลูกสร้าง'; isValid = false; }
         if (!area.service_system) { newErrors[`area_${index}_service_system`] = 'กรุณากรอกระบบใช้บริการ'; isValid = false; }
         if (!area.category_services || area.category_services.length === 0) { newErrors[`area_${index}_category_services`] = 'กรุณากรอกประเภทบริการ'; isValid = false; }
+        if (!area.area_size || area.area_size <= 0) { newErrors[`area_${index}_area_size`] = 'กรุณากรอกขนาดพื้นที่'; isValid = false; }
         if (!area.package_price_id) { newErrors[`area_${index}_package`] = 'กรุณาเลือกแพ็คเกจ'; isValid = false; }
       });
       setErrors(newErrors);
-      if (!isValid) return false;
+      if (!isValid) { scrollToFirstError(); return false; }
 
       if (workAreas.length > 1) {
         const units = workAreas
@@ -748,7 +758,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className={`flex flex-col items-center justify-center py-12 px-4 rounded-xl border border-dashed text-center flex-1 ${errors.customer_id ? 'bg-red-50 border-red-300' : 'bg-slate-50 border-slate-300'}`}>
+                    <div className="flex flex-col items-center justify-center py-12 px-4 rounded-xl border border-dashed text-center flex-1 bg-slate-50 border-slate-300">
                       <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3"><UserIcon className="w-6 h-6 text-slate-300" /></div>
                       <p className="text-slate-500 font-medium">กรุณาเลือกลูกค้า</p>
                       <p className="text-xs text-slate-400 mt-1">เพื่อดำเนินการต่อ</p>
@@ -762,15 +772,15 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                   <div className="p-2 bg-slate-100 rounded-lg text-slate-600"><CalendarIcon className="w-5 h-5" /></div>ข้อมูลนัดหมาย
                 </h3>
                 <div className="space-y-6">
-                  <div className={`p-4 rounded-xl border transition-colors ${errors.created_at ? 'border-red-500 bg-red-50/50' : 'border-slate-200/60 bg-slate-50/50'}`}>
+                  <div className="p-4 rounded-xl border transition-colors border-slate-200/60 bg-slate-50/50">
                     <FormField label="วันที่สร้าง *" htmlFor="created_at" className="mb-0">
-                      <DatePicker selected={formData.created_at ? new Date(formData.created_at) : new Date()} onChange={(date) => handleDateChange('created_at', date)} placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yyyy" locale="th" wrapperClassName="w-full" className={`h-10 border text-sm rounded-md p-2 w-full transition-colors ${errors.created_at ? 'border-red-500 focus:ring-red-500' : 'bg-white'}`} />
+                      <DatePicker selected={formData.created_at ? new Date(formData.created_at) : new Date()} onChange={(date) => handleDateChange('created_at', date)} placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yyyy" locale="th" wrapperClassName="w-full" className="h-10 border text-sm rounded-md p-2 w-full transition-colors bg-white" />
                     </FormField>
                     {errors.created_at && <p className="text-red-500 text-xs mt-1 font-medium">{errors.created_at}</p>}
                   </div>
-                  <div className={`p-4 rounded-xl border transition-colors ${errors.appointment_date ? 'border-red-500 bg-red-50/50' : 'border-slate-200/60 bg-slate-50/50'}`}>
+                  <div className="p-4 rounded-xl border transition-colors border-slate-200/60 bg-slate-50/50">
                     <FormField label="วันที่นัดหมาย *" htmlFor="appointment_date" className="mb-0">
-                      <DatePicker selected={formData.appointment_date ? new Date(formData.appointment_date) : null} onChange={(date) => handleDateChange('appointment_date', date)} minDate={new Date()} placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yyyy" locale="th" wrapperClassName="w-full" className={`h-10 border text-sm rounded-md p-2 w-full transition-colors ${errors.appointment_date ? 'border-red-500 focus:ring-red-500' : 'bg-white'}`} />
+                      <DatePicker selected={formData.appointment_date ? new Date(formData.appointment_date) : null} onChange={(date) => handleDateChange('appointment_date', date)} minDate={new Date()} placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yyyy" locale="th" wrapperClassName="w-full" className="h-10 border text-sm rounded-md p-2 w-full transition-colors bg-white" />
                     </FormField>
                     {errors.appointment_date && <p className="text-red-500 text-xs mt-1 font-medium">{errors.appointment_date}</p>}
                   </div>
@@ -782,7 +792,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
               <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2 mb-4"><span className="w-1.5 h-1.5 rounded-full bg-primary"></span>ที่อยู่สำหรับเข้าประเมิน (สามารถแก้ไขได้)</h3>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-slate-700 mb-1">ที่อยู่ (บ้านเลขที่, ถนน) <span className="text-red-500">*</span></label>
-                <Textarea name="address" value={formData.address || ''} onChange={handleFieldChange} className={`transition-colors ${errors.address ? 'border-red-500 focus:ring-red-500 bg-red-50/30' : 'bg-slate-50 focus:bg-white'}`} rows={2} />
+                <Textarea name="address" value={formData.address || ''} onChange={handleFieldChange} className="transition-colors bg-slate-50 focus:bg-white" rows={2} />
                 {errors.address && <p className="text-red-500 text-xs mt-1 font-medium">{errors.address}</p>}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -805,7 +815,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                   placeholder="https://maps.app.goo.gl/..."
                   value={formData.google_map_link || ''}
                   onChange={handleFieldChange}
-                  className={`transition-colors ${errors.google_map_link ? 'border-red-500 focus:ring-red-500 bg-red-50/30' : 'bg-slate-50 focus:bg-white'}`}
+                  className="transition-colors bg-slate-50 focus:bg-white"
                 />
                 {errors.google_map_link && <p className="text-red-500 text-xs mt-1 font-medium">{errors.google_map_link}</p>}
               </div>

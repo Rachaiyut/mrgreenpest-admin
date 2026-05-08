@@ -35,6 +35,7 @@ export const AccountModal: FC<AccountModalProps> = ({
 }) => {
   const [form, setForm] = useState(emptyForm);
   const [isSaving, setIsSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ account_number?: string; account_name?: string; bank_name?: string }>({});
 
   useEffect(() => {
     if (!isOpen) return;
@@ -54,10 +55,21 @@ export const AccountModal: FC<AccountModalProps> = ({
     } else {
       setForm(emptyForm);
     }
+    setFormErrors({});
   }, [isOpen, mode, initialValues]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const errors: { account_number?: string; account_name?: string; bank_name?: string } = {};
+    if (!form.account_number.trim()) errors.account_number = 'กรุณากรอกเลขที่บัญชี';
+    if (!form.account_name.trim()) errors.account_name = 'กรุณากรอกชื่อบัญชี';
+    if (!form.bank_name.trim()) errors.bank_name = 'กรุณากรอกชื่อธนาคาร';
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      setTimeout(() => document.querySelector('.text-red-500.text-xs')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      return;
+    }
+    setFormErrors({});
     setIsSaving(true);
     try {
       const payload: Partial<Account> = {
@@ -100,15 +112,18 @@ export const AccountModal: FC<AccountModalProps> = ({
       <form id="account-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="md:col-span-1">
           <label className="block text-sm font-medium text-slate-700 mb-1">เลขที่บัญชี <span className="text-red-500">*</span></label>
-          <Input value={form.account_number} onChange={(e) => setForm({ ...form, account_number: e.target.value })} required />
+          <Input value={form.account_number} onChange={(e) => { setForm({ ...form, account_number: e.target.value }); if (formErrors.account_number) setFormErrors((prev) => ({ ...prev, account_number: undefined })); }} />
+          {formErrors.account_number && <p className="text-red-500 text-xs mt-1">{formErrors.account_number}</p>}
         </div>
         <div className="md:col-span-1">
           <label className="block text-sm font-medium text-slate-700 mb-1">ชื่อบัญชี <span className="text-red-500">*</span></label>
-          <Input value={form.account_name} onChange={(e) => setForm({ ...form, account_name: e.target.value })} required />
+          <Input value={form.account_name} onChange={(e) => { setForm({ ...form, account_name: e.target.value }); if (formErrors.account_name) setFormErrors((prev) => ({ ...prev, account_name: undefined })); }} />
+          {formErrors.account_name && <p className="text-red-500 text-xs mt-1">{formErrors.account_name}</p>}
         </div>
         <div className="md:col-span-1">
           <label className="block text-sm font-medium text-slate-700 mb-1">ชื่อธนาคาร <span className="text-red-500">*</span></label>
-          <Input value={form.bank_name} onChange={(e) => setForm({ ...form, bank_name: e.target.value })} required />
+          <Input value={form.bank_name} onChange={(e) => { setForm({ ...form, bank_name: e.target.value }); if (formErrors.bank_name) setFormErrors((prev) => ({ ...prev, bank_name: undefined })); }} />
+          {formErrors.bank_name && <p className="text-red-500 text-xs mt-1">{formErrors.bank_name}</p>}
         </div>
         <div className="md:col-span-1">
           <label className="block text-sm font-medium text-slate-700 mb-1">ชื่อสาขา</label>

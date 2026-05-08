@@ -55,6 +55,7 @@ const ServiceSchedulePage: FC = () => {
   const [rows, setRows] = useState<ScheduleFormRow[]>([
     { visit_no: 1, month: '', work_task: '', service_details: '' },
   ]);
+  const [formErrors, setFormErrors] = useState<{ scheduleName?: string; workTaskRows?: number[]; monthRows?: number[] }>({});
 
   // Data from API
   const [schedules, setSchedules] = useState<ServiceSchedule[]>([]);
@@ -161,6 +162,7 @@ const ServiceSchedulePage: FC = () => {
     setScheduleName('');
     setSelectedPackageId('');
     setRows([{ visit_no: 1, month: '', work_task: '', service_details: '' }]);
+    setFormErrors({});
     setIsModalOpen(true);
   };
 
@@ -177,6 +179,7 @@ const ServiceSchedulePage: FC = () => {
         service_details: d.service_details || '',
       })),
     );
+    setFormErrors({});
     setIsModalOpen(true);
   };
 
@@ -222,16 +225,33 @@ const ServiceSchedulePage: FC = () => {
 
   // Save (create or update)
   const handleSave = async () => {
+    const errors: { scheduleName?: string; workTaskRows?: number[]; monthRows?: number[] } = {};
+
     if (!scheduleName.trim()) {
-      Swal.fire('กรุณากรอกข้อมูลให้ครบ', 'ชื่อตาราง จำเป็นต้องกรอก', 'warning');
+      errors.scheduleName = 'กรุณากรอกชื่อตาราง';
+    }
+
+    const emptyMonthRows = rows
+      .map((r, i) => (!r.month ? i : -1))
+      .filter((i) => i !== -1);
+    if (emptyMonthRows.length > 0) {
+      errors.monthRows = emptyMonthRows;
+    }
+
+    const emptyWorkTaskRows = rows
+      .map((r, i) => (!r.work_task ? i : -1))
+      .filter((i) => i !== -1);
+    if (emptyWorkTaskRows.length > 0) {
+      errors.workTaskRows = emptyWorkTaskRows;
+    }
+
+    if (errors.scheduleName || errors.workTaskRows || errors.monthRows) {
+      setFormErrors(errors);
+      setTimeout(() => document.querySelector('.text-red-500.text-xs')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
       return;
     }
 
-    const hasEmpty = rows.some((r) => !r.work_task);
-    if (hasEmpty) {
-      Swal.fire('กรุณากรอกข้อมูลให้ครบ', 'งานที่ปฏิบัติ จำเป็นต้องกรอก', 'warning');
-      return;
-    }
+    setFormErrors({});
 
     const details: ServiceScheduleDetailItem[] = rows.map((r, i) => ({
       visit_no: r.visit_no,
@@ -533,13 +553,21 @@ const ServiceSchedulePage: FC = () => {
               {isReadOnly ? (
                 <p className="text-sm text-slate-800 font-medium truncate">{scheduleName}</p>
               ) : (
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  placeholder="เช่น ตารางปฏิบัติงาน Package 7 ครั้ง"
-                  value={scheduleName}
-                  onChange={(e) => setScheduleName(e.target.value)}
-                />
+                <>
+                  <input
+                    type="text"
+                    className="w-full border border-slate-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-0 focus:border-green-500 h-[38px]"
+                    placeholder="เช่น ตารางปฏิบัติงาน Package 7 ครั้ง"
+                    value={scheduleName}
+                    onChange={(e) => {
+                      setScheduleName(e.target.value);
+                      if (formErrors.scheduleName) setFormErrors((prev) => ({ ...prev, scheduleName: undefined }));
+                    }}
+                  />
+                  {formErrors.scheduleName && (
+                    <p className="text-red-500 text-xs mt-1">{formErrors.scheduleName}</p>
+                  )}
+                </>
               )}
             </div>
 
@@ -578,7 +606,7 @@ const ServiceSchedulePage: FC = () => {
                         setSelectedPackageId('');
                         setRows([{ visit_no: 1, month: '', work_task: '', service_details: '' }]);
                       }}
-                      className="px-4 py-2.5 text-sm font-medium text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                      className="px-4 text-sm font-medium text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors h-10"
                     >
                       ล้างแพ็กเกจ (กรอกอิสระ)
                     </button>
@@ -590,7 +618,7 @@ const ServiceSchedulePage: FC = () => {
             {/* Schedule Table */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-semibold text-slate-800">ตารางการเข้าปฏิบัติงาน</h3>
+                <h3 className="text-base font-semibold text-slate-800">{isReadOnly ? 'ตารางการเข้าปฏิบัติงาน' : <>ตารางการเข้าปฏิบัติงาน <span className="text-red-500">*</span></>}</h3>
                 <span className="text-sm text-slate-500">เข้า {rows.length} ครั้ง</span>
               </div>
 
@@ -618,29 +646,55 @@ const ServiceSchedulePage: FC = () => {
                           {isReadOnly ? (
                             <span className="text-slate-700 font-medium">{row.month || '-'}</span>
                           ) : (
-                            <select
-                              className="w-full bg-transparent text-sm focus:ring-0 focus:outline-none cursor-pointer border-0 px-0 py-0"
-                              value={row.month}
-                              onChange={(e) => updateRow(index, 'month', e.target.value)}
-                            >
-                              <option value="">เลือก</option>
-                              {THAI_MONTHS.map((m) => (
-                                <option key={m} value={m}>{m}</option>
-                              ))}
-                            </select>
+                            <div>
+                              <select
+                                className="w-full bg-transparent text-sm focus:ring-0 focus:outline-none cursor-pointer border-0 px-0 py-0 h-6"
+                                value={row.month}
+                                onChange={(e) => {
+                                  updateRow(index, 'month', e.target.value);
+                                  if (formErrors.monthRows?.includes(index)) {
+                                    setFormErrors((prev) => ({
+                                      ...prev,
+                                      monthRows: prev.monthRows?.filter((i) => i !== index),
+                                    }));
+                                  }
+                                }}
+                              >
+                                <option value="">เลือก</option>
+                                {THAI_MONTHS.map((m) => (
+                                  <option key={m} value={m}>{m}</option>
+                                ))}
+                              </select>
+                              {formErrors.monthRows?.includes(index) && (
+                                <p className="text-red-500 text-xs mt-0.5">กรุณาเลือกเดือน</p>
+                              )}
+                            </div>
                           )}
                         </td>
                         <td className="px-4 py-3 align-top">
                           {isReadOnly ? (
                             <span className="text-slate-800 whitespace-pre-line break-words">{row.work_task || '-'}</span>
                           ) : (
-                            <textarea
-                              className="w-full bg-transparent text-sm focus:ring-0 focus:outline-none min-h-[50px] resize-none border-0 px-0 py-0"
-                              placeholder="เช่น สำรวจและติดตั้งกล่อง"
-                              value={row.work_task}
-                              onChange={(e) => updateRow(index, 'work_task', e.target.value)}
-                              rows={2}
-                            />
+                            <div>
+                              <input
+                                type="text"
+                                className="w-full bg-transparent text-sm focus:ring-0 focus:outline-none border-0 px-0 py-0 h-6"
+                                placeholder="เช่น สำรวจและติดตั้งกล่อง"
+                                value={row.work_task}
+                                onChange={(e) => {
+                                  updateRow(index, 'work_task', e.target.value);
+                                  if (formErrors.workTaskRows?.includes(index)) {
+                                    setFormErrors((prev) => ({
+                                      ...prev,
+                                      workTaskRows: prev.workTaskRows?.filter((i) => i !== index),
+                                    }));
+                                  }
+                                }}
+                              />
+                              {formErrors.workTaskRows?.includes(index) && (
+                                <p className="text-red-500 text-xs mt-0.5">กรุณากรอกงานที่ปฏิบัติ</p>
+                              )}
+                            </div>
                           )}
                         </td>
                         <td className="px-4 py-3 align-top">
@@ -692,16 +746,29 @@ const ServiceSchedulePage: FC = () => {
                       {isReadOnly ? (
                         <span className="text-sm">{row.month || '-'}</span>
                       ) : (
-                        <select
-                          className="w-full border border-slate-200 rounded-md px-2.5 py-2 text-sm bg-white focus:ring-1 focus:ring-green-500"
-                          value={row.month}
-                          onChange={(e) => updateRow(index, 'month', e.target.value)}
-                        >
-                          <option value="">เลือกเดือน</option>
-                          {THAI_MONTHS.map((m) => (
-                            <option key={m} value={m}>{m}</option>
-                          ))}
-                        </select>
+                        <>
+                          <select
+                            className="w-full border border-slate-200 rounded-md px-2.5 py-2 text-sm bg-white focus:ring-1 focus:ring-green-500"
+                            value={row.month}
+                            onChange={(e) => {
+                              updateRow(index, 'month', e.target.value);
+                              if (formErrors.monthRows?.includes(index)) {
+                                setFormErrors((prev) => ({
+                                  ...prev,
+                                  monthRows: prev.monthRows?.filter((i) => i !== index),
+                                }));
+                              }
+                            }}
+                          >
+                            <option value="">เลือกเดือน</option>
+                            {THAI_MONTHS.map((m) => (
+                              <option key={m} value={m}>{m}</option>
+                            ))}
+                          </select>
+                          {formErrors.monthRows?.includes(index) && (
+                            <p className="text-red-500 text-xs mt-1">กรุณาเลือกเดือน</p>
+                          )}
+                        </>
                       )}
                     </div>
                     <div>
@@ -709,13 +776,26 @@ const ServiceSchedulePage: FC = () => {
                       {isReadOnly ? (
                         <span className="text-sm">{row.work_task || '-'}</span>
                       ) : (
-                        <input
-                          type="text"
-                          className="w-full border border-slate-200 rounded-md px-2.5 py-2 text-sm focus:ring-1 focus:ring-green-500"
-                          placeholder="เช่น สำรวจและติดตั้งกล่อง"
-                          value={row.work_task}
-                          onChange={(e) => updateRow(index, 'work_task', e.target.value)}
-                        />
+                        <>
+                          <input
+                            type="text"
+                            className="w-full border border-slate-200 rounded-md px-2.5 py-2 text-sm focus:ring-1 focus:ring-green-500"
+                            placeholder="เช่น สำรวจและติดตั้งกล่อง"
+                            value={row.work_task}
+                            onChange={(e) => {
+                              updateRow(index, 'work_task', e.target.value);
+                              if (formErrors.workTaskRows?.includes(index)) {
+                                setFormErrors((prev) => ({
+                                  ...prev,
+                                  workTaskRows: prev.workTaskRows?.filter((i) => i !== index),
+                                }));
+                              }
+                            }}
+                          />
+                          {formErrors.workTaskRows?.includes(index) && (
+                            <p className="text-red-500 text-xs mt-1">กรุณากรอกงานที่ปฏิบัติ</p>
+                          )}
+                        </>
                       )}
                     </div>
                     <div>
@@ -740,7 +820,7 @@ const ServiceSchedulePage: FC = () => {
               {!isReadOnly && (
                 <button
                   onClick={addRow}
-                  className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:bg-slate-50 hover:border-green-400 hover:text-green-600 text-sm font-medium transition-colors"
+                  className="mt-3 mx-auto flex items-center justify-center gap-2 px-6 py-2.5 border border-green-500 rounded-lg text-green-600 hover:bg-green-50 text-sm font-medium transition-colors focus:outline-none focus:ring-0"
                 >
                   <PlusIcon className="w-4 h-4" />
                   เพิ่มครั้งที่ {rows.length + 1}

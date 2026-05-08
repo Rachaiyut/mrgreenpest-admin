@@ -413,6 +413,16 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   // Editable area prices - track per-area price overrides by index
   const [editableAreaPrices, setEditableAreaPrices] = useState<Record<number, number>>({});
   const [areaErrors, setAreaErrors] = useState<Record<string, string>>({});
+  const [formErrors, setFormErrors] = useState<{ customer?: string; serviceLocation?: string; areas?: string }>({});
+  useEffect(() => {
+    if (serviceLocation && formErrors.serviceLocation) setFormErrors((prev) => ({ ...prev, serviceLocation: undefined }));
+  }, [serviceLocation]);
+  useEffect(() => {
+    if (selectedCustomerId && formErrors.customer) setFormErrors((prev) => ({ ...prev, customer: undefined }));
+  }, [selectedCustomerId]);
+  useEffect(() => {
+    if (editableAreas.length > 0 && formErrors.areas) setFormErrors((prev) => ({ ...prev, areas: undefined }));
+  }, [editableAreas]);
   const [includeVat, setIncludeVat] = useState(initialValues?.include_vat ?? true);
   const vatRate = 0.07;
   const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(PaymentMethod.TRANSFER);
@@ -1246,25 +1256,32 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!selectedCustomerId || !selectedCustomer) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกลูกค้า' }); return; }
+    const errors: { customer?: string; serviceLocation?: string; areas?: string } = {};
+    if (!selectedCustomerId || !selectedCustomer) errors.customer = 'กรุณาเลือกลูกค้า';
+    if (!serviceLocation.trim()) errors.serviceLocation = 'กรุณากรอกสถานที่ให้บริการ';
+    if (editableAreas.length === 0) errors.areas = 'กรุณาเพิ่มรายละเอียดพื้นที่';
 
-    // Validate areas
-    if (editableAreas.length > 0) {
-      const newAreaErrors: Record<string, string> = {};
-      let hasAreaError = false;
-      for (let i = 0; i < editableAreas.length; i++) {
-        const area = editableAreas[i];
-        if (!area.area_name?.trim()) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณากรอกชื่อพื้นที่ ${i + 1}` }); setAreaErrors(newAreaErrors); return; }
-        if (!area.building_type) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณากรอกประเภทสิ่งปลูกสร้างในพื้นที่ "${area.area_name}"` }); setAreaErrors(newAreaErrors); return; }
-        if (!area.package_price_id) { newAreaErrors[`area_${i}_package`] = 'กรุณาเลือกแพ็คเกจ'; hasAreaError = true; }
-      }
-      if (hasAreaError) {
-        setAreaErrors(newAreaErrors);
-        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกแพ็คเกจในทุกพื้นที่' });
-        return;
-      }
-      setAreaErrors({});
+    const newAreaErrors: Record<string, string> = {};
+    let hasAreaError = false;
+    for (let i = 0; i < editableAreas.length; i++) {
+      const area = editableAreas[i];
+      if (!area.area_name?.trim()) { newAreaErrors[`area_${i}_area_name`] = 'กรุณากรอกชื่อพื้นที่'; hasAreaError = true; }
+      if (!area.building_type) { newAreaErrors[`area_${i}_building_type`] = 'กรุณาเลือกประเภทสิ่งปลูกสร้าง'; hasAreaError = true; }
+      if (!area.service_system) { newAreaErrors[`area_${i}_service_system`] = 'กรุณาเลือกระบบใช้บริการ'; hasAreaError = true; }
+      if (!area.category_services || area.category_services.length === 0) { newAreaErrors[`area_${i}_category_services`] = 'กรุณาเลือกประเภทบริการ'; hasAreaError = true; }
+      if (!area.area_size && area.area_size !== 0) { newAreaErrors[`area_${i}_area_size`] = 'กรุณากรอกขนาดพื้นที่'; hasAreaError = true; }
+      if (!area.package_price_id) { newAreaErrors[`area_${i}_package`] = 'กรุณาเลือกแพ็คเกจ'; hasAreaError = true; }
     }
+
+    const hasFormError = errors.customer || errors.serviceLocation || errors.areas;
+    if (hasFormError || hasAreaError) {
+      setFormErrors(hasFormError ? errors : {});
+      setAreaErrors(hasAreaError ? newAreaErrors : {});
+      setTimeout(() => document.querySelector('.text-red-500.text-xs')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      return;
+    }
+    setFormErrors({});
+    setAreaErrors({});
 
     const hasValidItems = items.some((item) => item.description && item.amount > 0);
     const hasAreas = editableAreas.length > 0 && editableAreas.some((a: any) => (Number(a.total_price) || Number(a.package_price) || 0) > 0);
@@ -1402,13 +1419,19 @@ export const QuotationForm: FC<QuotationFormProps> = ({
               <label className="block text-sm font-medium text-slate-700 mb-1">ลูกค้า <span className="text-red-500">*</span></label>
               <SearchableSelect
                 value={selectedCustomerId}
-                onChange={setSelectedCustomerId}
+                onChange={(val) => {
+                  setSelectedCustomerId(val);
+                  if (formErrors.customer) setFormErrors((prev) => ({ ...prev, customer: undefined }));
+                }}
                 onSearchChange={handleCustomerSearch}
                 options={fetchedCustomers.map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name}`, description: c.primary_phone }))}
                 placeholder="เลือกลูกค้า"
                 searchPlaceholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์"
                 disabled={isReadOnly}
               />
+              {formErrors.customer && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.customer}</p>
+              )}
             </div>
             <div className="col-span-1 md:col-span-2">
               <FormField label="ใบประเมินหน้างาน (อ้างอิง)">
@@ -1446,7 +1469,15 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <SectionHeader icon={HomeIcon} title="ข้อมูลที่อยู่" />
           <div className="space-y-4">
-            <FormField label="สถานที่ให้บริการ"><Textarea value={serviceLocation} onChange={(e) => setServiceLocation(e.target.value)} disabled={isReadOnly} rows={4} placeholder="ที่อยู่สำหรับเข้าให้บริการ..." required /></FormField>
+            <FormField label={<>สถานที่ให้บริการ <span className="text-red-500">*</span></>}>
+              <Textarea value={serviceLocation} onChange={(e) => {
+                setServiceLocation(e.target.value);
+                if (formErrors.serviceLocation) setFormErrors((prev) => ({ ...prev, serviceLocation: undefined }));
+              }} disabled={isReadOnly} rows={4} placeholder="ที่อยู่สำหรับเข้าให้บริการ..." />
+              {formErrors.serviceLocation && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.serviceLocation}</p>
+              )}
+            </FormField>
             <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
               <h4 className="text-sm font-semibold text-yellow-800 mb-2">Google Map</h4>
               {selectedCustomer?.google_map_link ? (
@@ -1491,11 +1522,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           }}
           isReadOnly={isReadOnly}
           isEditing={mode === 'edit' || mode === 'revise'}
-          title="รายละเอียดพื้นที่"
+          title={<>รายละเอียดพื้นที่ <span className="text-red-500">*</span></>}
           notice={mode === 'create' && selectedAssessmentId ? 'ข้อมูลพื้นที่จากใบประเมิน (แก้ไขไม่ได้)' : undefined}
           sortByCreatedAt
           disabled={mode === 'create' && !!selectedAssessmentId}
           errors={areaErrors}
+          errorMessage={formErrors.areas}
         />
 
         {!selectedAssessmentId && selectedCustomerId && selectedPackageId && (

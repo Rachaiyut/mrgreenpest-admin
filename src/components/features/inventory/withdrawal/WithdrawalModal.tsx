@@ -4,7 +4,6 @@
  *              Follows the same split pattern as QuotationModal / QuotationForm.
  *              Mode is controlled via `mode` prop ('create' | 'edit').
  */
-import Swal from '@/src/utils/swal';
 import React, {
   useState,
   useEffect,
@@ -453,6 +452,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
       quantity: 1,
     }));
     setGoodsItems((prev) => [...prev, ...newItems]);
+    if (errors.items) setErrors((prev) => ({ ...prev, items: undefined }));
     setIsProductModalOpen(false);
   };
 
@@ -476,20 +476,25 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
   const validate = () => {
     const newErrors: Record<string, string | undefined> = {};
     if (!requesterId) newErrors.requesterId = 'กรุณาเลือกผู้เบิก';
-    if (goodsItems.length > 0 && !fromWarehouseId) {
-      newErrors.fromWarehouseId = 'กรุณาเลือกคลังต้นทางเมื่อมีการเบิกสินค้า';
+    if (enableGoods && !fromWarehouseId) {
+      newErrors.fromWarehouseId = 'กรุณาเลือกคลังต้นทาง';
+    }
+    if (enableGoods && !toWarehouseId) {
+      newErrors.toWarehouseId = 'กรุณาเลือกคลังปลายทาง';
     }
     const hasValidExpenses = expenseItems.some((exp) => Number(exp.amount) > 0);
     if (goodsItems.length === 0 && !hasValidExpenses) {
-      newErrors.general = 'ต้องมีสินค้าอย่างน้อย 1 รายการ หรือมีการเบิกค่าใช้จ่าย';
-      Swal.fire({
-        icon: 'warning',
-        title: 'กรุณาตรวจสอบ',
-        text: 'กรุณาเลือกสินค้าอย่างน้อย 1 รายการ หรือเพิ่มรายการเบิกเงิน',
-      });
+      newErrors.items = 'กรุณาเลือกสินค้าอย่างน้อย 1 รายการ หรือเพิ่มรายการเบิกเงิน';
     }
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return false;
+    }
+    return true;
   };
 
   const buildPayload = (lifecycle: WithdrawalLifecycle): Partial<WithdrawalType> => ({
@@ -612,7 +617,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                 variant="primary"
                 type="submit"
                 form="withdrawal-form"
-                disabled={isSubmitting || !hasValidEntries}
+                disabled={isSubmitting}
                 className={`py-2.5 px-6 rounded-lg text-white font-semibold shadow-sm transition-all disabled:bg-slate-300 disabled:cursor-not-allowed ${
                   isOverLimit || isAnyItemOverLimit ? 'bg-amber-500 hover:bg-amber-600' : 'bg-primary hover:bg-primary/90'
                 }`}
@@ -658,7 +663,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
 
               <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-3 sm:p-5 rounded-lg border border-slate-100 relative z-50">
                 <div className="flex-1 w-full relative z-50">
-                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">เบิกจากคลัง (ต้นทาง)</label>
+                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">เบิกจากคลัง (ต้นทาง) <span className="text-red-500">*</span></label>
                   <SearchableSelect
                     value={fromWarehouseId}
                     onChange={(v) => {
@@ -678,10 +683,13 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                   <ArrowRightIcon className="w-5 h-5 text-slate-400" />
                 </div>
                 <div className="flex-1 w-full relative z-40">
-                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ไปยังคลัง/รถ (ปลายทาง)</label>
+                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ไปยังคลัง/รถ (ปลายทาง) <span className="text-red-500">*</span></label>
                   <SearchableSelect
                     value={toWarehouseId}
-                    onChange={setToWarehouseId}
+                    onChange={(v) => {
+                      setToWarehouseId(v);
+                      setErrors((prev) => ({ ...prev, toWarehouseId: undefined }));
+                    }}
                     onSearchChange={(q) => {
                       if (vehicleSearchTimerRef.current) clearTimeout(vehicleSearchTimerRef.current);
                       vehicleSearchTimerRef.current = setTimeout(() => fetchVehicleWarehouses(q), 300);
@@ -689,6 +697,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     options={vehicleWarehouseOptions}
                     placeholder="เลือกคลังปลายทาง"
                   />
+                  {errors.toWarehouseId && <p className="text-red-500 text-xs mt-1">{errors.toWarehouseId}</p>}
                 </div>
               </div>
             </div>
@@ -704,7 +713,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex-1 w-full relative z-40">
                   <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">
-                    ผู้เบิก <span className="text-red-500">*</span>
+                    ผู้เบิก (Requester) <span className="text-red-500">*</span>
                   </label>
                   <SearchableSelect
                     value={requesterId}
@@ -721,7 +730,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                   {errors.requesterId && <p className="text-red-500 text-xs mt-1">{errors.requesterId}</p>}
                 </div>
                 <div className="flex-1 w-full relative z-30">
-                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ผู้รับเงิน</label>
+                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ผู้รับเงิน (Recipient)</label>
                   <SearchableSelect
                     value={recipientId}
                     onChange={(v) => {
@@ -783,15 +792,15 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                       <p className="text-sm text-slate-500 mt-0.5">สินค้าที่ต้องการเบิกออกจากคลัง</p>
                     </div>
                   </div>
-                  <Button
+                  <button
                     type="button"
                     onClick={() => setIsProductModalOpen(true)}
-                    variant="outline"
-                    className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 text-sm font-bold px-4 py-2 w-full sm:w-auto"
+                    className="flex items-center gap-1 bg-primary/10 text-primary font-semibold py-1 px-2 rounded-md text-sm"
                     disabled={!fromWarehouseId}
                   >
-                    <PlusIcon className="w-5 h-5 mr-1.5" /> เพิ่มสินค้า
-                  </Button>
+                    <PlusIcon className="h-4 w-4" />
+                    เพิ่มสินค้า
+                  </button>
                 </div>
 
                 <div className="flex-grow overflow-y-auto bg-slate-50/30 p-5">
@@ -802,6 +811,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                       </div>
                       <p className="font-bold text-slate-600 text-base">ยังไม่มีรายการสินค้า</p>
                       <p className="text-sm mt-1.5 text-slate-400">กดปุ่ม "เพิ่มสินค้า" เพื่อเลือกจากคลัง</p>
+                      {errors.items && <p className="text-red-500 text-xs mt-2">{errors.items}</p>}
                     </div>
                   ) : (
                     <div className="space-y-3 mt-2">
@@ -828,9 +838,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                         return (
                           <div
                             key={item.id}
-                            className={`px-4 sm:px-5 py-4 rounded-xl border transition-all duration-200 bg-white ${
-                              hasWarning ? 'border-red-300 bg-red-50/30' : 'border-slate-200'
-                            }`}
+                            className="px-4 sm:px-5 py-4 rounded-xl border transition-all duration-200 bg-white border-slate-200"
                           >
                             {/* Desktop: grid layout */}
                             <div className="hidden md:grid grid-cols-12 gap-4 items-center w-full">
@@ -986,23 +994,13 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             {/* Card 4: Finance */}
             {enableExpense && (
               <div
-                className={`p-4 sm:p-6 rounded-xl border shadow-sm transition-all relative z-10 ${
-                  isOverLimit ? 'bg-red-50/50 border-red-200 ring-1 ring-red-100' : 'bg-white border-slate-200'
-                }`}
+                className="p-4 sm:p-6 rounded-xl border shadow-sm transition-all relative z-10 bg-white border-slate-200"
               >
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 border-b border-slate-100 pb-3">
                   <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">
                     <span className="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg flex items-center justify-center text-base font-black border border-emerald-200">฿</span>
                     การเงิน & ค่าใช้จ่าย
                   </h3>
-                  <Button
-                    type="button"
-                    onClick={handleAddExpense}
-                    variant="outline"
-                    className="text-primary border-primary/20 bg-primary/5 text-sm font-bold px-4 py-2 w-full sm:w-auto"
-                  >
-                    <PlusIcon className="w-5 h-5 mr-1.5" /> เพิ่มรายการเบิกเงิน
-                  </Button>
                 </div>
 
                 {walletInfo && (
@@ -1069,42 +1067,83 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     expenseItems.map((item) => (
                       <div
                         key={item.id}
-                        className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center bg-white p-3 rounded-lg border border-slate-200 shadow-sm group hover:border-primary/30 transition-colors"
+                        className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm group hover:border-primary/30 transition-colors"
                       >
-                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-3 sm:mb-0 sm:hidden justify-between">
                           <div className="p-2 bg-slate-100 rounded-md text-slate-400 shrink-0">
                             <BanknotesIcon className="w-5 h-5" />
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveExpenseItem(item.id)}
+                            className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors shrink-0"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <div className="hidden sm:flex items-center gap-3">
+                          <div className="p-2 bg-slate-100 rounded-md text-slate-400 shrink-0">
+                            <BanknotesIcon className="w-5 h-5" />
+                          </div>
+                          <div className="flex gap-3 flex-1 min-w-0">
+                            <input
+                              type="text"
+                              value={item.description}
+                              onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
+                              placeholder="กรอกรายละเอียดค่าใช้จ่าย..."
+                              className="w-[70%] rounded-lg border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium bg-white px-3 py-2 min-w-0"
+                            />
+                            <div className="relative flex items-center w-[30%]">
+                              <input
+                                type="number"
+                                value={item.amount}
+                                onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
+                                placeholder="0.00"
+                                className="w-full rounded-lg border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary text-base font-bold text-right pr-12 bg-white px-3 py-2"
+                              />
+                              <span className="absolute right-3 text-sm font-semibold text-slate-400">บาท</span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveExpenseItem(item.id)}
+                            className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors shrink-0"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-3 sm:hidden">
                           <input
                             type="text"
                             value={item.description}
                             onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
                             placeholder="กรอกรายละเอียดค่าใช้จ่าย..."
-                            className="flex-grow border-0 border-b border-transparent focus:border-primary focus:ring-0 text-sm font-medium bg-transparent px-2 min-w-0"
+                            className="w-full rounded-lg border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium bg-white px-3 py-2"
                           />
-                        </div>
-                        <div className="flex items-center gap-2 pl-11 sm:pl-0">
-                          <div className="relative flex items-center w-full sm:w-auto max-w-[150px]">
+                          <div className="relative flex items-center w-full">
                             <input
                               type="number"
                               value={item.amount}
                               onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
                               placeholder="0.00"
-                              className="w-full border-0 border-b border-transparent focus:border-primary focus:ring-0 text-base font-bold text-right pr-8 bg-transparent"
+                              className="w-full rounded-lg border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary text-base font-bold text-right pr-12 bg-white px-3 py-2"
                             />
-                            <span className="absolute right-0 text-sm font-semibold text-slate-400">บาท</span>
+                            <span className="absolute right-3 text-sm font-semibold text-slate-400">บาท</span>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveExpenseItem(item.id)}
-                            className="text-slate-300 hover:text-red-500 ml-auto sm:ml-2 p-1 rounded-lg hover:bg-red-50 transition-colors shrink-0"
-                          >
-                            <XCircleIcon className="w-6 h-6" />
-                          </button>
                         </div>
                       </div>
                     ))
                   )}
+
+                  <div className="flex justify-center mt-2">
+                    <button
+                      type="button"
+                      onClick={handleAddExpense}
+                      className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium"
+                    >
+                      <PlusIcon className="h-5 w-5" /> เพิ่มรายการเบิกเงิน
+                    </button>
+                  </div>
 
                   {expenseItems.length > 0 && (
                     <div className="flex justify-between items-center pt-4 border-t border-slate-200 mt-4">

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Swal from '@/src/utils/swal';
 import { FormField, Input } from '../../common/FormControls';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 import { Supplier } from '@/src/types/entity/supplier.interface';
@@ -19,6 +18,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
   const [supplierType, setSupplierType] = useState<'บุคคลธรรมดา' | 'นิติบุคคล'>('นิติบุคคล');
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [phones, setPhones] = useState(['']);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (initialValues) {
@@ -37,24 +37,58 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       setPhones(['']);
       setSupplierType('นิติบุคคล');
     }
+    setErrors({});
   }, [initialValues]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
   };
 
   const handlePhoneChange = (index: number, value: string) => {
     const newPhones = [...phones];
     newPhones[index] = value;
     setPhones(newPhones);
+    if (index === 0 && errors.phone) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.phone;
+        return next;
+      });
+    }
+  };
+
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.name?.trim()) {
+      newErrors.name = supplierType === 'นิติบุคคล' ? 'กรุณากรอกชื่อบริษัท' : 'กรุณากรอกชื่อ-นามสกุล';
+    }
+    if (supplierType === 'นิติบุคคล' && !formData.tax_id?.trim()) {
+      newErrors.tax_id = 'กรุณากรอกเลขประจำตัวผู้เสียภาษี';
+    }
+    if (!phones[0]?.trim()) {
+      newErrors.phone = 'กรุณากรอกเบอร์โทรศัพท์';
+    }
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+    }
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name?.trim() || !phones[0]?.trim() || (supplierType === 'นิติบุคคล' && !formData.tax_id?.trim())) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน' });
-      return;
-    }
+    if (!validate()) return;
 
     onSubmit({
       name: formData.name,
@@ -71,8 +105,9 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
   return (
     <form id="supplier-form" onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="tax_id">
-          <Input name="tax_id" type="text" value={formData.tax_id || ''} onChange={handleChange} required={supplierType === 'นิติบุคคล'} />
+        <FormField label={supplierType === 'นิติบุคคล' ? 'เลขประจำตัวผู้เสียภาษี *' : 'เลขประจำตัวผู้เสียภาษี'} htmlFor="tax_id">
+          <Input name="tax_id" type="text" value={formData.tax_id || ''} onChange={handleChange} />
+          {errors.tax_id && <p className="text-red-500 text-xs mt-1">{errors.tax_id}</p>}
         </FormField>
         <FormField label="ประเภทผู้จัดจำหน่าย">
           <div className={`flex rounded-lg bg-slate-100 p-1 w-full ${mode === 'edit' ? 'opacity-60' : ''}`}>
@@ -101,7 +136,8 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       </div>
 
       <FormField label={supplierType === 'นิติบุคคล' ? 'ชื่อบริษัท *' : 'ชื่อ-นามสกุล *'} htmlFor="name">
-        <Input name="name" type="text" value={formData.name || ''} onChange={handleChange} required />
+        <Input name="name" type="text" value={formData.name || ''} onChange={handleChange} />
+        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
       </FormField>
 
       {supplierType === 'นิติบุคคล' && (
@@ -111,11 +147,11 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField label="โทรศัพท์ *">
+        <FormField label="เบอร์โทรศัพท์ *">
           <div className="space-y-2">
             {phones.map((phone, index) => (
               <div key={index} className="flex items-center gap-2">
-                <Input type="tel" value={phone} onChange={(e) => handlePhoneChange(index, e.target.value)} required={index === 0} placeholder={`เบอร์โทรศัพท์ ${index + 1}`} />
+                <Input type="tel" value={phone} onChange={(e) => handlePhoneChange(index, e.target.value)} placeholder={`เบอร์โทรศัพท์ ${index + 1}`} />
                 {index > 0 && (
                   <button type="button" onClick={() => setPhones(phones.filter((_, i) => i !== index))} className="p-2 text-red-500 hover:text-red-700 rounded-full hover:bg-red-50">
                     <TrashIcon className="h-5 w-5" />
@@ -123,6 +159,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
                 )}
               </div>
             ))}
+            {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
             {phones.length < 3 && (
               <button type="button" onClick={() => setPhones([...phones, ''])} className="text-sm text-primary hover:underline flex items-center gap-1">
                 <PlusIcon className="h-4 w-4" />เพิ่มเบอร์โทรศัพท์

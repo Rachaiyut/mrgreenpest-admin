@@ -184,7 +184,10 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
 
   const submitWithStatus = (status: 'DRAFT' | 'PENDING') => {
     const requireReason = status === 'PENDING';
-    if (!validateRequired({ requireReason })) return;
+    if (!validateRequired({ requireReason })) {
+      setTimeout(() => document.querySelector('.text-red-500.text-xs')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      return;
+    }
 
     if (status === 'PENDING') {
       const adjustmentItems = items
@@ -308,7 +311,7 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
               <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100">
-                <FormField label="คลังสินค้า" htmlFor="warehouse">
+                <FormField label="คลังสินค้า *" htmlFor="warehouse">
                   <SearchableSelect
                     value={warehouseId}
                     onChange={(v) => {
@@ -339,13 +342,13 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                     }))}
                   />
                   {warehouseError && (
-                    <p className="mt-1 text-xs text-red-600">{warehouseError}</p>
+                    <p className="text-red-500 text-xs mt-1">{warehouseError}</p>
                   )}
                 </FormField>
               </div>
             </div>
             <div className="mt-4">
-              <FormField label="เหตุผลในการปรับปรุง" htmlFor="main-reason">
+              <FormField label="เหตุผลในการปรับปรุง *" htmlFor="main-reason">
                 <Textarea
                   id="main-reason"
                   value={mainReason}
@@ -359,7 +362,7 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                   placeholder="กรอกเหตุผลการปรับปรุง..."
                 />
                 {reasonError && (
-                  <p className="mt-1 text-xs text-red-600">{reasonError}</p>
+                  <p className="text-red-500 text-xs mt-1">{reasonError}</p>
                 )}
               </FormField>
             </div>

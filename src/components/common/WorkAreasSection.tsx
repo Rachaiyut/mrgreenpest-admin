@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, ReactNode } from 'react';
 import { PlusIcon, ClipboardDocumentListIcon } from '../../assets/icons/Icons';
 import { WorkAreaForm } from '../features/assessments/WorkAreaForm';
 import { Product } from '../../types/entity/product.interface';
@@ -15,11 +15,12 @@ export interface WorkAreasSectionProps {
   onSelectPackage?: (pkgId: string, areaIndex: number) => void;
   isReadOnly?: boolean;
   isEditing?: boolean;
-  title?: string;
+  title?: ReactNode;
   notice?: string;
   sortByCreatedAt?: boolean;
   disabled?: boolean;
   errors?: Record<string, string>;
+  errorMessage?: string;
 }
 
 const WorkAreasSection: FC<WorkAreasSectionProps> = ({
@@ -37,6 +38,7 @@ const WorkAreasSection: FC<WorkAreasSectionProps> = ({
   sortByCreatedAt = false,
   disabled = false,
   errors = {},
+  errorMessage,
 }) => {
   const handleAreaChange = (index: number, updated: any) => {
     onAreasChange(areas.map((a, idx) => idx === index ? updated : a));
@@ -116,6 +118,9 @@ const WorkAreasSection: FC<WorkAreasSectionProps> = ({
           <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 text-slate-400">
             <ClipboardDocumentListIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">ยังไม่มีพื้นที่ให้บริการ กด "เพิ่มพื้นที่" เพื่อเริ่มต้น</p>
+            {errorMessage && (
+              <p className="text-red-500 text-xs mt-2">{errorMessage}</p>
+            )}
           </div>
         )}
 

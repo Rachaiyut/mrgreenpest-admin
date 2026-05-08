@@ -273,7 +273,13 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!validateRequired({ requireReason: true })) return;
+    if (!validateRequired({ requireReason: true })) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
+    }
     if (items.length === 0 || items.some((item) => item.quantity <= 0)) {
       Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'ต้องมีสินค้าอย่างน้อย 1 รายการที่จำนวนมากกว่า 0' });
       return;
@@ -282,7 +288,13 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
   };
 
   const handleSaveDraft = () => {
-    if (!validateRequired({ requireReason: false })) return;
+    if (!validateRequired({ requireReason: false })) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
+    }
     submitWithStatus('DRAFT');
   };
 
@@ -369,7 +381,7 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-3 bg-amber-50/50 rounded-md border border-amber-100">
-                <FormField label="คลังต้นทาง " htmlFor="from-warehouse">
+                <FormField label="คลังต้นทาง *" htmlFor="from-warehouse">
                   <SearchableSelect
                     value={fromWarehouseId}
                     onChange={(newFromId) => {
@@ -388,13 +400,13 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                     }))}
                   />
                   {fromWarehouseError && (
-                    <p className="mt-1 text-xs text-red-600">{fromWarehouseError}</p>
+                    <p className="text-red-500 text-xs mt-1">{fromWarehouseError}</p>
                   )}
                 </FormField>
               </div>
               <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100">
                 <FormField
-                  label="คลังปลายทาง "
+                  label="คลังปลายทาง *"
                   htmlFor="to-warehouse"
                 >
                   <SearchableSelect
@@ -413,13 +425,13 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                       }))}
                   />
                   {toWarehouseError && (
-                    <p className="mt-1 text-xs text-red-600">{toWarehouseError}</p>
+                    <p className="text-red-500 text-xs mt-1">{toWarehouseError}</p>
                   )}
                 </FormField>
               </div>
             </div>
             <div className="mt-4">
-              <FormField label="เหตุผลในการโอนย้าย" htmlFor="reason">
+              <FormField label="เหตุผลในการโอนย้าย *" htmlFor="reason">
                 <Textarea
                   id="reason"
                   value={reason}
@@ -433,7 +445,7 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                   placeholder="กรอกสาเหตุการโอนย้าย..."
                 />
                 {reasonError && (
-                  <p className="mt-1 text-xs text-red-600">{reasonError}</p>
+                  <p className="text-red-500 text-xs mt-1">{reasonError}</p>
                 )}
               </FormField>
             </div>

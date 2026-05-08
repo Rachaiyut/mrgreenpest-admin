@@ -21,6 +21,7 @@ export const UnitModal: FC<UnitModalProps> = ({
   const [name, setName] = useState('');
   const [symbol, setSymbol] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ name?: string }>({});
 
   useEffect(() => {
     if (isOpen) {
@@ -31,12 +32,18 @@ export const UnitModal: FC<UnitModalProps> = ({
         setName('');
         setSymbol('');
       }
+      setFormErrors({});
     }
   }, [isOpen, mode, initialValues]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setFormErrors({ name: 'กรุณากรอกชื่อหน่วยนับ' });
+      setTimeout(() => document.querySelector('.text-red-500.text-xs')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      return;
+    }
+    setFormErrors({});
     setIsSubmitting(true);
     try {
       await onSubmit({ name: name.trim(), symbol: symbol.trim() });
@@ -46,13 +53,11 @@ export const UnitModal: FC<UnitModalProps> = ({
     }
   };
 
-  const isValid = name.trim().length > 0;
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={mode === 'create' ? 'เพิ่มหน่วยนับ' : 'แก้ไขหน่วยนับ'}
+      title={mode === 'create' ? 'สร้างหน่วยนับ' : 'แก้ไขหน่วยนับ'}
       size="md"
       footer={
         <div className="flex items-center gap-3 w-full justify-end">
@@ -62,10 +67,10 @@ export const UnitModal: FC<UnitModalProps> = ({
           <Button
             variant="primary"
             onClick={handleSubmit}
-            disabled={!isValid || isSubmitting}
+            disabled={isSubmitting}
             className="px-6 bg-green-600 hover:bg-green-700"
           >
-            {isSubmitting ? 'กำลังบันทึก...' : mode === 'create' ? 'เพิ่ม' : 'บันทึก'}
+            {isSubmitting ? 'กำลังบันทึก...' : 'บันทึก'}
           </Button>
         </div>
       }
@@ -75,13 +80,13 @@ export const UnitModal: FC<UnitModalProps> = ({
           <Input
             id="unit-name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => { setName(e.target.value); if (formErrors.name) setFormErrors({}); }}
             placeholder="เช่น ตารางเมตร, เมตร, กิโลกรัม"
             maxLength={100}
-            required
           />
+          {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
         </FormField>
-        <FormField label="อักษรย่อ" htmlFor="unit-symbol">
+        <FormField label="ตัวย่อ" htmlFor="unit-symbol">
           <Input
             id="unit-symbol"
             value={symbol}

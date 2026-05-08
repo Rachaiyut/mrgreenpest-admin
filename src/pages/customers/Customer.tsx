@@ -358,7 +358,7 @@ const Customers: React.FC = () => {
         {/* Toolbar */}
         <Card className="!p-4 flex-shrink-0">
           <div className="flex flex-col sm:flex-row gap-3 items-center">
-            <div className="relative w-full sm:w-80 flex-shrink-0">
+            <div className="relative w-full sm:w-[28rem] flex-shrink-0">
               <Input
                 type="search"
                 placeholder="ค้นหารหัส, ชื่อ-นามสกุล, ชื่อเล่น, เบอร์โทรศัพท์"
@@ -429,6 +429,7 @@ const Customers: React.FC = () => {
                 itemsPerPage={itemsPerPage}
               />
             </div>
+            {totalItems > 0 && (
             <div className="mt-auto border-t border-slate-200">
               <Pagination
                 currentPage={currentPage}
@@ -438,6 +439,7 @@ const Customers: React.FC = () => {
                 onItemsPerPageChange={handleItemsPerPageChange}
               />
             </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col w-full space-y-6 flex-1">
@@ -447,6 +449,7 @@ const Customers: React.FC = () => {
                 handleDropdownToggle={handleDropdownToggle}
               />
             </div>
+            {totalItems > 0 && (
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 mt-auto sticky bottom-0 z-20">
               <Pagination
                 currentPage={currentPage}
@@ -456,6 +459,7 @@ const Customers: React.FC = () => {
                 onItemsPerPageChange={handleItemsPerPageChange}
               />
             </div>
+            )}
           </div>
         )}
       </div>

@@ -222,10 +222,18 @@ export const ReturnToMainWarehouseModal: React.FC<
     for (const item of items) {
       if (!item.productId) {
         message.error('กรุณาเลือกสินค้าให้ครบถ้วน');
+        setTimeout(() => {
+          const el = document.querySelector('.text-red-600');
+          el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
         return;
       }
       if (item.quantity <= 0) {
         message.error('จำนวนสินค้าต้องมากกว่า 0');
+        setTimeout(() => {
+          const el = document.querySelector('.text-red-600');
+          el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
         return;
       }
       const currentStock = stockMap.get(item.productId) || 0;
@@ -234,6 +242,10 @@ export const ReturnToMainWarehouseModal: React.FC<
         message.error(
           `สินค้า ${prodName} มีจำนวนไม่พอ (คงเหลือ: ${currentStock})`
         );
+        setTimeout(() => {
+          const el = document.querySelector('.text-red-600');
+          el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
         return;
       }
     }
@@ -470,11 +482,7 @@ export const ReturnToMainWarehouseModal: React.FC<
                                   Number(e.target.value)
                                 )
                               }
-                              className={`w-28 text-right transition-all h-9 text-sm font-bold pr-8 ${
-                                item.quantity > currentStock
-                                  ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200'
-                                  : 'border-slate-200 focus:border-indigo-500'
-                              }`}
+                              className="w-28 text-right transition-all h-9 text-sm font-bold pr-8 border-slate-200 focus:border-indigo-500"
                             />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium pointer-events-none">
                               {product?.unit?.name || 'หน่วย'}
@@ -535,11 +543,7 @@ export const ReturnToMainWarehouseModal: React.FC<
                                   Number(e.target.value)
                                 )
                               }
-                              className={`w-full text-right transition-all h-9 text-sm font-bold pr-8 ${
-                                item.quantity > currentStock
-                                  ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200'
-                                  : 'border-slate-200 focus:border-indigo-500'
-                              }`}
+                              className="w-full text-right transition-all h-9 text-sm font-bold pr-8 border-slate-200 focus:border-indigo-500"
                             />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium pointer-events-none">
                               {product?.unit?.name || 'หน่วย'}
