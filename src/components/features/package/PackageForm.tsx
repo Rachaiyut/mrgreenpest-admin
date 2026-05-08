@@ -166,8 +166,14 @@ const PackageForm: FC<PackageFormProps> = ({
     setSubmitted(true);
     const errs = validate();
     setErrors(errs);
-    if (Object.keys(errs).length > 0) return;
-    if (invalidIndices.length > 0 || conditionsIncomplete) return;
+    const hasErrors = Object.keys(errs).length > 0 || invalidIndices.length > 0 || conditionsIncomplete;
+    if (hasErrors) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs, .text-xs.text-red-500');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
+    }
 
     onSubmit({
       ...initialValues,
@@ -192,8 +198,7 @@ const PackageForm: FC<PackageFormProps> = ({
   const errorText = (msg?: string) =>
     msg ? <p className="mt-1 text-xs text-red-500">{msg}</p> : null;
 
-  const inputErrCls = (has?: boolean) =>
-    has ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : '';
+  const inputErrCls = (_has?: boolean) => '';
 
   return (
     <form id="package-form" onSubmit={handleSubmit} noValidate className="space-y-6">
@@ -229,7 +234,6 @@ const PackageForm: FC<PackageFormProps> = ({
                 }}
                 placeholder="เลือกหมวดหมู่"
                 options={availableCategories.map((cat) => ({ value: cat.id, label: cat.name }))}
-                error={!!errors.categoryId}
               />
               {errorText(errors.categoryId)}
             </FormField>
@@ -331,7 +335,7 @@ const PackageForm: FC<PackageFormProps> = ({
                   {conditions.map((cond, idx) => {
                     const minMaxError = invalidIndices.includes(idx);
                     return (
-                      <tr key={idx} className={minMaxError ? 'bg-red-50/50' : 'hover:bg-slate-50/50'}>
+                      <tr key={idx} className="hover:bg-slate-50/50">
                         <td className="px-4 py-3 text-center">
                           <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold text-xs">{idx + 1}</span>
                         </td>
@@ -344,7 +348,6 @@ const PackageForm: FC<PackageFormProps> = ({
                             onChange={(v) => handleConditionChange(idx, 'unit_id', v)}
                             placeholder="เลือก"
                             options={availableUnits.map((u) => ({ value: u.id, label: u.name }))}
-                            error={priceFieldHasError(idx, 'unit_id')}
                             className="h-9 w-full"
                           />
                         </td>

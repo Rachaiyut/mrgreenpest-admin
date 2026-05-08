@@ -10,7 +10,7 @@ import type {
 import ButtonUI from './Button';
 
 export const FormField: FC<{
-  label: string;
+  label: ReactNode;
   children: ReactNode;
   htmlFor?: string;
   className?: string;
@@ -21,23 +21,25 @@ export const FormField: FC<{
   );
 
   let labelContent: ReactNode = label;
-  // If the child is required, but the label doesn't manually have a *, add a red one.
-  if (isRequired && !label.endsWith('*')) {
-    labelContent = (
-      <>
-        {label}
-        <span className="text-red-500">*</span>
-      </>
-    );
-  }
-  // If the label manually has a *, render it as red. This covers cases where auto-detection fails (like with complex children).
-  else if (label.endsWith('*')) {
-    labelContent = (
-      <>
-        {label.slice(0, -1)}
-        <span className="text-red-500">*</span>
-      </>
-    );
+  if (typeof label === 'string') {
+    // If the child is required, but the label doesn't manually have a *, add a red one.
+    if (isRequired && !label.endsWith('*')) {
+      labelContent = (
+        <>
+          {label}
+          <span className="text-red-500">*</span>
+        </>
+      );
+    }
+    // If the label manually has a *, render it as red. This covers cases where auto-detection fails (like with complex children).
+    else if (label.endsWith('*')) {
+      labelContent = (
+        <>
+          {label.slice(0, -1)}
+          <span className="text-red-500">*</span>
+        </>
+      );
+    }
   }
 
   return (
@@ -132,7 +134,7 @@ export const Textarea: FC<TextareaHTMLAttributes<HTMLTextAreaElement>> = ({
     <textarea
       {...props}
       {...controlledProps}
-      className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm text-slate-900 ${className || ''}`}
+      className={`block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm text-slate-900 ${className || ''}`}
       rows={rows ?? 3}
     />
   );

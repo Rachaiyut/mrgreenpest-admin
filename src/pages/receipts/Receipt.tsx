@@ -128,6 +128,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
   }, []);
 
   const [receiptFormNotes, setReceiptFormNotes] = useState<string>('');
+  const [receiptFormErrors, setReceiptFormErrors] = useState<{ customer?: string; amount?: string }>({});
 
   const receiptData = receipts || [];
   const receiptPaymentMethods = useMemo(
@@ -669,7 +670,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
         footer={
           <div className="flex items-center gap-3 justify-end pt-4 border-t border-slate-200">
             <Button
-              onClick={() => setIsAddReceiptModalOpen(false)}
+              onClick={() => { setIsAddReceiptModalOpen(false); setReceiptFormErrors({}); }}
               className="px-6 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
               variant="outline"
             >
@@ -677,6 +678,15 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             </Button>
             <Button
               onClick={() => {
+                const errors: { customer?: string; amount?: string } = {};
+                if (!receiptFormCustomerId) errors.customer = 'กรุณาเลือกลูกค้า';
+                if (!receiptFormAmount || receiptFormAmount <= 0) errors.amount = 'กรุณากรอกจำนวนเงิน';
+                if (Object.keys(errors).length > 0) {
+                  setReceiptFormErrors(errors);
+                  setTimeout(() => document.querySelector('.text-red-500.text-xs')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+                  return;
+                }
+                setReceiptFormErrors({});
                 const payload: Omit<Receipt, 'id'> = {
                   invoice_id: receiptFormInvoiceId || undefined,
                   customer_id: receiptFormCustomerId,
@@ -696,6 +706,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                 setReceiptFormAmount(0);
                 setReceiptFormPaymentReference('');
                 setReceiptFormNotes('');
+                setReceiptFormErrors({});
               }}
               className="px-6 py-2 rounded-lg bg-primary text-white shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all"
               variant="primary"
@@ -728,6 +739,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                           setReceiptFormCustomerId(inv.customer_id);
                           setReceiptFormCustomerName(inv.customer_name);
                           setReceiptFormAmount(inv.total || 0);
+                          setReceiptFormErrors({});
                         }
                       }}
                       className="w-full"
@@ -757,6 +769,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                             `${cust.first_name} ${cust.last_name}`
                           );
                         }
+                        if (receiptFormErrors.customer) setReceiptFormErrors((prev) => ({ ...prev, customer: undefined }));
                       }}
                       className="w-full"
                       disabled={!!receiptFormInvoiceId}
@@ -768,6 +781,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                         })),
                       ]}
                     />
+                    {receiptFormErrors.customer && (
+                      <p className="text-red-500 text-xs mt-1">{receiptFormErrors.customer}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -832,15 +848,16 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                 <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-600 mb-1">
-                      จำนวนเงินที่ได้รับ (Amount Received)
+                      จำนวนเงินที่ได้รับ (Amount Received) <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <Input
                         type="number"
                         value={String(receiptFormAmount)}
-                        onChange={(e) =>
-                          setReceiptFormAmount(parseFloat(e.target.value) || 0)
-                        }
+                        onChange={(e) => {
+                          setReceiptFormAmount(parseFloat(e.target.value) || 0);
+                          if (receiptFormErrors.amount) setReceiptFormErrors((prev) => ({ ...prev, amount: undefined }));
+                        }}
                         step="0.01"
                         min="0"
                         className="w-full pr-16 text-lg font-bold text-slate-800"
@@ -850,6 +867,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                         บาท
                       </span>
                     </div>
+                    {receiptFormErrors.amount && (
+                      <p className="text-red-500 text-xs mt-1">{receiptFormErrors.amount}</p>
+                    )}
                   </div>
 
                   {receiptFormInvoiceId && (

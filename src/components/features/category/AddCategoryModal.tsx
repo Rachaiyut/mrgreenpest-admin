@@ -44,6 +44,10 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     const validationErrors = validate(data);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
       return;
     }
 
@@ -95,7 +99,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
             name="name"
             id="category-name"
             type="text"
-            className={errors.name ? 'border-red-500' : ''}
+            className=""
             onChange={() => setErrors(prev => { const { name, ...rest } = prev; return rest; })}
           />
           {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
@@ -109,7 +113,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
               type="text"
               maxLength={3}
               placeholder="เช่น CH, MAT"
-              className={errors.code ? 'border-red-500' : ''}
+              className=""
               onChange={() => setErrors(prev => { const { code, ...rest } = prev; return rest; })}
             />
             {errors.code && <p className="text-sm text-red-500 mt-1">{errors.code}</p>}
@@ -123,7 +127,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                 { value: CategoryType.PRODUCT, label: 'สินค้า' },
                 { value: CategoryType.SERVICE, label: 'บริการ' },
               ]}
-              error={!!errors.type}
+              error={false}
             />
             {errors.type && <p className="text-sm text-red-500 mt-1">{errors.type}</p>}
           </FormField>

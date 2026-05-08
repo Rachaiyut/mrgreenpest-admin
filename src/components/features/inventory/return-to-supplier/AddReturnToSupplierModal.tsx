@@ -375,12 +375,24 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!validateRequired({ requireItems: true, requireReason: true })) return;
+    if (!validateRequired({ requireItems: true, requireReason: true })) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
+    }
     submitWithStatus('PENDING');
   };
 
   const handleSaveDraft = (_e: MouseEvent<HTMLButtonElement>) => {
-    if (!validateRequired({ requireItems: false, requireReason: false })) return;
+    if (!validateRequired({ requireItems: false, requireReason: false })) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
+    }
     submitWithStatus('DRAFT');
   };
 
@@ -514,7 +526,7 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-3 bg-amber-50/50 rounded-md border border-amber-100">
-                <FormField label="คืนจากคลัง" htmlFor="warehouse">
+                <FormField label="คืนจากคลัง *" htmlFor="warehouse">
                   <SearchableSelect
                     value={selectedWarehouseId}
                     onChange={(v) => {
@@ -530,12 +542,12 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
                     }))}
                   />
                   {warehouseError && (
-                    <p className="mt-1 text-xs text-red-600">{warehouseError}</p>
+                    <p className="text-red-500 text-xs mt-1">{warehouseError}</p>
                   )}
                 </FormField>
               </div>
               <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100">
-                <FormField label="ผู้จำหน่ายที่จะคืน" htmlFor="supplier">
+                <FormField label="ผู้จำหน่ายที่จะคืน *" htmlFor="supplier">
                   <SearchableSelect
                     value={selectedSupplierId}
                     onChange={(v) => {
@@ -548,13 +560,13 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
                     options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
                   />
                   {supplierError && (
-                    <p className="mt-1 text-xs text-red-600">{supplierError}</p>
+                    <p className="text-red-500 text-xs mt-1">{supplierError}</p>
                   )}
                 </FormField>
               </div>
             </div>
             <div className="mt-4">
-              <FormField label="เหตุผลในการคืน" htmlFor="remarks">
+              <FormField label="เหตุผลในการคืน *" htmlFor="remarks">
                 <Textarea
                   id="remarks"
                   name="remarks"
@@ -569,7 +581,7 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
                   }}
                 />
                 {returnReasonError && (
-                  <p className="mt-1 text-xs text-red-600">{returnReasonError}</p>
+                  <p className="text-red-500 text-xs mt-1">{returnReasonError}</p>
                 )}
               </FormField>
             </div>

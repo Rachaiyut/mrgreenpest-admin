@@ -109,7 +109,14 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
       if (!item.reason.trim()) newErrors[`reason_${item.product_id}`] = 'กรุณากรอกเหตุผล';
     });
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -298,7 +305,7 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                                 );
                                 if (errors[`quantity_${item.product_id}`]) setErrors((prev) => { const next = { ...prev }; delete next[`quantity_${item.product_id}`]; return next; });
                               }}
-                              className={`w-24 h-10 ${errors[`quantity_${item.product_id}`] ? 'border-red-500' : ''}`}
+                              className="w-24 h-10"
                               min="1"
                               max={
                                 stockMap[formData.warehouse_id]?.[product.id] ??
@@ -320,7 +327,7 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                                 );
                                 if (errors[`reason_${item.product_id}`]) setErrors((prev) => { const next = { ...prev }; delete next[`reason_${item.product_id}`]; return next; });
                               }}
-                              className={`w-full h-10 ${errors[`reason_${item.product_id}`] ? 'border-red-500' : ''}`}
+                              className="w-full h-10"
                               placeholder="เหตุผลในการคืนสินค้า"
                               required
                             />

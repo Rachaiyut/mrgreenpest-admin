@@ -191,7 +191,13 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
   };
 
   const submitWithStatus = (status: 'DRAFT' | 'PENDING', formData: FormData) => {
-    if (!validateRequired()) return;
+    if (!validateRequired()) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
+    }
 
     const payload = buildPayload(status, formData);
     if (isEditMode && editingReceipt && onUpdateReceipt) {
@@ -295,7 +301,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                   }}
                 />
                 {receiptNoError && (
-                  <p className="mt-1 text-xs text-red-600">{receiptNoError}</p>
+                  <p className="text-red-500 text-xs mt-1">{receiptNoError}</p>
                 )}
               </FormField>
               <FormField label="ผู้ทำรับ" htmlFor="created-by">
@@ -331,7 +337,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100">
                 <FormField
-                  label="รับเข้าคลัง"
+                  label="รับเข้าคลัง *"
                   htmlFor="warehouse"
                 >
                   <SearchableSelect
@@ -350,12 +356,12 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                     }))}
                   />
                   {warehouseError && (
-                    <p className="mt-1 text-xs text-red-600">{warehouseError}</p>
+                    <p className="text-red-500 text-xs mt-1">{warehouseError}</p>
                   )}
                 </FormField>
               </div>
               <div className="p-3 bg-amber-50/50 rounded-md border border-amber-100">
-                <FormField label="ผู้จัดจำหน่าย" htmlFor="supplier">
+                <FormField label="ผู้จัดจำหน่าย *" htmlFor="supplier">
                   <SearchableSelect
                     value={selectedSupplierId}
                     onChange={(v) => {
@@ -378,7 +384,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                     })()}
                   />
                   {supplierError && (
-                    <p className="mt-1 text-xs text-red-600">{supplierError}</p>
+                    <p className="text-red-500 text-xs mt-1">{supplierError}</p>
                   )}
                 </FormField>
               </div>

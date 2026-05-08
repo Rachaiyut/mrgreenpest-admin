@@ -21,6 +21,7 @@ export const UnitModal: FC<UnitModalProps> = ({
   const [name, setName] = useState('');
   const [symbol, setSymbol] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ name?: string }>({});
 
   useEffect(() => {
     if (isOpen) {
@@ -31,12 +32,18 @@ export const UnitModal: FC<UnitModalProps> = ({
         setName('');
         setSymbol('');
       }
+      setFormErrors({});
     }
   }, [isOpen, mode, initialValues]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setFormErrors({ name: 'กรุณากรอกชื่อหน่วยนับ' });
+      setTimeout(() => document.querySelector('.text-red-500.text-xs')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      return;
+    }
+    setFormErrors({});
     setIsSubmitting(true);
     try {
       await onSubmit({ name: name.trim(), symbol: symbol.trim() });
@@ -45,8 +52,6 @@ export const UnitModal: FC<UnitModalProps> = ({
       setIsSubmitting(false);
     }
   };
-
-  const isValid = name.trim().length > 0;
 
   return (
     <Modal
@@ -62,7 +67,7 @@ export const UnitModal: FC<UnitModalProps> = ({
           <Button
             variant="primary"
             onClick={handleSubmit}
-            disabled={!isValid || isSubmitting}
+            disabled={isSubmitting}
             className="px-6 bg-green-600 hover:bg-green-700"
           >
             {isSubmitting ? 'กำลังบันทึก...' : 'บันทึก'}
@@ -75,11 +80,11 @@ export const UnitModal: FC<UnitModalProps> = ({
           <Input
             id="unit-name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => { setName(e.target.value); if (formErrors.name) setFormErrors({}); }}
             placeholder="เช่น ตารางเมตร, เมตร, กิโลกรัม"
             maxLength={100}
-            required
           />
+          {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
         </FormField>
         <FormField label="ตัวย่อ" htmlFor="unit-symbol">
           <Input

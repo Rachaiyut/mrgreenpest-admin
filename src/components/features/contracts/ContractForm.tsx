@@ -172,6 +172,20 @@ export const ContractForm: FC<ContractFormProps> = ({
     setServiceType(selectedServiceTypes.join(', '));
   }, [selectedServiceTypes]);
 
+  const [formErrors, setFormErrors] = useState<{ customer?: string; serviceLocation?: string; areas?: string; contractType?: string }>({});
+  const [areaErrors, setAreaErrors] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (selectedCustomerId && formErrors.customer) setFormErrors((prev) => ({ ...prev, customer: undefined }));
+  }, [selectedCustomerId]);
+  useEffect(() => {
+    if (serviceLocation && formErrors.serviceLocation) setFormErrors((prev) => ({ ...prev, serviceLocation: undefined }));
+  }, [serviceLocation]);
+  useEffect(() => {
+    if (workAreaAreas.length > 0 && formErrors.areas) setFormErrors((prev) => ({ ...prev, areas: undefined }));
+  }, [workAreaAreas]);
+  useEffect(() => {
+    if (isSeparateContract !== null && formErrors.contractType) setFormErrors((prev) => ({ ...prev, contractType: undefined }));
+  }, [isSeparateContract]);
   const [systemUsed, setSystemUsed] = useState(
     initialValues?.system_used || ''
   );
@@ -1040,15 +1054,32 @@ export const ContractForm: FC<ContractFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedCustomerId) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกลูกค้า' });
-      return;
+    const errors: { customer?: string; serviceLocation?: string; areas?: string; contractType?: string } = {};
+    if (!selectedCustomerId) errors.customer = 'กรุณาเลือกลูกค้า';
+    if (!serviceLocation.trim()) errors.serviceLocation = 'กรุณากรอกสถานที่ให้บริการ';
+    if (workAreaAreas.length === 0) errors.areas = 'กรุณาเพิ่มรายละเอียดพื้นที่';
+    if (isSeparateContract === null) errors.contractType = 'กรุณาเลือกรูปแบบการออกสัญญา';
+
+    const newAreaErrors: Record<string, string> = {};
+    let hasAreaError = false;
+    for (let i = 0; i < workAreaAreas.length; i++) {
+      const area = workAreaAreas[i];
+      if (!area.area_name?.trim()) { newAreaErrors[`area_${i}_area_name`] = 'กรุณากรอกชื่อพื้นที่'; hasAreaError = true; }
+      if (!area.building_type) { newAreaErrors[`area_${i}_building_type`] = 'กรุณาเลือกประเภทสิ่งปลูกสร้าง'; hasAreaError = true; }
+      if (!area.service_system) { newAreaErrors[`area_${i}_service_system`] = 'กรุณาเลือกระบบใช้บริการ'; hasAreaError = true; }
+      if (!area.category_services || area.category_services.length === 0) { newAreaErrors[`area_${i}_category_services`] = 'กรุณาเลือกประเภทบริการ'; hasAreaError = true; }
+      if (!area.area_size && area.area_size !== 0) { newAreaErrors[`area_${i}_area_size`] = 'กรุณากรอกขนาดพื้นที่'; hasAreaError = true; }
     }
 
-    if (isSeparateContract === null) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกรูปแบบการออกสัญญา (รวม 1 สัญญา หรือ แยกตามพื้นที่)' });
+    const hasFormError = errors.customer || errors.serviceLocation || errors.areas || errors.contractType;
+    if (hasFormError || hasAreaError) {
+      setFormErrors(hasFormError ? errors : {});
+      setAreaErrors(hasAreaError ? newAreaErrors : {});
+      setTimeout(() => document.querySelector('.text-red-500.text-xs')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
       return;
     }
+    setFormErrors({});
+    setAreaErrors({});
 
     if (contractPaymentMethod === 'INSTALLMENT') {
       const totalPercentage = installments.reduce(
@@ -1347,7 +1378,7 @@ export const ContractForm: FC<ContractFormProps> = ({
               </div>
             )}
 
-            <FormField label="ลูกค้า" htmlFor="customer">
+            <FormField label="ลูกค้า *" htmlFor="customer">
               <SearchableSelect
                 options={(() => {
                   const allCustomers = [...customers, ...searchedCustomers];
@@ -1362,11 +1393,17 @@ export const ContractForm: FC<ContractFormProps> = ({
                   }));
                 })()}
                 value={selectedCustomerId}
-                onChange={setSelectedCustomerId}
+                onChange={(val) => {
+                  setSelectedCustomerId(val);
+                  if (formErrors.customer) setFormErrors((prev) => ({ ...prev, customer: undefined }));
+                }}
                 onSearchChange={handleCustomerSearch}
                 placeholder="เลือกลูกค้า"
                 searchPlaceholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์"
               />
+              {formErrors.customer && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.customer}</p>
+              )}
             </FormField>
 
             <FormField label="อ้างอิงใบเสนอราคา (ถ้ามี)" htmlFor="quotation">
@@ -1401,7 +1438,7 @@ export const ContractForm: FC<ContractFormProps> = ({
             disabled={mode === 'edit'}
             className={`space-y-4 border-0 p-0 m-0 min-w-0 ${mode === 'edit' ? '[&_*]:pointer-events-none' : ''}`}
           >
-            <FormField label="สถานที่ให้บริการ" htmlFor="location">
+            <FormField label="สถานที่ให้บริการ *" htmlFor="location">
               <Textarea
                 id="location"
                 value={serviceLocation}
@@ -1409,6 +1446,9 @@ export const ContractForm: FC<ContractFormProps> = ({
                 rows={4}
                 placeholder="ที่อยู่สำหรับเข้าให้บริการ..."
               />
+              {formErrors.serviceLocation && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.serviceLocation}</p>
+              )}
             </FormField>
 
             <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
@@ -1458,6 +1498,9 @@ export const ContractForm: FC<ContractFormProps> = ({
           disabled={!!selectedQuotationId && (mode === 'create' || mode === 'edit')}
           isReadOnly={!!selectedQuotationId && (mode === 'create' || mode === 'edit')}
           notice={selectedQuotationId && (mode === 'create' || mode === 'edit') ? 'อ้างอิงจากใบเสนอราคา — ไม่สามารถแก้ไขได้' : undefined}
+          title={<>รายละเอียดพื้นที่ <span className="text-red-500">*</span></>}
+          errorMessage={formErrors.areas}
+          errors={areaErrors}
         />
 
         {/* Notes + Price Summary */}
@@ -1595,6 +1638,9 @@ export const ContractForm: FC<ContractFormProps> = ({
               );
             })()}
           </div>
+          {formErrors.contractType && (
+            <p className="text-red-500 text-xs mt-2">{formErrors.contractType}</p>
+          )}
         </div>
       </div>
       </fieldset>

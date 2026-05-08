@@ -125,15 +125,33 @@ const JobCard: React.FC<{
       if (!onReject) return;
       Swal.fire({
         title: 'ปฏิเสธงานนี้?',
-        input: 'textarea',
-        inputLabel: 'เหตุผลการปฏิเสธ',
-        inputPlaceholder: 'กรอกเหตุผล...',
-        inputAttributes: { 'aria-label': 'เหตุผลการปฏิเสธ' },
+        html: `
+          <div class="text-left">
+            <label class="block text-sm font-medium text-slate-700 mb-1">เหตุผลการปฏิเสธ <span class="text-red-500">*</span></label>
+            <textarea id="swal-reject-reason" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm text-slate-900" rows="3" placeholder="กรอกเหตุผล..."></textarea>
+            <p id="swal-reject-error" class="text-red-500 text-xs mt-1 font-medium hidden">กรุณากรอกเหตุผล</p>
+          </div>
+        `,
         showCancelButton: true,
         confirmButtonText: 'ปฏิเสธ',
         cancelButtonText: 'ยกเลิก',
         confirmButtonColor: '#ef4444',
-        inputValidator: (value) => (!value || !value.trim() ? 'กรุณากรอกเหตุผล' : null),
+        focusConfirm: false,
+        didOpen: () => {
+          const textarea = document.getElementById('swal-reject-reason') as HTMLTextAreaElement;
+          const errorEl = document.getElementById('swal-reject-error');
+          textarea?.focus();
+          textarea?.addEventListener('input', () => { if (errorEl) errorEl.classList.add('hidden'); });
+        },
+        preConfirm: () => {
+          const reason = (document.getElementById('swal-reject-reason') as HTMLTextAreaElement)?.value?.trim();
+          if (!reason) {
+            const errorEl = document.getElementById('swal-reject-error');
+            if (errorEl) errorEl.classList.remove('hidden');
+            return false;
+          }
+          return reason;
+        },
       }).then((result) => {
         if (result.isConfirmed && result.value) {
           Promise.resolve(onReject(job.id, result.value.trim()));

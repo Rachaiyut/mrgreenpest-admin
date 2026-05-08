@@ -125,6 +125,7 @@ export const JobForm: React.FC<JobFormProps> = ({
   const [operationDetails, setOperationDetails] = useState('');
   const [operationDetailsText, setOperationDetailsText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [serviceSystem, setServiceSystem] = useState<string>('');
 
@@ -848,12 +849,7 @@ export const JobForm: React.FC<JobFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (timeConflictError) return;
-    if (!leadTechnicianId) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกหัวหน้าช่าง' });
-      setCurrentStep(2);
-      return;
-    }
+    if (!validateStep()) return;
     
     const currentStatus = jobToEdit?.api_status || jobToEdit?.status || JobMainStatus.PENDING;
     const jobData = createJobObject(currentStatus as JobMainStatus);
@@ -958,6 +954,7 @@ export const JobForm: React.FC<JobFormProps> = ({
 
   const handleLeadTechnicianChange = (id: string) => {
     setLeadTechnicianId(id);
+    if (id) setErrors((prev) => ({ ...prev, lead_technician_id: '' }));
     if (selectedTechnicianIds.includes(id)) {
       setSelectedTechnicianIds((prev) => prev.filter((techId) => techId !== id));
     }
@@ -1027,14 +1024,39 @@ export const JobForm: React.FC<JobFormProps> = ({
     { id: 2, label: 'ทีมช่าง & ยานพาหนะ', icon: <TruckIcon className="w-5 h-5" />, isValid: !!leadTechnicianId && !!selectedVehicleId && !timeConflictError },
   ];
 
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const el = document.querySelector('.text-red-500.text-xs');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+  };
+
+  const validateStep = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (currentStep === 0) {
+      if (!selectedCustomerId) newErrors.customer_id = 'กรุณาเลือกลูกค้า';
+      if (!workDate) newErrors.work_date = 'กรุณาเลือกวันที่ปฏิบัติงาน';
+      if (!startTime) newErrors.start_time = 'กรุณากรอกเวลาเริ่มต้น';
+      if (!endTime) newErrors.end_time = 'กรุณากรอกเวลาสิ้นสุด';
+      if (startTime && endTime && endTime <= startTime) newErrors.end_time = 'เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น';
+    }
+    if (currentStep === 2) {
+      if (!selectedVehicleId) newErrors.vehicle_id = 'กรุณาเลือกยานพาหนะ';
+      if (!leadTechnicianId) newErrors.lead_technician_id = 'กรุณาเลือกหัวหน้าทีม';
+      if (timeConflictError) newErrors.vehicle_id = timeConflictError;
+    }
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) { scrollToFirstError(); return false; }
+    return true;
+  };
+
   const handleNextStep = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (steps[currentStep].isValid) {
-      setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
-      setVisitedSteps((prev) => [...new Set([...prev, currentStep + 1])]);
-    }
+    if (!validateStep()) return;
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+    setVisitedSteps((prev) => [...new Set([...prev, currentStep + 1])]);
   };
 
   const handlePrevStep = () => {
@@ -1079,7 +1101,10 @@ export const JobForm: React.FC<JobFormProps> = ({
                 <div className="p-2 bg-primary/10 rounded-lg text-primary"><UserIcon className="w-5 h-5" /></div>ข้อมูลลูกค้า
               </h3>
               <div className="space-y-6 flex-1 flex flex-col">
-                <SearchableSelect label="ค้นหาลูกค้า" options={filteredCustomers.map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''}`, description: c.primary_phone || '' }))} value={selectedCustomerId} onChange={handleCustomerChange} onSearchChange={setCustomerSearch} placeholder="เลือกลูกค้า" searchPlaceholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์" required disabled={mode === 'edit'} />
+                <div>
+                  <SearchableSelect label="ค้นหาลูกค้า" options={filteredCustomers.map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''}`, description: c.primary_phone || '' }))} value={selectedCustomerId} onChange={(v) => { handleCustomerChange(v); if (v) setErrors((prev) => ({ ...prev, customer_id: '' })); }} onSearchChange={setCustomerSearch} placeholder="เลือกลูกค้า" searchPlaceholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์" required disabled={mode === 'edit'} />
+                  {errors.customer_id && <p className="text-red-500 text-xs mt-1 font-medium">{errors.customer_id}</p>}
+                </div>
                 {selectedCustomerData ? (
                   <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all flex-1">
                     <div className="flex items-start justify-between">
@@ -1127,40 +1152,39 @@ export const JobForm: React.FC<JobFormProps> = ({
                 <div className="p-2 bg-slate-100 rounded-lg text-slate-600"><CalendarIcon className="w-5 h-5" /></div>กำหนดการปฏิบัติงาน
               </h3>
               <div className="space-y-6">
-                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
+                <div className="p-4 rounded-xl border bg-slate-50/50 border-slate-200/60">
                   <FormField label="วันที่ปฏิบัติงาน *" htmlFor="work-date" className="mb-0">
                     <DatePicker
                       id="work-date"
                       selected={workDate ? new Date(workDate) : null}
-                      onChange={(date: Date | null) => { if (date) { const yyyy = date.getFullYear(); const mm = String(date.getMonth() + 1).padStart(2, '0'); const dd = String(date.getDate()).padStart(2, '0'); setWorkDate(`${yyyy}-${mm}-${dd}`); } else { setWorkDate(''); } }}
+                      onChange={(date: Date | null) => { if (date) { const yyyy = date.getFullYear(); const mm = String(date.getMonth() + 1).padStart(2, '0'); const dd = String(date.getDate()).padStart(2, '0'); setWorkDate(`${yyyy}-${mm}-${dd}`); setErrors((prev) => ({ ...prev, work_date: '' })); } else { setWorkDate(''); } }}
                       minDate={mode === 'add' ? new Date() : undefined}
                       disabled={mode === 'edit'}
-                      required
                       wrapperClassName="w-full"
                       placeholderText="dd/mm/yyyy"
                       dateFormat="dd/MM/yyyy"
                       locale="th"
-                      className={`w-full h-12 pr-10 rounded-md border-slate-300 focus:border-primary focus:ring-primary text-slate-700 shadow-sm ${mode === 'edit' ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
+                      className={`w-full h-12 pr-10 rounded-md focus:border-primary focus:ring-primary shadow-sm ${mode === 'edit' ? 'bg-slate-100 text-slate-500 border-slate-300 cursor-not-allowed' : 'bg-white text-slate-700 border-slate-300'}`}
                     />
                   </FormField>
+                  {errors.work_date && <p className="text-red-500 text-xs mt-1 font-medium">{errors.work_date}</p>}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
                     <FormField label="เวลาเริ่มต้น *" htmlFor="start-time" className="mb-0">
                       <div className="relative">
-                        <Input id="start-time" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required className="pl-3 h-12 text-left font-medium [&::-webkit-datetime-edit-ampm-field]:hidden" />
+                        <Input id="start-time" type="time" value={startTime} onChange={(e) => { setStartTime(e.target.value); if (e.target.value) setErrors((prev) => ({ ...prev, start_time: '' })); }} className="pl-3 h-12 text-left font-medium [&::-webkit-datetime-edit-ampm-field]:hidden" />
                       </div>
                     </FormField>
+                    {errors.start_time && <p className="text-red-500 text-xs mt-1 font-medium">{errors.start_time}</p>}
                   </div>
                   <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
                     <FormField label="เวลาสิ้นสุด *" htmlFor="end-time" className="mb-0">
                       <div className="relative">
-                        <Input id="end-time" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required className={`pl-3 h-12 text-left font-medium [&::-webkit-datetime-edit-ampm-field]:hidden ${startTime && endTime && endTime <= startTime ? 'border-red-500 focus:ring-red-500' : ''}`} />
+                        <Input id="end-time" type="time" value={endTime} onChange={(e) => { setEndTime(e.target.value); if (e.target.value) setErrors((prev) => ({ ...prev, end_time: '' })); }} className="pl-3 h-12 text-left font-medium [&::-webkit-datetime-edit-ampm-field]:hidden" />
                       </div>
-                      {startTime && endTime && endTime <= startTime && (
-                        <p className="text-xs text-red-500 mt-1">เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น</p>
-                      )}
                     </FormField>
+                    {errors.end_time && <p className="text-red-500 text-xs mt-1 font-medium">{errors.end_time}</p>}
                   </div>
                 </div>
               </div>
@@ -1347,16 +1371,19 @@ export const JobForm: React.FC<JobFormProps> = ({
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
                 <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2"><div className="p-2 bg-slate-100 rounded-lg text-slate-600"><TruckIcon className="w-5 h-5" /></div>ยานพาหนะ</h3>
                 <div className="space-y-4">
-                  <SearchableSelect 
-                    label="เลือกรถที่ปฏิบัติงาน"
-                    options={filteredVehicles} 
-                    value={selectedVehicleId} 
-                    onChange={setSelectedVehicleId} 
-                    onSearchChange={setVehicleSearch} 
-                    placeholder="ค้นหารถบริการ..."
-                    disabled={isDisableTeamEdit}
-                    required 
-                  />
+                  <div>
+                    <SearchableSelect
+                      label="เลือกรถที่ปฏิบัติงาน"
+                      options={filteredVehicles}
+                      value={selectedVehicleId}
+                      onChange={(v) => { setSelectedVehicleId(v || ''); if (v) setErrors((prev) => ({ ...prev, vehicle_id: '' })); }}
+                      onSearchChange={setVehicleSearch}
+                      placeholder="ค้นหารถบริการ..."
+                      disabled={isDisableTeamEdit}
+                      required
+                    />
+                    {errors.vehicle_id && <p className="text-red-500 text-xs mt-1 font-medium">{errors.vehicle_id}</p>}
+                  </div>
                   {timeConflictError && (<div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600 flex items-start gap-2"><span className="text-lg">⚠️</span><p>{timeConflictError}</p></div>)}
                   {bookedSlots.length > 0 && (
                     <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
@@ -1369,17 +1396,18 @@ export const JobForm: React.FC<JobFormProps> = ({
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
                 <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2"><div className="p-2 bg-primary/10 rounded-lg text-primary"><UserIcon className="w-5 h-5" /></div>หัวหน้าทีม (Leader)</h3>
                 <div className="mb-4">
-                  <SearchableSelect 
+                  <SearchableSelect
                   label="หัวหน้าช่าง"
-                  name="primary_tech_id" 
-                  options={leadTechnicianOptions.map((tech) => ({ value: tech.id, label: `${getTechnicianName(tech)} ${tech.nick_name ? `(${tech.nick_name})` : ''}`, description: tech.phone || '' }))} 
-                  value={leadTechnicianId} 
-                  onChange={handleLeadTechnicianChange} 
-                  onSearchChange={setLeadTechSearch} 
-                  placeholder="ค้นหาหัวหน้าช่าง..." 
+                  name="primary_tech_id"
+                  options={leadTechnicianOptions.map((tech) => ({ value: tech.id, label: `${getTechnicianName(tech)} ${tech.nick_name ? `(${tech.nick_name})` : ''}`, description: tech.phone || '' }))}
+                  value={leadTechnicianId}
+                  onChange={handleLeadTechnicianChange}
+                  onSearchChange={setLeadTechSearch}
+                  placeholder="ค้นหาหัวหน้าช่าง..."
                   disabled={isDisableTeamEdit}
-                  required 
+                  required
                 />
+                {errors.lead_technician_id && <p className="text-red-500 text-xs mt-1 font-medium">{errors.lead_technician_id}</p>}
                 </div>
               </div>
             </div>
@@ -1425,11 +1453,11 @@ export const JobForm: React.FC<JobFormProps> = ({
               </Button>
             )}
             {currentStep < steps.length - 1 ? (
-              <Button type="button" onClick={handleNextStep} variant="primary" disabled={!steps[currentStep].isValid} className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl">
+              <Button type="button" onClick={handleNextStep} variant="primary" className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl">
                 ถัดไป<ArrowRightIcon className="w-4 h-4 stroke-[2] mt-0.5" />
               </Button>
             ) : (
-              <Button type="submit" variant="primary" disabled={!steps[currentStep].isValid || !!timeConflictError || isSubmitting} className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl">
+              <Button type="submit" variant="primary" disabled={isSubmitting} className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl">
                 {isSubmitting ? 'กำลังบันทึก...' : mode === 'edit' ? 'บันทึกการแก้ไข' : 'สร้างนัดหมาย'}
                 {!isSubmitting && <CheckCircleIcon className="w-4 h-4 stroke-[2] mt-0.5" />}
               </Button>

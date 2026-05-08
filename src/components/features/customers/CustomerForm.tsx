@@ -39,8 +39,7 @@ const SearchableSelect: React.FC<{
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
-  error?: boolean;
-}> = ({ id, value, options, onChange, placeholder, required, disabled, error }) => {
+}> = ({ id, value, options, onChange, placeholder, required, disabled }) => {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -96,7 +95,7 @@ const SearchableSelect: React.FC<{
         required={required}
         disabled={disabled}
         autoComplete="off"
-        className={`w-full px-3 py-2 bg-white border ${error ? 'border-red-500' : 'border-slate-300'} rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900`}
+        className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900`}
       />
       {open && filtered.length > 0 && (
         <ul className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto text-sm">
@@ -348,6 +347,12 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     if (!formData.googleMapLink?.trim()) newErrors.googleMapLink = 'กรุณากรอกลิงก์แผนที่';
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -466,11 +471,11 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <FormField label="ชื่อจริง*" htmlFor="first_name">
-                  <Input id="first_name" name="first_name" type="text" value={formData.first_name || ''} onChange={handleChange} className={errors.first_name ? 'border-red-500' : ''} />
+                  <Input id="first_name" name="first_name" type="text" value={formData.first_name || ''} onChange={handleChange} />
                   {errors.first_name && <p className="text-red-500 text-xs mt-1">{errors.first_name}</p>}
                 </FormField>
                 <FormField label="นามสกุล*" htmlFor="last_name">
-                  <Input id="last_name" name="last_name" type="text" value={formData.last_name || ''} onChange={handleChange} className={errors.last_name ? 'border-red-500' : ''} />
+                  <Input id="last_name" name="last_name" type="text" value={formData.last_name || ''} onChange={handleChange} />
                   {errors.last_name && <p className="text-red-500 text-xs mt-1">{errors.last_name}</p>}
                 </FormField>
               </div>
@@ -499,7 +504,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <FormField label="ชื่อบริษัท*" htmlFor="name">
-                  <Input id="name" name="name" type="text" value={formData.name || ''} onChange={handleChange} className={errors.name ? 'border-red-500' : ''} />
+                  <Input id="name" name="name" type="text" value={formData.name || ''} onChange={handleChange} />
                   {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                 </FormField>
                 <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="taxId">
@@ -549,7 +554,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               value={formData.primaryPhone || ''}
               onChange={(e) => handlePhoneChange(e, 'primaryPhone')}
               maxLength={20}
-              className={`font-mono ${errors.primaryPhone ? 'border-red-500' : ''}`}
+              className="font-mono"
               placeholder="08xxxxxxxx"
             />
             {errors.primaryPhone && <p className="text-red-500 text-xs mt-1">{errors.primaryPhone}</p>}
@@ -647,7 +652,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
         <div className="space-y-5">
           <FormField label="บ้านเลขที่ / อาคาร / หมู่บ้าน*" htmlFor="address-street">
-            <Textarea id="address-street" name="address-street" rows={2} value={formData['address-street'] || ''} onChange={handleChange} className={errors['address-street'] ? 'border-red-500' : ''} />
+            <Textarea id="address-street" name="address-street" rows={2} value={formData['address-street'] || ''} onChange={handleChange} />
             {errors['address-street'] && <p className="text-red-500 text-xs mt-1">{errors['address-street']}</p>}
           </FormField>
           
@@ -668,7 +673,6 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 options={provinceNames}
                 onChange={handleProvinceChange}
                 placeholder="พิมพ์เพื่อค้นหาจังหวัด..."
-                error={!!errors['address-province']}
               />
               {errors['address-province'] && <p className="text-red-500 text-xs mt-1">{errors['address-province']}</p>}
             </FormField>
@@ -680,7 +684,6 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 onChange={handleDistrictChange}
                 placeholder="เลือกจังหวัดก่อน"
                 disabled={!formData['address-province']}
-                error={!!errors['address-district']}
               />
               {errors['address-district'] && <p className="text-red-500 text-xs mt-1">{errors['address-district']}</p>}
             </FormField>
@@ -692,7 +695,6 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 onChange={handleSubdistrictChange}
                 placeholder="เลือกเขต/อำเภอก่อน"
                 disabled={!formData['address-district']}
-                error={!!errors['address-subdistrict']}
               />
               {errors['address-subdistrict'] && <p className="text-red-500 text-xs mt-1">{errors['address-subdistrict']}</p>}
             </FormField>
@@ -700,7 +702,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <FormField label="รหัสไปรษณีย์*" htmlFor="address-postalcode">
-              <Input id="address-postalcode" name="address-postalcode" type="text" value={formData['address-postalcode'] || ''} onChange={handleChange} className={`font-mono ${errors['address-postalcode'] ? 'border-red-500' : ''}`} readOnly />
+              <Input id="address-postalcode" name="address-postalcode" type="text" value={formData['address-postalcode'] || ''} onChange={handleChange} className="font-mono" readOnly />
               {errors['address-postalcode'] && <p className="text-red-500 text-xs mt-1">{errors['address-postalcode']}</p>}
             </FormField>
             <FormField label="ประเทศ" htmlFor="address-country">
@@ -746,7 +748,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
             value={formData.googleMapLink || ''}
             onChange={handleChange}
             placeholder="https://maps.app.goo.gl/..."
-            className={`pl-10 ${errors.googleMapLink ? 'border-red-500' : ''}`}
+            className="pl-10"
           />
           {errors.googleMapLink && <p className="text-red-500 text-xs mt-1">{errors.googleMapLink}</p>}
         </FormField>

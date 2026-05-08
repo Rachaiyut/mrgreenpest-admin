@@ -94,7 +94,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   const [issueDate, setIssueDate] = useState<Date | null>(
     isEditMode && summary?.created_at ? new Date(summary.created_at) : null
   );
-  const [formErrors, setFormErrors] = useState<{ warehouseId: string; issueDate: string; requesterId: string }>({ warehouseId: '', issueDate: '', requesterId: '' });
+  const [formErrors, setFormErrors] = useState<{ warehouseId: string; issueDate: string; requesterId: string; items: string }>({ warehouseId: '', issueDate: '', requesterId: '', items: '' });
   const [requesterId, setRequesterId] = useState('');
   const [recipientId, setRecipientId] = useState('');
   const [notes, setNotes] = useState('');
@@ -425,6 +425,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
       };
     });
     setItems((prev) => [...prev, ...newItems]);
+    if (formErrors.items) setFormErrors((prev) => ({ ...prev, items: '' }));
     setIsProductModalOpen(false);
   };
 
@@ -460,17 +461,15 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
       warehouseId: !warehouseId ? 'กรุณาเลือกรถบริการ' : '',
       issueDate: !issueDate ? 'กรุณาเลือกวันที่เบิก' : '',
       requesterId: !requesterId ? 'กรุณาเลือกผู้เบิก' : '',
+      items: !hasValidEntries ? 'กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ หรือกรอกค่าใช้จ่ายอย่างน้อย 1 รายการ' : '',
     };
     setFormErrors(errors);
-    if (errors.warehouseId || errors.issueDate || errors.requesterId) return;
-
-    // Validate: need at least 1 valid item (product or expense)
-    if (!hasValidEntries) {
-      return Swal.fire({
-        icon: 'warning',
-        title: 'กรุณาตรวจสอบ',
-        text: 'กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ หรือ กรอกค่าใช้จ่ายอย่างน้อย 1 รายการ',
-      });
+    if (errors.warehouseId || errors.issueDate || errors.requesterId || errors.items) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
     }
 
     const invalidItems = items.filter((item) => !item.product_id || item.quantity <= 0);
@@ -611,7 +610,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
               </div>
               <h3 className="text-lg font-bold text-slate-800">การเคลื่อนย้ายสินค้า</h3>
               <div className="ml-auto">
-              <div className={`flex items-center gap-2 bg-white px-3 py-2 rounded-lg border hover:border-slate-400 transition-colors cursor-pointer ${formErrors.issueDate ? 'border-red-500' : !issueDate ? 'border-red-300' : 'border-slate-300'}`}>
+              <div className={`flex items-center gap-2 bg-white px-3 py-2 rounded-lg border hover:border-slate-400 transition-colors cursor-pointer border-slate-300`}>
                 <CalendarDaysIcon className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 <DatePicker
                   selected={issueDate}
@@ -646,7 +645,6 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   }}
                   placeholder="เลือกรถบริการ..."
                   required
-                  className={formErrors.warehouseId ? 'border-red-500' : ''}
                 />
                 {formErrors.warehouseId && <p className="text-xs text-red-500 mt-1">{formErrors.warehouseId}</p>}
               </div>
@@ -675,7 +673,6 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                     if (v) setFormErrors((prev) => ({ ...prev, requesterId: '' }));
                   }}
                   placeholder="ค้นหาผู้เบิก..."
-                  className={formErrors.requesterId ? 'border-red-500' : ''}
                 />
                 {formErrors.requesterId && <p className="text-xs text-red-500 mt-1">{formErrors.requesterId}</p>}
               </div>
@@ -734,15 +731,15 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                     </p>
                   </div>
                 </div>
-                <Button
+                <button
                   type="button"
                   onClick={() => setIsProductModalOpen(true)}
-                  variant="outline"
-                  className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 text-sm font-bold px-4 py-2"
+                  className="flex items-center gap-1 bg-primary/10 text-primary font-semibold py-1 px-2 rounded-md text-sm"
                   disabled={!warehouseId}
                 >
-                  <PlusIcon className="w-5 h-5 mr-1.5" /> เพิ่มสินค้า
-                </Button>
+                  <PlusIcon className="h-4 w-4" />
+                  เพิ่มสินค้า
+                </button>
               </div>
 
               <div className="flex-grow overflow-y-auto bg-slate-50/30 p-5">
@@ -753,6 +750,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                     </div>
                     <p className="font-bold text-slate-600 text-base">ยังไม่มีรายการสินค้า</p>
                     <p className="text-sm mt-1.5 text-slate-400">กดปุ่ม "เพิ่มสินค้า" ด้านบนเพื่อเลือกสินค้าจากรถ</p>
+                    {formErrors.items && <p className="text-red-500 text-xs mt-2">{formErrors.items}</p>}
                   </div>
                 ) : (
                   <div className="space-y-3 mt-2">

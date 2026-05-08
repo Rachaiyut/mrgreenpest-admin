@@ -114,6 +114,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const technicianSigRef = useRef<SignatureCanvas>(null);
   const [isCustomerSigning, setIsCustomerSigning] = useState(false);
   const [isTechSigning, setIsTechSigning] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const MAX_FILES = 5;
   const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB — ต้องตรงกับ backend STORAGE_MAX_FILE_SIZE
@@ -150,6 +151,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         }
         return combined;
       });
+      if (errors.blueprint_images) setErrors((prev) => ({ ...prev, blueprint_images: '' }));
 
       // เคลียร์ input เพื่อให้ user เลือกไฟล์เดิมได้อีกรอบ
       if (e.target) e.target.value = '';
@@ -479,11 +481,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
     const totalImages = existingImages.length + selectedFiles.length;
     if (totalImages < 2) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'กรุณาเพิ่มรูปภาพ',
-        text: `ต้องแนบรูปการปฏิบัติงานอย่างน้อย 2 รูป (ตอนนี้มี ${totalImages} รูป)`,
-      });
+      setErrors((prev) => ({ ...prev, blueprint_images: `กรุณาแนบรูปการปฏิบัติงานอย่างน้อย 2 รูป (ตอนนี้มี ${totalImages} รูป)` }));
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
       return;
     }
 
@@ -1762,7 +1764,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
           <h3 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
             <DocumentIcon className="w-5 h-5 text-primary" />
-            รูปการปฎิบัติงาน เเละ Station
+            รูปการปฎิบัติงาน เเละ Station <span className="text-red-500">*</span>
           </h3>
           <div className="space-y-4">
             <div className="flex items-center justify-center w-full">
@@ -1844,6 +1846,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                 </div>
               </div>
             )}
+            {errors.blueprint_images && <p className="text-red-500 text-xs mt-1 font-medium">{errors.blueprint_images}</p>}
           </div>
         </div>
 

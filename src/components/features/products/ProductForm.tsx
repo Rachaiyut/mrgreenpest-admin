@@ -32,6 +32,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (initialValues) {
@@ -56,6 +57,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       setSelectedType(CategoryType.PRODUCT);
     }
     setImageFile(null);
+    setFormErrors({});
     if (!initialValues || !(initialValues as unknown as Record<string, string>).image_url) setImagePreview(null);
   }, [initialValues]);
 
@@ -72,6 +74,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     const nonNegativeFields = ['price', 'cost_price', 'min_stock'];
     if (nonNegativeFields.includes(name) && value !== '' && Number(value) < 0) return;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (formErrors[name]) setFormErrors((prev) => { const next = { ...prev }; delete next[name]; return next; });
   };
 
   const handleNumberFocus = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -93,14 +96,21 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
+    const errors: Record<string, string> = {};
+    if (!formData.name?.trim()) errors.name = isProduct ? 'กรุณากรอกชื่อสินค้า' : 'กรุณากรอกชื่อบริการ';
+    if (!formData.category_id) errors.category_id = 'กรุณาเลือกหมวดหมู่';
     if (isProduct) {
-      const price = Number(formData.price);
-      if (!price || price <= 0) {
-        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกราคาขาย/หน่วย' });
-        return;
-      }
+      if (!formData.unit_id) errors.unit_id = 'กรุณาเลือกหน่วย';
+      if (!Number(formData.price) || Number(formData.price) <= 0) errors.price = 'กรุณากรอกราคาขาย/หน่วย';
+    } else {
+      if (!Number(formData.price) || Number(formData.price) <= 0) errors.price = 'กรุณากรอกราคาบริการ';
     }
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      setTimeout(() => document.querySelector('.text-red-500.text-xs')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      return;
+    }
+    setFormErrors({});
 
     if (isProduct) {
       onSubmit({
@@ -192,16 +202,18 @@ const ProductForm: React.FC<ProductFormProps> = ({
       {isProduct ? (
         <>
           <FormField label="ชื่อสินค้า/บริการ *" htmlFor="name">
-            <Input name="name" type="text" value={formData.name || ''} onChange={handleChange} required />
+            <Input name="name" type="text" value={formData.name || ''} onChange={handleChange} />
+            {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
           </FormField>
 
           <FormField label="หมวดหมู่ *" htmlFor="category_id">
             <DropdownSelect
               value={formData.category_id || ''}
-              onChange={(v) => handleChange({ target: { name: 'category_id', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+              onChange={(v) => { handleChange({ target: { name: 'category_id', value: v } } as React.ChangeEvent<HTMLSelectElement>); if (formErrors.category_id) setFormErrors((prev) => { const next = { ...prev }; delete next.category_id; return next; }); }}
               placeholder="-- เลือกหมวดหมู่ --"
               options={filteredCategories.map((cat) => ({ value: cat.id, label: cat.name }))}
             />
+            {formErrors.category_id && <p className="text-red-500 text-xs mt-1">{formErrors.category_id}</p>}
           </FormField>
 
           <FormField label="รายละเอียด" htmlFor="remark">
@@ -212,13 +224,15 @@ const ProductForm: React.FC<ProductFormProps> = ({
             <FormField label="หน่วย *" htmlFor="unit_id">
               <DropdownSelect
                 value={formData.unit_id || ''}
-                onChange={(v) => handleChange({ target: { name: 'unit_id', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+                onChange={(v) => { handleChange({ target: { name: 'unit_id', value: v } } as React.ChangeEvent<HTMLSelectElement>); if (formErrors.unit_id) setFormErrors((prev) => { const next = { ...prev }; delete next.unit_id; return next; }); }}
                 placeholder="-- เลือกหน่วย --"
                 options={units.map((u) => ({ value: u.id, label: u.name }))}
               />
+              {formErrors.unit_id && <p className="text-red-500 text-xs mt-1">{formErrors.unit_id}</p>}
             </FormField>
             <FormField label="ราคาขาย/หน่วย *" htmlFor="price">
-              <Input name="price" type="number" value={formData.price ?? ''} onChange={handleChange} onFocus={handleNumberFocus} required step="0.01" min="0" placeholder="0.00" />
+              <Input name="price" type="number" value={formData.price ?? ''} onChange={handleChange} onFocus={handleNumberFocus} step="0.01" min="0" placeholder="0.00" />
+              {formErrors.price && <p className="text-red-500 text-xs mt-1">{formErrors.price}</p>}
             </FormField>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -239,20 +253,23 @@ const ProductForm: React.FC<ProductFormProps> = ({
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="ชื่อบริการ *" htmlFor="name">
-              <Input name="name" type="text" value={formData.name || ''} onChange={handleChange} required />
+              <Input name="name" type="text" value={formData.name || ''} onChange={handleChange} />
+              {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
             </FormField>
             <FormField label="หมวดหมู่ *" htmlFor="category_id">
               <DropdownSelect
                 value={formData.category_id || ''}
-                onChange={(v) => handleChange({ target: { name: 'category_id', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+                onChange={(v) => { handleChange({ target: { name: 'category_id', value: v } } as React.ChangeEvent<HTMLSelectElement>); if (formErrors.category_id) setFormErrors((prev) => { const next = { ...prev }; delete next.category_id; return next; }); }}
                 placeholder="-- เลือกหมวดหมู่ --"
                 options={filteredCategories.map((cat) => ({ value: cat.id, label: cat.name }))}
               />
+              {formErrors.category_id && <p className="text-red-500 text-xs mt-1">{formErrors.category_id}</p>}
             </FormField>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="ราคาบริการ *" htmlFor="price">
-              <Input name="price" type="number" value={formData.price ?? ''} onChange={handleChange} onFocus={handleNumberFocus} required step="0.01" min="0" placeholder="0.00" />
+              <Input name="price" type="number" value={formData.price ?? ''} onChange={handleChange} onFocus={handleNumberFocus} step="0.01" min="0" placeholder="0.00" />
+              {formErrors.price && <p className="text-red-500 text-xs mt-1">{formErrors.price}</p>}
             </FormField>
             <FormField label="รายละเอียด" htmlFor="remark">
               <Input name="remark" type="text" value={formData.remark || ''} onChange={handleChange} placeholder="รายละเอียดเพิ่มเติม" />

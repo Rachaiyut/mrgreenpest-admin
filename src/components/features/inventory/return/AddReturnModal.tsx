@@ -250,7 +250,14 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
       if (!item.reason.trim()) newErrors[`reason_${item.id}`] = 'กรุณากรอกเหตุผล';
     });
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs, .text-red-600.text-\\[10px\\], .text-red-500.text-\\[10px\\]');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -441,9 +448,9 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                 onClick={() => { setIsProductModalOpen(true); if (errors.items) setErrors((prev) => { const next = { ...prev }; delete next.items; return next; }); }}
                 disabled={!fromWarehouseId}
                 title={!fromWarehouseId ? 'กรุณาเลือกรถต้นทางก่อน' : ''}
-                className="flex items-center gap-1.5 px-4 py-2 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1 bg-primary/10 text-primary font-semibold py-1 px-2 rounded-md text-sm"
               >
-                <PlusIcon className="w-4 h-4" />
+                <PlusIcon className="h-4 w-4" />
                 เพิ่มสินค้า
               </button>
             </div>
@@ -515,11 +522,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                                   handleItemChange(item.id, 'quantity', Number(e.target.value));
                                   if (errors[`quantity_${item.id}`]) setErrors((prev) => { const next = { ...prev }; delete next[`quantity_${item.id}`]; return next; });
                                 }}
-                                className={`w-full text-right transition-all h-9 text-sm font-bold pr-8 ${
-                                  isOverStock || errors[`quantity_${item.id}`]
-                                    ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200'
-                                    : 'border-slate-200 focus:border-indigo-500'
-                                }`}
+                                className="w-full text-right transition-all h-9 text-sm font-bold pr-8 border-slate-200 focus:border-indigo-500"
                               />
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium pointer-events-none">
                                 {product?.unit?.name || 'หน่วย'}
@@ -555,7 +558,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                                 handleItemChange(item.id, 'reason', e.target.value);
                                 if (errors[`reason_${item.id}`]) setErrors((prev) => { const next = { ...prev }; delete next[`reason_${item.id}`]; return next; });
                               }}
-                              className={`w-full text-sm h-9 ${errors[`reason_${item.id}`] ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-slate-200 focus:border-indigo-500'}`}
+                              className="w-full text-sm h-9 border-slate-200 focus:border-indigo-500"
                             />
                             {errors[`reason_${item.id}`] && <p className="text-red-500 text-[10px] mt-1">{errors[`reason_${item.id}`]}</p>}
                           </div>

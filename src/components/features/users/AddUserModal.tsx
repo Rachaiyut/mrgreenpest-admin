@@ -101,6 +101,12 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
       newErrors['user-role-id'] = 'กรุณาเลือกบทบาท';
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs, .text-red-500.text-sm');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -283,7 +289,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       name="user-first-name"
                       type="text"
                       placeholder="กรอกชื่อผู้ใช้งาน"
-                      className={`h-11 ${errors['user-first-name'] ? 'border-red-500 focus:ring-red-500' : ''}`}
+                      className="h-11"
                       value={formData['user-first-name']}
                       onChange={handleChange}
                     />
@@ -299,7 +305,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       name="user-last-name"
                       type="text"
                       placeholder="กรอกนามสกุล"
-                      className={`h-11 ${errors['user-last-name'] ? 'border-red-500 focus:ring-red-500' : ''}`}
+                      className="h-11"
                       value={formData['user-last-name']}
                       onChange={handleChange}
                     />
@@ -318,7 +324,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       name="user-nickname"
                       type="text"
                       placeholder="กรอกชื่อเล่น"
-                      className={`h-11 ${errors['user-nickname'] ? 'border-red-500 focus:ring-red-500' : ''}`}
+                      className="h-11"
                       value={formData['user-nickname']}
                       onChange={handleChange}
                     />
@@ -334,7 +340,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       name="user-phone"
                       type="tel"
                       placeholder="กรอกเบอร์โทรศัพท์"
-                      className={`h-11 ${errors['user-phone'] ? 'border-red-500 focus:ring-red-500' : ''}`}
+                      className="h-11"
                       value={formData['user-phone']}
                       onChange={handleChange}
                     />
@@ -359,7 +365,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       name="user-email"
                       type="email"
                       placeholder="กรอกอีเมล"
-                      className={`h-11 ${errors['user-email'] ? 'border-red-500 focus:ring-red-500' : ''}`}
+                      className="h-11"
                       value={formData['user-email']}
                       onChange={handleChange}
                     />
@@ -392,7 +398,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                         name="user-password"
                         type={showPassword ? 'text' : 'password'}
                         placeholder="กรอกรหัสผ่าน"
-                        className={`h-11 pr-11 ${errors['user-password'] ? 'border-red-500 focus:ring-red-500' : ''}`}
+                        className="h-11 pr-11"
                         value={formData['user-password']}
                         onChange={handleChange}
                       />

@@ -72,7 +72,13 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setAttemptedSubmit(true);
-    if (!roleName.trim()) return;
+    if (!roleName.trim()) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs, .text-red-500.text-sm');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
+    }
     setIsSaving(true);
     try {
       // 1. Create Role
@@ -142,7 +148,7 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
               value={roleName}
               onChange={(e) => setRoleName(e.target.value)}
               placeholder="เช่น ผู้จัดการฝ่ายขาย"
-              className={nameError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
+              className=""
             />
             {nameError && <p className="text-xs text-red-500 mt-1">กรุณากรอกชื่อบทบาท</p>}
           </div>

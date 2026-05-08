@@ -235,9 +235,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   className={`w-28 text-right font-bold text-sm h-10 !py-1 ${
                     readOnly
                       ? ''
-                      : isPriceInvalid
-                        ? 'text-red-600 border-red-500 focus:ring-red-500 bg-red-50'
-                        : 'text-primary border-slate-300 focus:ring-primary focus:border-primary bg-white'
+                      : 'text-primary border-slate-300 focus:ring-primary focus:border-primary bg-white'
                   }`}
                   value={
                     area.package_price === undefined ? '' : area.package_price
@@ -586,7 +584,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
           <div className="p-4 pt-0 border-t border-slate-200 animate-fadeIn">
             <div className="mt-4 space-y-4">
               <FormField
-                label={`ชื่อพื้นที่ #${displayIndex}`}
+                label={`ชื่อพื้นที่ #${displayIndex} *`}
                 htmlFor={`areaName-${index}`}
               >
                 <Input
@@ -594,7 +592,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   value={area.area_name || ''}
                   onChange={handleFieldChange}
                   placeholder="เช่น บ้าน A-1, อาคาร Lobby"
-                  className={!readOnly && errors?.[`area_${index}_area_name`] ? 'border-red-500 bg-red-50/50' : ''}
+                  className=""
                   required
                   disabled={readOnly}
                 />
@@ -605,7 +603,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <FormField
-                  label="ประเภทสิ่งปลูกสร้าง"
+                  label="ประเภทสิ่งปลูกสร้าง *"
                   htmlFor={`buildingType-${index}`}
                 >
                   <DropdownSelect
@@ -613,7 +611,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     onChange={(val) => onAreaChange(index, { ...area, building_type: val || undefined })}
                     placeholder="เลือกประเภท"
                     options={Object.entries(WORKAREA_BUILDING_LABELS).map(([key, label]) => ({ value: key, label: label as string }))}
-                    error={!!errors?.[`area_${index}_building_type`]}
+                    error={false}
                     disabled={readOnly}
                   />
                   {errors?.[`area_${index}_building_type`] && (
@@ -635,7 +633,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 )}
 
                 <FormField
-                  label="ระบบใช้บริการ"
+                  label="ระบบใช้บริการ *"
                   htmlFor={`serviceSystem-${index}`}
                 >
                   <DropdownSelect
@@ -643,7 +641,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     onChange={(val) => onAreaChange(index, { ...area, service_system: val || undefined })}
                     placeholder="เลือกระบบ"
                     options={Object.values(ServiceSystem).map((type) => ({ value: type, label: serviceLabels[type] }))}
-                    error={!!errors?.[`area_${index}_service_system`]}
+                    error={false}
                     disabled={readOnly}
                   />
                   {errors?.[`area_${index}_service_system`] && (
@@ -679,7 +677,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                             <label className={`flex items-center space-x-2 ${readOnly ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                               <input
                                 type="checkbox"
-                                className={`h-4 w-4 rounded border-gray-300 text-primary ${readOnly ? 'cursor-not-allowed' : `focus:ring-primary ${errors?.[`area_${index}_category_services`] ? 'border-red-500' : ''}`}`}
+                                className={`h-4 w-4 rounded border-gray-300 text-primary ${readOnly ? 'cursor-not-allowed' : 'focus:ring-primary'}`}
                                 checked={isChecked}
                                 onChange={() => handleServiceTypeChange(cat.id)}
                                 disabled={readOnly}
@@ -814,28 +812,32 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       </p>
                     )}
                     {/* Always show input for custom area size */}
-                    <div className="relative mb-3">
-                      <Input
-                        name="area_size"
-                        type="text"
-                        inputMode="decimal"
-                        value={isAreaSizeFocused ? (area.area_size ?? '') : (area.area_size ? Number(area.area_size).toLocaleString('th-TH') : '')}
-                        onChange={(e) => {
-                          const raw = e.target.value.replace(/,/g, '');
-                          if (raw === '' || /^\d*\.?\d*$/.test(raw)) {
-                            onAreaChange(index, { ...area, area_size: raw === '' ? undefined : parseFloat(raw) });
-                          }
-                        }}
-                        onFocus={() => setIsAreaSizeFocused(true)}
-                        onBlur={() => setIsAreaSizeFocused(false)}
-                        placeholder="กรอกขนาดพื้นที่"
-                        className="pr-20"
-                        required
-                        disabled={readOnly}
-                      />
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 text-xs sm:text-sm">{selectedUnitName}</span>
+                    <div className="mb-3">
+                      <div className="relative">
+                        <Input
+                          name="area_size"
+                          type="text"
+                          inputMode="decimal"
+                          value={isAreaSizeFocused ? (area.area_size ?? '') : (area.area_size ? Number(area.area_size).toLocaleString('th-TH') : '')}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/,/g, '');
+                            if (raw === '' || /^\d*\.?\d*$/.test(raw)) {
+                              onAreaChange(index, { ...area, area_size: raw === '' ? undefined : parseFloat(raw) });
+                            }
+                          }}
+                          onFocus={() => setIsAreaSizeFocused(true)}
+                          onBlur={() => setIsAreaSizeFocused(false)}
+                          placeholder="กรอกขนาดพื้นที่"
+                          className="pr-20"
+                          disabled={readOnly}
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 text-xs sm:text-sm">{selectedUnitName}</span>
+                        </div>
                       </div>
+                      {errors?.[`area_${index}_area_size`] && (
+                        <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_area_size`]}</p>
+                      )}
                     </div>
 
                   </div>
@@ -882,28 +884,32 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     {area.area_size && area.area_size > 0 && (
                       <p className="text-xs text-slate-500 mb-2">หรือกรอกขนาดเอง:</p>
                     )}
-                    <div className="relative mb-3">
-                      <Input
-                        name="area_size"
-                        type="text"
-                        inputMode="decimal"
-                        value={isAreaSizeFocused ? (area.area_size ?? '') : (area.area_size ? Number(area.area_size).toLocaleString('th-TH') : '')}
-                        onChange={(e) => {
-                          const raw = e.target.value.replace(/,/g, '');
-                          if (raw === '' || /^\d*\.?\d*$/.test(raw)) {
-                            onAreaChange(index, { ...area, area_size: raw === '' ? undefined : parseFloat(raw) });
-                          }
-                        }}
-                        onFocus={() => setIsAreaSizeFocused(true)}
-                        onBlur={() => setIsAreaSizeFocused(false)}
-                        placeholder="กรอกขนาดพื้นที่"
-                        className="pr-16"
-                        required
-                        disabled={readOnly}
-                      />
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 text-xs sm:text-sm">เมตร</span>
+                    <div className="mb-3">
+                      <div className="relative">
+                        <Input
+                          name="area_size"
+                          type="text"
+                          inputMode="decimal"
+                          value={isAreaSizeFocused ? (area.area_size ?? '') : (area.area_size ? Number(area.area_size).toLocaleString('th-TH') : '')}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/,/g, '');
+                            if (raw === '' || /^\d*\.?\d*$/.test(raw)) {
+                              onAreaChange(index, { ...area, area_size: raw === '' ? undefined : parseFloat(raw) });
+                            }
+                          }}
+                          onFocus={() => setIsAreaSizeFocused(true)}
+                          onBlur={() => setIsAreaSizeFocused(false)}
+                          placeholder="กรอกขนาดพื้นที่"
+                          className="pr-16"
+                          disabled={readOnly}
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 text-xs sm:text-sm">เมตร</span>
+                        </div>
                       </div>
+                      {errors?.[`area_${index}_area_size`] && (
+                        <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_area_size`]}</p>
+                      )}
                     </div>
                   </div>
                 )}

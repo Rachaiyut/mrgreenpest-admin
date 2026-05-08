@@ -28,6 +28,7 @@ export const ChemicalCatalogModal: React.FC<ChemicalCatalogModalProps> = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [existingImageId, setExistingImageId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ name?: string }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export const ChemicalCatalogModal: React.FC<ChemicalCatalogModalProps> = ({
       setExistingImageId(null);
     }
     setImageFile(null);
+    setFormErrors({});
   }, [isOpen, mode, initialValues]);
 
   const handleFile = (file: File | null) => {
@@ -62,7 +64,12 @@ export const ChemicalCatalogModal: React.FC<ChemicalCatalogModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setFormErrors({ name: 'กรุณากรอกชื่อสารเคมี' });
+      setTimeout(() => document.querySelector('.text-red-500.text-xs')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      return;
+    }
+    setFormErrors({});
     setIsSubmitting(true);
     try {
       let savedId: string;
@@ -144,7 +151,7 @@ export const ChemicalCatalogModal: React.FC<ChemicalCatalogModalProps> = ({
             variant="primary"
             type="submit"
             form="chemical-catalog-form"
-            disabled={!isValid || isSubmitting}
+            disabled={isSubmitting}
           >
             {isSubmitting ? 'กำลังบันทึก...' : 'บันทึก'}
           </Button>
@@ -219,11 +226,16 @@ export const ChemicalCatalogModal: React.FC<ChemicalCatalogModalProps> = ({
                 id="cc-name"
                 name="name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (formErrors.name) setFormErrors({});
+                }}
                 placeholder="เช่น น้ำยากำจัดปลวก X100"
                 maxLength={255}
-                required
               />
+              {formErrors.name && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>
+              )}
             </FormField>
 
             <FormField label="รายละเอียด" htmlFor="cc-description">

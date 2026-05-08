@@ -107,6 +107,10 @@ export const SetWithdrawalLimitModal: React.FC<
     e.preventDefault();
     if (Object.keys(errors).length > 0) {
       Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาแก้ไขข้อมูลให้ถูกต้อง' });
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-600.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
       return;
     }
     const finalLimits: { [productId: string]: number } = {};
@@ -178,7 +182,7 @@ export const SetWithdrawalLimitModal: React.FC<
                           handleLimitChange(product.id, e.target.value)
                         }
                         placeholder="ไม่จำกัด"
-                        className={`w-32 h-9 ${errors[product.id] ? 'border-red-500 focus:ring-red-500' : ''}`}
+                        className="w-32 h-9"
                       />
                       {errors[product.id] && (
                         <p className="text-xs text-red-600 mt-1">

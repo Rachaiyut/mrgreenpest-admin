@@ -77,6 +77,12 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       newErrors.phone = 'กรุณากรอกเบอร์โทรศัพท์';
     }
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -99,8 +105,8 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
   return (
     <form id="supplier-form" onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="tax_id">
-          <Input name="tax_id" type="text" value={formData.tax_id || ''} onChange={handleChange} required={supplierType === 'นิติบุคคล'} className={errors.tax_id ? 'border-red-500' : ''} />
+        <FormField label={supplierType === 'นิติบุคคล' ? 'เลขประจำตัวผู้เสียภาษี *' : 'เลขประจำตัวผู้เสียภาษี'} htmlFor="tax_id">
+          <Input name="tax_id" type="text" value={formData.tax_id || ''} onChange={handleChange} />
           {errors.tax_id && <p className="text-red-500 text-xs mt-1">{errors.tax_id}</p>}
         </FormField>
         <FormField label="ประเภทผู้จัดจำหน่าย">
@@ -130,7 +136,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       </div>
 
       <FormField label={supplierType === 'นิติบุคคล' ? 'ชื่อบริษัท *' : 'ชื่อ-นามสกุล *'} htmlFor="name">
-        <Input name="name" type="text" value={formData.name || ''} onChange={handleChange} required className={errors.name ? 'border-red-500' : ''} />
+        <Input name="name" type="text" value={formData.name || ''} onChange={handleChange} />
         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
       </FormField>
 
@@ -145,7 +151,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
           <div className="space-y-2">
             {phones.map((phone, index) => (
               <div key={index} className="flex items-center gap-2">
-                <Input type="tel" value={phone} onChange={(e) => handlePhoneChange(index, e.target.value)} required={index === 0} placeholder={`เบอร์โทรศัพท์ ${index + 1}`} className={index === 0 && errors.phone ? 'border-red-500' : ''} />
+                <Input type="tel" value={phone} onChange={(e) => handlePhoneChange(index, e.target.value)} placeholder={`เบอร์โทรศัพท์ ${index + 1}`} />
                 {index > 0 && (
                   <button type="button" onClick={() => setPhones(phones.filter((_, i) => i !== index))} className="p-2 text-red-500 hover:text-red-700 rounded-full hover:bg-red-50">
                     <TrashIcon className="h-5 w-5" />

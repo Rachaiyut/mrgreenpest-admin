@@ -1,5 +1,5 @@
 import type { FC, FormEvent } from 'react';
-import { Fragment } from 'react';
+import { Fragment, useEffect } from 'react';
 import { Input } from '../../common/FormControls';
 import { Permission } from '@/src/api/role';
 import {
@@ -40,6 +40,15 @@ export const RoleForm: FC<RoleFormProps> = ({
   onTogglePermission,
   onSubmit,
 }) => {
+  useEffect(() => {
+    if (errors.name || errors.roleType) {
+      setTimeout(() => {
+        const el = document.querySelector('.text-red-500.text-xs, .text-red-500.text-sm, .text-red-600.text-xs, .text-red-600.text-sm');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+    }
+  }, [errors]);
+
   return (
     <form id={formId} onSubmit={onSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -54,7 +63,7 @@ export const RoleForm: FC<RoleFormProps> = ({
             value={roleName}
             onChange={(e) => onRoleNameChange(e.target.value)}
             placeholder="เช่น ผู้จัดการฝ่ายขาย"
-            className={errors.name ? 'border-red-500 focus:ring-red-500' : ''}
+            className=""
           />
           {errors.name && (
             <p className="mt-1 text-xs text-red-600">{errors.name}</p>

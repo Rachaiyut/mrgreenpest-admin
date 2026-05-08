@@ -458,6 +458,7 @@ const ServiceDetailPage: FC = () => {
   // Form
   const [detailName, setDetailName] = useState('');
   const [editorContent, setEditorContent] = useState('');
+  const [formErrors, setFormErrors] = useState<{ detailName?: string; editorContent?: string }>({});
 
   // Data
   const [details, setDetails] = useState<IServiceProcedureTemplate[]>([]);
@@ -568,10 +569,20 @@ const ServiceDetailPage: FC = () => {
 
   // Save
   const handleSave = async () => {
+    const errors: { detailName?: string; editorContent?: string } = {};
     if (!detailName.trim()) {
-      Swal.fire('กรุณากรอกข้อมูลให้ครบ', 'ชื่อ จำเป็นต้องกรอก', 'warning');
+      errors.detailName = 'กรุณากรอกชื่อ';
+    }
+    const strippedContent = editorContent.replace(/<[^>]*>/g, '').trim();
+    if (!strippedContent) {
+      errors.editorContent = 'กรุณากรอกรายละเอียดขั้นตอนบริการ';
+    }
+    if (errors.detailName || errors.editorContent) {
+      setFormErrors(errors);
+      setTimeout(() => document.querySelector('.text-red-500.text-xs')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
       return;
     }
+    setFormErrors({});
 
     try {
       console.log('[DEBUG] Saving content:', editorContent);
@@ -845,19 +856,27 @@ const ServiceDetailPage: FC = () => {
               {isReadOnly ? (
                 <p className="text-sm text-slate-800 font-medium">{detailName}</p>
               ) : (
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  placeholder="เช่น รายละเอียดงานควบคุมป้องกันกำจัดปลวก"
-                  value={detailName}
-                  onChange={(e) => setDetailName(e.target.value)}
-                />
+                <>
+                  <input
+                    type="text"
+                    className="w-full border border-slate-300 rounded-lg px-3 text-sm focus:outline-none focus:ring-0 focus:border-green-500 h-[38px]"
+                    placeholder="เช่น รายละเอียดงานควบคุมป้องกันกำจัดปลวก"
+                    value={detailName}
+                    onChange={(e) => {
+                      setDetailName(e.target.value);
+                      if (formErrors.detailName) setFormErrors({});
+                    }}
+                  />
+                  {formErrors.detailName && (
+                    <p className="text-red-500 text-xs mt-1">{formErrors.detailName}</p>
+                  )}
+                </>
               )}
             </div>
 
             {/* Rich Text Editor */}
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1.5">รายละเอียดขั้นตอนบริการ</label>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">{isReadOnly ? 'รายละเอียดขั้นตอนบริการ' : <>รายละเอียดขั้นตอนบริการ <span className="text-red-500">*</span></>}</label>
               {isReadOnly ? (
                 <>
                   <style>{`
@@ -881,7 +900,15 @@ const ServiceDetailPage: FC = () => {
                   />
                 </>
               ) : (
-                <TipTapEditor content={editorContent} onChange={setEditorContent} />
+                <>
+                  <TipTapEditor content={editorContent} onChange={(val) => {
+                    setEditorContent(val);
+                    if (formErrors.editorContent) setFormErrors((prev) => ({ ...prev, editorContent: undefined }));
+                  }} />
+                  {formErrors.editorContent && (
+                    <p className="text-red-500 text-xs mt-1">{formErrors.editorContent}</p>
+                  )}
+                </>
               )}
             </div>
           </div>
