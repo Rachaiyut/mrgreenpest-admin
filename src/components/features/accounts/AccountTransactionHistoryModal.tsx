@@ -9,7 +9,14 @@ import {
   AccountTransaction,
   AccountTransactionType,
 } from '../../../types/entity/account.interface';
-import { LoadingIcon, DocumentCheckIcon } from '../../../assets/icons/Icons';
+import {
+  LoadingIcon,
+  DocumentCheckIcon,
+  BuildingOfficeIcon,
+  WalletIcon,
+  ArrowTrendingUpIcon,
+  CurrencyDollarIcon,
+} from '../../../assets/icons/Icons';
 import { formatThaiDateTime } from '../../../utils/date';
 
 interface Props {
@@ -129,33 +136,74 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
       isOpen={isOpen}
       onClose={onClose}
       title={`ประวัติรายการเดินบัญชี · ${account.account_number}`}
-      size="5xl"
+      size="7xl"
     >
       {/* Account summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <div className="p-3 rounded-md bg-slate-50 border border-slate-200">
-          <p className="text-xs text-slate-500">ชื่อบัญชี</p>
-          <p className="text-sm font-semibold text-slate-800 truncate">{account.account_name}</p>
-          <p className="text-xs text-slate-500">{account.bank_name}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <div className="p-3.5 rounded-lg bg-gradient-to-br from-slate-50 to-white border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-600 flex-shrink-0">
+              <BuildingOfficeIcon className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">ชื่อบัญชี</p>
+              <p className="text-sm font-semibold text-slate-800 truncate leading-tight">
+                {account.account_name}
+              </p>
+              <p className="text-[11px] text-slate-500 truncate">{account.bank_name}</p>
+            </div>
+          </div>
         </div>
-        <div className="p-3 rounded-md bg-slate-50 border border-slate-200">
-          <p className="text-xs text-slate-500">ยอดคงเหลือ</p>
-          <p className="text-lg font-bold text-slate-800 tabular-nums">
-            {fmtMoney(account.current_balance)}
-          </p>
+
+        <div className="p-3.5 rounded-lg bg-gradient-to-br from-slate-50 to-white border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-600 flex-shrink-0">
+              <WalletIcon className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">ยอดคงเหลือ</p>
+              <p className="text-base font-bold text-slate-900 tabular-nums leading-tight whitespace-nowrap truncate">
+                {fmtMoney(account.current_balance)}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="p-3 rounded-md bg-emerald-50 border border-emerald-200">
-          <p className="text-xs text-emerald-700">เงินเข้า (ในหน้านี้)</p>
-          <p className="text-lg font-bold text-emerald-700 tabular-nums">+{fmtMoney(summary.deposit)}</p>
+
+        <div className="p-3.5 rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-50/30 border border-emerald-200 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-100 text-emerald-600 flex-shrink-0">
+              <ArrowTrendingUpIcon className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium text-emerald-700 uppercase tracking-wide">
+                เงินเข้า (ในหน้านี้)
+              </p>
+              <p className="text-base font-bold text-emerald-700 tabular-nums leading-tight whitespace-nowrap truncate">
+                +{fmtMoney(summary.deposit)}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="p-3 rounded-md bg-red-50 border border-red-200">
-          <p className="text-xs text-red-700">เงินออก (ในหน้านี้)</p>
-          <p className="text-lg font-bold text-red-700 tabular-nums">-{fmtMoney(summary.withdraw)}</p>
+
+        <div className="p-3.5 rounded-lg bg-gradient-to-br from-red-50 to-red-50/30 border border-red-200 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-red-100 text-red-600 flex-shrink-0">
+              <CurrencyDollarIcon className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium text-red-700 uppercase tracking-wide">
+                เงินออก (ในหน้านี้)
+              </p>
+              <p className="text-base font-bold text-red-700 tabular-nums leading-tight whitespace-nowrap truncate">
+                -{fmtMoney(summary.withdraw)}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Filter bar */}
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex flex-wrap items-center gap-3 mb-4">
         <DropdownSelect
           value={typeFilter}
           onChange={(v) => {
@@ -171,40 +219,49 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
             { value: 'ADJUSTMENT', label: 'ปรับปรุงยอด' },
           ]}
         />
-        <span className="ml-auto text-sm text-slate-500">ทั้งหมด {total.toLocaleString('th-TH')} รายการ</span>
+        <span className="ml-auto text-sm text-slate-500">
+          ทั้งหมด{' '}
+          <span className="font-semibold text-slate-700 tabular-nums">
+            {total.toLocaleString('th-TH')}
+          </span>{' '}
+          รายการ
+        </span>
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border border-slate-200 overflow-hidden">
-        <div className="overflow-auto max-h-[50vh]">
+      <div className="rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="overflow-auto max-h-[55vh]">
           <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-left">
             <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
-              <tr className="text-sm font-semibold text-slate-600">
-                <th className="px-4 py-2.5 w-16">ลำดับ</th>
-                <th className="px-4 py-2.5">วันที่และเวลา</th>
-                <th className="px-4 py-2.5">ประเภท</th>
-                <th className="px-4 py-2.5">รายละเอียด</th>
-                <th className="px-4 py-2.5">อ้างอิง</th>
-                <th className="px-4 py-2.5">จำนวนเงิน</th>
-                <th className="px-4 py-2.5">ยอดคงเหลือ</th>
+              <tr className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                <th className="px-5 py-3.5 w-16">ลำดับ</th>
+                <th className="px-5 py-3.5">วันที่และเวลา</th>
+                <th className="px-5 py-3.5">ประเภท</th>
+                <th className="px-5 py-3.5">รายละเอียด</th>
+                <th className="px-5 py-3.5">อ้างอิง</th>
+                <th className="px-5 py-3.5 text-right">จำนวนเงิน</th>
+                <th className="px-5 py-3.5 text-right">ยอดคงเหลือ</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="py-12">
+                  <td colSpan={7} className="py-16">
                     <div className="flex flex-col items-center text-slate-500">
-                      <LoadingIcon className="w-8 h-8 animate-spin mb-2 text-primary" />
-                      <p className="text-sm">กำลังโหลด...</p>
+                      <LoadingIcon className="w-10 h-10 animate-spin mb-3 text-primary" />
+                      <p className="text-sm font-medium">กำลังโหลด...</p>
                     </div>
                   </td>
                 </tr>
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12">
+                  <td colSpan={7} className="py-16">
                     <div className="flex flex-col items-center text-slate-400">
-                      <DocumentCheckIcon className="h-10 w-10 mb-2 opacity-50" />
-                      <p className="text-sm font-medium">ยังไม่มีรายการเดินบัญชี</p>
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 mb-3">
+                        <DocumentCheckIcon className="h-8 w-8 opacity-60" />
+                      </div>
+                      <p className="text-base font-medium text-slate-500">ยังไม่มีรายการเดินบัญชี</p>
+                      <p className="text-sm text-slate-400 mt-1">รายการที่บันทึกจะปรากฏที่นี่</p>
                     </div>
                   </td>
                 </tr>
@@ -213,28 +270,32 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
                   const meta = TYPE_META[t.type];
                   return (
                     <tr key={t.id} className={`${meta.rowClass} ${meta.hoverClass} transition-colors`}>
-                      <td className={`px-4 py-2.5 text-sm text-slate-500 tabular-nums ${meta.accentClass}`}>
+                      <td className={`px-5 py-4 text-sm text-slate-500 tabular-nums ${meta.accentClass}`}>
                         {(page - 1) * limit + i + 1}
                       </td>
-                      <td className="px-4 py-2.5 text-sm text-slate-700 whitespace-nowrap">
+                      <td className="px-5 py-4 text-sm text-slate-700 whitespace-nowrap">
                         {formatThaiDateTime(t.created_at || t.transaction_date)}
                       </td>
-                      <td className="px-4 py-2.5 text-sm">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${meta.badgeClass}`}>
+                      <td className="px-5 py-4 text-sm">
+                        <span
+                          className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${meta.badgeClass}`}
+                        >
                           {meta.label}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 text-sm text-slate-700 text-left">
+                      <td className="px-5 py-4 text-sm text-slate-700 text-left">
                         {t.description || <span className="text-slate-300">-</span>}
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-xs text-slate-500">
+                      <td className="px-5 py-4 font-mono text-xs text-slate-500">
                         {t.reference_code || <span className="text-slate-300">-</span>}
                       </td>
-                      <td className={`px-4 py-2.5 text-sm font-bold tabular-nums ${meta.amountClass}`}>
+                      <td
+                        className={`px-5 py-4 text-base font-bold tabular-nums text-right whitespace-nowrap ${meta.amountClass}`}
+                      >
                         {meta.sign}
                         {fmtMoney(t.amount)}
                       </td>
-                      <td className="px-4 py-2.5 text-sm text-slate-800 font-semibold tabular-nums">
+                      <td className="px-5 py-4 text-sm text-slate-800 font-semibold tabular-nums text-right whitespace-nowrap">
                         {fmtMoney(t.balance_after)}
                       </td>
                     </tr>
