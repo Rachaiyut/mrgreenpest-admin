@@ -18,6 +18,7 @@ import { StorageApi } from '@/src/api/storage';
 
 // ===== Components (Absolute) =====
 import { ProductModal } from '@/src/components/features/products/ProductModal';
+import { ProductDetailsModal } from '@/src/components/features/products/ProductDetailsModal';
 
 // ===== Components (Relative) =====
 import { Card } from '../../../components/common/Card';
@@ -32,6 +33,7 @@ import {
   PlusIcon,
   TrashIcon,
   ArchiveBoxIcon,
+  EyeIcon,
 } from '../../../assets/icons/Icons';
 
 const Product: React.FC = () => {
@@ -54,6 +56,9 @@ const Product: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
+
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [productToView, setProductToView] = useState<IProduct | null>(null);
 
   const fetchCategories = async () => {
     try {
@@ -215,6 +220,12 @@ const Product: React.FC = () => {
     setOpenDropdownId(null);
   };
 
+
+  const handleViewDetails = (product: IProduct) => {
+    setProductToView(product);
+    setIsDetailsModalOpen(true);
+    setOpenDropdownId(null);
+  };
 
   const handleEdit = (product: IProduct) => {
     setSelectedProduct(product);
@@ -485,6 +496,11 @@ const Product: React.FC = () => {
                         onToggle={setOpenDropdownId}
                         actions={[
                           {
+                            label: 'ดูรายละเอียด',
+                            icon: EyeIcon,
+                            onClick: () => handleViewDetails(product),
+                          },
+                          {
                             label: 'แก้ไข',
                             icon: PencilIcon,
                             onClick: () => handleEdit(product),
@@ -516,6 +532,12 @@ const Product: React.FC = () => {
         </div>
         )}
       </div>
+
+      <ProductDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => { setIsDetailsModalOpen(false); setProductToView(null); }}
+        product={productToView}
+      />
 
       <ProductModal
         isOpen={isModalOpen}

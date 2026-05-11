@@ -100,6 +100,7 @@ export const ActionDropdown: FC<ActionDropdownProps> = ({
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
+                  onToggle(null);
                   action.onClick();
                 }}
                 className={`flex items-center w-full text-left px-4 py-3 text-sm font-medium transition-colors ${

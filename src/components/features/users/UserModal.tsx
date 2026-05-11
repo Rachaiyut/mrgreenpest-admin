@@ -100,12 +100,7 @@ export const UserModal: React.FC<UserModalProps> = ({
       footer={
         mode === 'view' ? (
           <div className="flex justify-end py-2">
-            <Button
-              type="button"
-              onClick={onClose}
-              variant="primary"
-              className="h-12 px-6 rounded-lg text-base font-medium min-w-[110px]"
-            >
+            <Button type="button" variant="secondary" onClick={onClose}>
               ปิด
             </Button>
           </div>

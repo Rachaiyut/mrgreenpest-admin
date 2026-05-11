@@ -55,7 +55,7 @@ export const ReturnDetailsModal: React.FC<ReturnDetailsModalProps> = ({
               </span>
             )}
           </div>
-          <Button variant="primary" type="button" onClick={onClose}>
+          <Button variant="secondary" type="button" onClick={onClose}>
             ปิด
           </Button>
         </div>

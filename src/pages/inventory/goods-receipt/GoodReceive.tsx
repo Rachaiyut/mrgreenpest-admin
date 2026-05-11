@@ -86,9 +86,8 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
   const [editingReceipt, setEditingReceipt] = useState<GoodsReceiveType | null>(null);
-  const [selectedReceipt, setSelectedReceipt] = useState<GoodsReceiveType | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
@@ -226,16 +225,9 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
 
   const handleDropdownToggle = (id: string | null) => {
     setOpenDropdownId(id);
-    if (id) {
-      const found = receipts.find((r) => r.id === id);
-      setSelectedReceipt(found || null);
-    } else {
-      setSelectedReceipt(null);
-    }
   };
 
-  const handleApprovalAction = async (action: 'approve' | 'reject') => {
-    const target = selectedReceipt;
+  const handleApprovalAction = async (action: 'approve' | 'reject', target: GoodsReceiveType) => {
     setOpenDropdownId(null);
     if (!target) return;
 
@@ -272,7 +264,6 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
           ?.response?.data?.message;
         Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถดำเนินการได้', 'error');
       }
-      setSelectedReceipt(null);
       return;
     }
 
@@ -304,7 +295,6 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
         ?.response?.data?.message;
       Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถอนุมัติได้', 'error');
     }
-    setSelectedReceipt(null);
   };
 
   const handleCancel = async (receiptId: string) => {
@@ -359,14 +349,14 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
       {
         label: 'อนุมัติ',
         icon: DocumentCheckIcon,
-        onClick: () => handleApprovalAction('approve'),
+        onClick: () => handleApprovalAction('approve', receipt),
         isPrimary: true,
         hidden: !isPending,
       },
       {
         label: 'ไม่อนุมัติ',
         icon: XCircleIcon,
-        onClick: () => handleApprovalAction('reject'),
+        onClick: () => handleApprovalAction('reject', receipt),
         isDanger: true,
         hidden: !isPending,
       },
@@ -400,8 +390,8 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รับสินค้าเข้า</h1>
             <p className="mt-1 text-sm sm:text-base text-slate-600">จัดการการรับสินค้าเข้าคลัง</p>
           </div>
-          <Button onClick={() => setIsAddModalOpen(true)} variant="primary" className="w-full sm:w-auto justify-center shrink-0">
-            <PlusIcon className="h-5 w-5 mr-2" />
+          <Button onClick={() => setIsAddModalOpen(true)} className="self-start sm:self-auto">
+            <PlusIcon className="h-5 w-5" />
             สร้างใบรับเข้า
           </Button>
         </div>
@@ -510,79 +500,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
         </Card>
 
         <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
-          {/* Mobile card view */}
-          <div className="md:hidden flex-1 overflow-auto relative">
-            {isLoading ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 p-6">
-                <LoadingIcon className="w-10 h-10 animate-spin mb-3 text-primary" />
-                <p className="text-sm font-medium">กำลังโหลดข้อมูลใบรับเข้า...</p>
-              </div>
-            ) : paginatedReceipts.length > 0 ? (
-              <ul className="divide-y divide-slate-200">
-                {paginatedReceipts.map((receipt, index) => {
-                  const warehouseName = (receipt as unknown as Record<string, { name?: string }>).warehouse?.name || warehouseMap[receipt.warehouse_id] || '-';
-                  const u = (receipt as { created_by_user?: { first_name?: string; last_name?: string; nick_name?: string } }).created_by_user;
-                  const creator = u ? (`${u.first_name || ''} ${u.last_name || ''}`.trim() || u.nick_name || 'ไม่กรอก') : 'ไม่กรอก';
-                  return (
-                    <li key={receipt.id} className="p-3 hover:bg-slate-50 transition-colors">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs text-slate-400">#{(currentPage - 1) * itemsPerPage + index + 1}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleViewDetails(receipt)}
-                              className="text-sm font-semibold text-primary hover:text-primary-dark"
-                            >
-                              {receipt.code || receipt.id.substring(0, 8)}
-                            </button>
-                            <StatusBadge status={receipt.status} />
-                          </div>
-                          <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-600">
-                            <div className="col-span-2">
-                              <span className="text-slate-400">เลขที่อ้างอิง: </span>
-                              <span className="font-medium text-slate-700">{receipt.receipt_no || '-'}</span>
-                            </div>
-                            <div>
-                              <span className="text-slate-400">วันที่: </span>
-                              <span className="text-slate-700">{formatThaiDate(receipt.created_at)}</span>
-                            </div>
-                            <div className="truncate">
-                              <span className="text-slate-400">คลัง: </span>
-                              <span className="text-slate-700">{warehouseName}</span>
-                            </div>
-                            <div className="col-span-2 truncate">
-                              <span className="text-slate-400">ผู้จัดจำหน่าย: </span>
-                              <span className="text-slate-700">{receipt.supplier_id ? supplierMap[receipt.supplier_id] : '-'}</span>
-                            </div>
-                            <div className="col-span-2 truncate">
-                              <span className="text-slate-400">ผู้สร้าง: </span>
-                              <span className="text-slate-700">{creator}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <ActionDropdown
-                          itemId={receipt.id}
-                          openId={openDropdownId}
-                          onToggle={handleDropdownToggle}
-                          actions={getActions(receipt)}
-                        />
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-6">
-                <DocumentCheckIcon className="w-12 h-12 text-slate-300 mb-3 opacity-50" />
-                <p className="text-base font-medium">ไม่พบข้อมูลใบรับเข้า</p>
-                <p className="text-xs mt-1 text-center">ลองเปลี่ยนคำค้นหา หรือสร้างใบรับเข้าใหม่</p>
-              </div>
-            )}
-          </div>
-
-          {/* Desktop / tablet table view */}
-          <div className="hidden md:block overflow-auto w-full flex-1 relative">
+          <div className="overflow-auto w-full flex-1 relative">
             <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-left">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>

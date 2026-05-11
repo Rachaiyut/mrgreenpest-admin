@@ -10,10 +10,12 @@ import {
   ArchiveBoxIcon,
   XCircleIcon,
   CheckCircleIcon,
+  EyeIcon,
 } from '../../assets/icons/Icons';
 import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 import { Pagination } from '../../components/common/Pagination';
 import { UnitModal } from '../../components/features/units/UnitModal';
+import { UnitDetailsModal } from '../../components/features/units/UnitDetailsModal';
 import { Input, Button } from '../../components/common/FormControls';
 import { DropdownSelect } from '../../components/common/DropdownSelect';
 
@@ -29,6 +31,9 @@ const Units: React.FC = () => {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [formModalMode, setFormModalMode] = useState<'create' | 'edit'>('create');
   const [unitToEdit, setUnitToEdit] = useState<IUnit | null>(null);
+
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [unitToView, setUnitToView] = useState<IUnit | null>(null);
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
@@ -56,7 +61,14 @@ const Units: React.FC = () => {
     fetchUnits();
   }, [fetchUnits]);
 
+  const handleViewDetails = (unit: IUnit) => {
+    setUnitToView(unit);
+    setIsDetailsModalOpen(true);
+    setOpenDropdownId(null);
+  };
+
   const getUnitActions = (unit: IUnit): ActionDropdownItem[] => [
+    { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(unit) },
     { label: 'แก้ไข', icon: PencilIcon, onClick: () => handleEdit(unit) },
     {
       label: unit.is_active !== false ? 'ปิดใช้งาน' : 'เปิดใช้งาน',
@@ -242,6 +254,12 @@ const Units: React.FC = () => {
         )}
       </div>
 
+
+      <UnitDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => { setIsDetailsModalOpen(false); setUnitToView(null); }}
+        unit={unitToView}
+      />
 
       <UnitModal
         isOpen={isFormModalOpen}

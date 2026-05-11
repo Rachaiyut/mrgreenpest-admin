@@ -20,6 +20,7 @@ import {
   ArchiveBoxIcon,
   XCircleIcon,
   CheckCircleIcon,
+  EyeIcon,
 } from '../../assets/icons/Icons';
 
 // Component
@@ -29,12 +30,16 @@ import { DropdownSelect } from '@/src/components/common/DropdownSelect';
 import { Pagination } from '../../components/common/Pagination';
 import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 import { CategoryModal } from '../../components/features/category/CategoryModal';
+import { CategoryDetailsModal } from '../../components/features/category/CategoryDetailsModal';
 
 const Categories: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [categoryToView, setCategoryToView] = useState<Category | null>(null);
+
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(10);
@@ -139,7 +144,14 @@ const Categories: React.FC = () => {
     [fetchCategories]
   );
 
+  const handleViewDetails = (category: Category) => {
+    setCategoryToView(category);
+    setIsDetailsModalOpen(true);
+    setOpenDropdownId(null);
+  };
+
   const getCategoryActions = (category: Category): ActionDropdownItem[] => [
+    { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(category) },
     { label: 'แก้ไข', icon: PencilIcon, onClick: () => handleEdit(category) },
     {
       label: category.is_active !== false ? 'ปิดใช้งาน' : 'เปิดใช้งาน',
@@ -347,6 +359,12 @@ const Categories: React.FC = () => {
         )}
       </div>
 
+
+      <CategoryDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => { setIsDetailsModalOpen(false); setCategoryToView(null); }}
+        category={categoryToView}
+      />
 
       <CategoryModal
         isOpen={isModalOpen}

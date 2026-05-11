@@ -97,7 +97,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
               })}{' '}บาท
             </span>
           </p>
-          <Button variant="primary" type="button" onClick={onClose}>
+          <Button variant="secondary" type="button" onClick={onClose}>
             ปิด
           </Button>
         </div>
