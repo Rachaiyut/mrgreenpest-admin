@@ -1,19 +1,11 @@
-import { Button } from 'antd';
-
-// Interface
 import { Customer } from '@/src/types/entity/customer.interface';
-
-// Component
 import { TruncateText } from '../../components/common/TruncateText';
 import { StatusBadge } from '../../components/common/StatusBadge';
-
-// Icon
-import { ManageIcon } from '../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 import { CustomerType } from '@/src/types';
 import { formatThaiDate } from '@/src/utils/date';
 import { formatPhoneNumber } from '@/src/utils/format';
 
-// Helper function to calculate duration
 const calculateDuration = (createdAt: string): string => {
   if (!createdAt) return '-';
 
@@ -44,13 +36,12 @@ const TH = (v: string) => (
 
 const CustomerListView: React.FC<{
   customers: Customer[];
-  handleDropdownToggle: (
-    event: React.MouseEvent<HTMLElement>,
-    customerId: string
-  ) => void;
+  getActions: (customer: Customer) => ActionDropdownItem[];
+  openDropdownId: string | null;
+  setOpenDropdownId: (id: string | null) => void;
   currentPage: number;
   itemsPerPage: number;
-}> = ({ customers, handleDropdownToggle, currentPage, itemsPerPage }) => (
+}> = ({ customers, getActions, openDropdownId, setOpenDropdownId, currentPage, itemsPerPage }) => (
   <div className="overflow-x-auto">
     <table className="min-w-[1200px] w-full divide-y divide-slate-200 border-b border-slate-200">
       <thead className="bg-slate-50">
@@ -101,7 +92,7 @@ const CustomerListView: React.FC<{
           const expiringContracts = Number(customer.expiring_contracts_count) || 0;
 
           return (
-            <tr key={customer.id} className="hover:bg-slate-50 cursor-pointer [&>td]:align-top" onClick={(e) => { if (!(e.target as HTMLElement).closest('button')) handleDropdownToggle(e as React.MouseEvent<HTMLElement>, customer.id); }}>
+            <tr key={customer.id} className="hover:bg-slate-50 cursor-pointer [&>td]:align-top">
               <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                 {(currentPage - 1) * itemsPerPage + index + 1}
               </td>
@@ -127,7 +118,6 @@ const CustomerListView: React.FC<{
                   {customer.type === CustomerType.CORPORATE ? 'นิติบุคคล' : 'บุคคลธรรมดา'}
                 </span>
               </td>
-              {/* สัญญา */}
               <td className="px-4 py-3 whitespace-nowrap text-left bg-green-50/50">
                 <div className="flex items-center justify-center gap-1">
                   <span className={`text-sm font-semibold ${activeContracts > 0 ? 'text-green-700' : 'text-slate-400'}`}>
@@ -140,15 +130,12 @@ const CustomerListView: React.FC<{
                   )}
                 </div>
               </td>
-              {/* บริการล่าสุด */}
               <td className="px-4 py-3 whitespace-nowrap text-sm bg-blue-50/50">
                 {customer.last_service_date ? formatThaiDate(customer.last_service_date) : <span className="text-slate-400">-</span>}
               </td>
-              {/* บริการถัดไป */}
               <td className="px-4 py-3 whitespace-nowrap text-sm bg-blue-50/50">
                 {customer.next_service_date ? formatThaiDate(customer.next_service_date) : <span className="text-slate-400">-</span>}
               </td>
-              {/* ยอดค้างชำระ */}
               <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-medium bg-red-50/50">
                 {outstandingAmount > 0 ? (
                   <span className="text-red-600">
@@ -158,7 +145,6 @@ const CustomerListView: React.FC<{
                   <span className="text-green-600">-</span>
                 )}
               </td>
-              {/* ระยะเวลา */}
               <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                 <span
                   className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700"
@@ -167,20 +153,16 @@ const CustomerListView: React.FC<{
                   {calculateDuration(customer.created_at)}
                 </span>
               </td>
-              {/* สถานะ */}
               <td className="px-4 py-3 whitespace-nowrap text-center">
                 <StatusBadge status={customer.status || 'ACTIVE'} />
               </td>
-              {/* จัดการ */}
               <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
-                <button
-                  data-customer-id={customer.id}
-                  onClick={(e) => handleDropdownToggle(e, customer.id)}
-                  title="ตัวเลือก"
-                  className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700 cursor-pointer"
-                >
-                  <ManageIcon className="h-5 w-5" aria-hidden="true" />
-                </button>
+                <ActionDropdown
+                  actions={getActions(customer)}
+                  itemId={customer.id}
+                  openId={openDropdownId}
+                  onToggle={setOpenDropdownId}
+                />
               </td>
             </tr>
           );

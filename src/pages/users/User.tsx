@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card } from '../../components/common/Card';
 import {
   User,
@@ -9,7 +9,6 @@ import {
   PlusIcon,
   ShieldCheckIcon,
   ArrowLeftIcon,
-  ManageIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
@@ -17,6 +16,7 @@ import {
   LoadingIcon,
   DocumentCheckIcon,
 } from '../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 import { RoleModal } from '../../components/features/users/RoleModal';
 import { Pagination } from '../../components/common/Pagination';
 import { UserModal } from '../../components/features/users/UserModal';
@@ -103,11 +103,6 @@ const Users: React.FC<UsersProps> = ({
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
@@ -303,54 +298,18 @@ const Users: React.FC<UsersProps> = ({
     return counts;
   }, [roles]);
 
-  const userActions = [
-    { label: 'ดูรายละเอียด', icon: EyeIcon },
-    { label: 'แก้ไข', icon: PencilIcon },
-    { label: 'กระเป๋าเงิน', icon: WalletIcon },
-    { label: 'ลบ', icon: TrashIcon, isDanger: true },
+  const getUserActions = (user: User): ActionDropdownItem[] => [
+    { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(user) },
+    { label: 'แก้ไข', icon: PencilIcon, onClick: () => handleEdit(user) },
+    { label: 'กระเป๋าเงิน', icon: WalletIcon, onClick: () => handleOpenWallet(user) },
+    { label: 'ลบ', icon: TrashIcon, isDanger: true, onClick: () => handleDelete(user) },
   ];
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    id: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === id) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setOpenDropdownId(id);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      ) {
-        return;
-      }
-      if (
-        (event.target as HTMLElement).closest(
-          'button[data-user-id], button[data-role-id]'
-        )
-      ) {
-        return;
-      }
-      setOpenDropdownId(null);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openDropdownId]);
+  const getRoleActions = (role: Role): ActionDropdownItem[] => [
+    { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewRoleDetails(role.id) },
+    { label: 'แก้ไข', icon: PencilIcon, onClick: () => handleEditRole(role.id) },
+    { label: 'ลบ', icon: TrashIcon, isDanger: true, onClick: () => handleDeleteRole(role), hidden: roleCounts[role.id] > 0 },
+  ];
 
   return (
     <div className="flex-1 flex flex-col">
@@ -473,16 +432,12 @@ const Users: React.FC<UsersProps> = ({
                             <RoleBadge role={user.role} />
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center text-sm font-medium">
-                            <div className="inline-block text-left">
-                              <Button
-                                variant="icon"
-                                data-user-id={user.id}
-                                onClick={(e) => handleDropdownToggle(e, user.id)}
-                              >
-                                <span className="sr-only">Open options</span>
-                                <ManageIcon className="h-5 w-5" aria-hidden="true" />
-                              </Button>
-                            </div>
+                            <ActionDropdown
+                              actions={getUserActions(user)}
+                              itemId={user.id}
+                              openId={openDropdownId}
+                              onToggle={setOpenDropdownId}
+                            />
                           </td>
                         </tr>
                       ))}
@@ -613,18 +568,12 @@ const Users: React.FC<UsersProps> = ({
                           {roleCounts[role.id] || 0}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center text-sm font-medium">
-                          <Button
-                            data-role-id={role.id}
-                            onClick={(e) => handleDropdownToggle(e, role.id)}
-                            variant="icon"
-                            title="ตัวเลือก"
-                          >
-                            <span className="sr-only">Open options</span>
-                            <ManageIcon
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </Button>
+                          <ActionDropdown
+                            actions={getRoleActions(role)}
+                            itemId={role.id}
+                            openId={openDropdownId}
+                            onToggle={setOpenDropdownId}
+                          />
                         </td>
                       </tr>
                     ))}
@@ -648,111 +597,6 @@ const Users: React.FC<UsersProps> = ({
           </>
         )}
       </div>
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-1" role="none">
-            {view === 'users' &&
-              userActions.map((action) => (
-                <a
-                  key={action.label}
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const user = users.find((u) => u.id === openDropdownId);
-                    if (!user) {
-                      setOpenDropdownId(null);
-                      return;
-                    }
-                    if (action.label === 'ดูรายละเอียด') {
-                      handleViewDetails(user);
-                    } else if (action.label === 'แก้ไข') {
-                      handleEdit(user);
-                    } else if (action.label === 'กระเป๋าเงิน') {
-                      handleOpenWallet(user);
-                    } else if (action.label === 'ลบ') {
-                      handleDelete(user);
-                    } else {
-                      setOpenDropdownId(null);
-                    }
-                  }}
-                  className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
-                  role="menuitem"
-                >
-                  <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                  <span>{action.label}</span>
-                </a>
-              ))}
-            {view === 'roles' && (
-              <>
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleViewRoleDetails(openDropdownId!);
-                  }}
-                  className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                  role="menuitem"
-                >
-                  <EyeIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-                  <span>ดูรายละเอียด</span>
-                </a>
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleEditRole(openDropdownId!);
-                  }}
-                  className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                  role="menuitem"
-                >
-                  <PencilIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-                  <span>แก้ไข</span>
-                </a>
-                {(() => {
-                  const hasUsers = roleCounts[openDropdownId || ''] > 0;
-                  return (
-                    <a
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (hasUsers) return;
-                        const role = roles.find((r) => r.id === openDropdownId);
-                        if (role) handleDeleteRole(role);
-                      }}
-                      aria-disabled={hasUsers}
-                      title={
-                        hasUsers
-                          ? 'ไม่สามารถลบบทบาทที่มีผู้ใช้งานได้'
-                          : 'ลบบทบาท'
-                      }
-                      className={`flex items-center w-full text-left px-4 py-2 text-sm ${
-                        hasUsers
-                          ? 'text-slate-400 cursor-not-allowed pointer-events-none'
-                          : 'text-red-700 hover:bg-red-50'
-                      }`}
-                      role="menuitem"
-                    >
-                      <TrashIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-                      <span>ลบ</span>
-                    </a>
-                  );
-                })()}
-              </>
-            )}
-          </div>
-        </div>
-      )}
       <RoleModal
         isOpen={isAddRoleModalOpen}
         onClose={() => setIsAddRoleModalOpen(false)}

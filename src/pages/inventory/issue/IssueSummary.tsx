@@ -2,7 +2,6 @@ import { isFieldRole } from '@/src/utils/role';
 // ===== React / External =====
 import Swal from '@/src/utils/swal';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 
 // ===== Types =====
 import {
@@ -39,7 +38,6 @@ import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import {
   CurrencyDollarIcon,
   EyeIcon,
-  ManageIcon,
   PencilIcon,
   PlusIcon,
   TrashIcon,
@@ -49,6 +47,7 @@ import {
   LoadingIcon,
   CheckCircleIcon,
 } from '../../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../../components/common/ActionDropdown';
 
 // Helper function สำหรับแสดงสถานะเป็นภาษาไทยและสี
 const getStatusBadge = (status?: string) => {
@@ -184,13 +183,6 @@ const IssueSummaryPage: React.FC = () => {
   const [searchDebounced, setSearchDebounced] = useState('');
   const searchDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [openDropdownCategory, setOpenDropdownCategory] = useState<'STOCK' | 'EXPENSE' | null>(null);
-  const [openDropdownApprovalStatus, setOpenDropdownApprovalStatus] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedSummary, setSelectedSummary] =
     useState<StockIssueSummaryType | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -569,28 +561,6 @@ const IssueSummaryPage: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    summaryId: string,
-    category?: 'STOCK' | 'EXPENSE' | null,
-    approvalStatus?: string | null,
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === summaryId && openDropdownCategory === (category ?? null)) {
-      setOpenDropdownId(null);
-      setOpenDropdownCategory(null);
-      setOpenDropdownApprovalStatus(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setOpenDropdownId(summaryId);
-      setOpenDropdownCategory(category ?? null);
-      setOpenDropdownApprovalStatus(approvalStatus ?? null);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
 
   const handleDelete = (summaryId: string) => {
     if (confirm('ยืนยันการลบใบเบิก?')) {
@@ -606,35 +576,12 @@ const IssueSummaryPage: React.FC = () => {
     }
   }, [isDetailsModalOpen]);
 
-  // Effect to handle clicks outside the dropdown to close it
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        if (
-          !(event.target as HTMLElement).closest('button[data-summary-id]')
-        ) {
-          setOpenDropdownId(null);
-        }
-      }
-    };
-
-    if (openDropdownId) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openDropdownId]);
 
   const getActionItems = (
     summary: StockIssueSummaryType,
     category?: 'STOCK' | 'EXPENSE' | null,
     approvalStatus?: string | null,
-  ) => {
+  ): ActionDropdownItem[] => {
     const canApproveThisRow =
       approvalStatus === 'PENDING' &&
       ((category === 'STOCK' && canApproveStock) ||
@@ -644,62 +591,48 @@ const IssueSummaryPage: React.FC = () => {
 
     // ช่าง (LEAD_TECH/TECH) เห็นได้แค่ "ดูรายละเอียด" ไม่ให้แก้/เปลี่ยนสถานะ/ลบ
     // แก้ไข / เปลี่ยนสถานะ / ลบ — เปิดให้ทำเฉพาะใบที่สถานะเป็น DRAFT (ฉบับร่าง)
-    const actions = [
-      ...(canApproveThisRow
-        ? [
-            {
-              label: 'อนุมัติ',
-              icon: CheckCircleIcon,
-              color: 'text-green-600',
-              hoverBg: 'hover:bg-green-50',
-              onClick: () =>
-                handleRowApprove(summary.id as string, category as 'STOCK' | 'EXPENSE'),
-            },
-            {
-              label: 'ไม่อนุมัติ',
-              icon: TrashIcon,
-              color: 'text-red-600',
-              hoverBg: 'hover:bg-red-50',
-              onClick: () =>
-                handleRowReject(summary.id as string, category as 'STOCK' | 'EXPENSE'),
-            },
-          ]
-        : []),
+    return [
+      {
+        label: 'อนุมัติ',
+        icon: CheckCircleIcon,
+        onClick: () =>
+          handleRowApprove(summary.id as string, category as 'STOCK' | 'EXPENSE'),
+        isPrimary: true,
+        hidden: !canApproveThisRow,
+      },
+      {
+        label: 'ไม่อนุมัติ',
+        icon: TrashIcon,
+        onClick: () =>
+          handleRowReject(summary.id as string, category as 'STOCK' | 'EXPENSE'),
+        isDanger: true,
+        hidden: !canApproveThisRow,
+      },
       {
         label: 'ดูรายละเอียด',
         icon: EyeIcon,
-        color: 'text-slate-700',
-        hoverBg: 'hover:bg-slate-50',
         onClick: () => handleViewDetails(summary),
       },
-      ...(!isTechRole && isDraft
-        ? [
-            {
-              label: 'แก้ไข',
-              icon: PencilIcon,
-              color: 'text-blue-600',
-              hoverBg: 'hover:bg-blue-50',
-              onClick: () => handleEditSummary(summary),
-            },
-            {
-              label: 'เปลี่ยนสถานะ',
-              icon: CheckCircleIcon,
-              color: 'text-slate-700',
-              hoverBg: 'hover:bg-slate-50',
-              onClick: () => handleStatusClick(summary),
-            },
-            {
-              label: 'ลบ',
-              icon: TrashIcon,
-              color: 'text-red-600',
-              hoverBg: 'hover:bg-red-50',
-              onClick: () => handleDelete(summary.id),
-            },
-          ]
-        : []),
+      {
+        label: 'แก้ไข',
+        icon: PencilIcon,
+        onClick: () => handleEditSummary(summary),
+        hidden: isTechRole || !isDraft,
+      },
+      {
+        label: 'เปลี่ยนสถานะ',
+        icon: CheckCircleIcon,
+        onClick: () => handleStatusClick(summary),
+        hidden: isTechRole || !isDraft,
+      },
+      {
+        label: 'ลบ',
+        icon: TrashIcon,
+        onClick: () => handleDelete(summary.id),
+        isDanger: true,
+        hidden: isTechRole || !isDraft,
+      },
     ];
-
-    return actions;
   };
 
   return (
@@ -1023,21 +956,12 @@ const IssueSummaryPage: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
-                          <Button
-                            variant="icon"
-                            data-summary-id={summary.id}
-                            onClick={(e) =>
-                              handleDropdownToggle(
-                                e,
-                                summary.id,
-                                row.category,
-                                row.approvalStatus || null,
-                              )
-                            }
-                          >
-                            <span className="sr-only">จัดการ</span>
-                            <ManageIcon className="h-5 w-5" aria-hidden="true" />
-                          </Button>
+                          <ActionDropdown
+                            itemId={`${summary.id}-${row.category || 'all'}`}
+                            openId={openDropdownId}
+                            onToggle={setOpenDropdownId}
+                            actions={getActionItems(summary, row.category, row.approvalStatus || null)}
+                          />
                         </td>
                       </tr>
                     );
@@ -1077,48 +1001,6 @@ const IssueSummaryPage: React.FC = () => {
           )}
         </div>
       </div>
-
-      {openDropdownId &&
-        dropdownPosition &&
-        createPortal(
-          <div
-            ref={dropdownRef}
-            style={{
-              position: 'absolute',
-              top: `${dropdownPosition.top}px`,
-              left: `${dropdownPosition.left}px`,
-              transform: 'translateX(-100%)',
-            }}
-            className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
-            role="menu"
-            aria-orientation="vertical"
-          >
-            <div className="py-1" role="none">
-              {(() => {
-                const summary = stockIssueSummaries.find(
-                  (s) => s.id === openDropdownId
-                );
-                if (!summary) return null;
-
-                return getActionItems(summary, openDropdownCategory, openDropdownApprovalStatus).map((action, index) => (
-                  <button
-                    key={index}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      action.onClick();
-                    }}
-                    className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
-                    role="menuitem"
-                  >
-                    <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                    <span>{action.label}</span>
-                  </button>
-                ));
-              })()}
-            </div>
-          </div>,
-          document.body
-        )}
 
       {/* Create / Edit Modal */}
       <IssueSummaryModal

@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { Button } from '@/src/components/common/FormControls';
 import {
-  ManageIcon,
   MapPinIcon,
   JobDateIcon,
   EyeIcon,
 } from '@/src/assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '@/src/components/common/ActionDropdown';
 import { formatThaiDate } from '@/src/utils/date';
 import { StatusBadge } from '@/src/components/common/StatusBadge';
 import { Assessment } from '@/src/types/entity/app.interface';
@@ -13,12 +13,11 @@ import { Assessment } from '@/src/types/entity/app.interface';
 const AssessmentCard: React.FC<{
   assessment: Assessment;
   customerName?: string;
-  onDropdownToggle: (
-    event: React.MouseEvent<HTMLButtonElement>,
-    assessmentId: string
-  ) => void;
+  actions: ActionDropdownItem[];
+  openDropdownId: string | null;
+  onDropdownToggle: (id: string | null) => void;
   onViewDetails: (assessment: Assessment) => void;
-}> = ({ assessment, customerName, onDropdownToggle, onViewDetails }) => {
+}> = ({ assessment, customerName, actions, openDropdownId, onDropdownToggle, onViewDetails }) => {
   const appointmentDate = formatThaiDate(
     assessment.appointment_date.toString()
   );
@@ -69,17 +68,14 @@ const AssessmentCard: React.FC<{
               </p>
             )}
           </div>
-          <Button
-            data-assessment-id={assessment.id || assessment.code}
-            onClick={(e) =>
-              onDropdownToggle(e, assessment.id || assessment.code)
-            }
-            variant="ghost"
-            className="p-1.5 h-auto rounded-lg hover:bg-slate-100 -mr-1 -mt-1 flex-shrink-0"
-            title="ตัวเลือก"
-          >
-            <ManageIcon className="h-4 w-4 text-slate-400" />
-          </Button>
+          <div className="-mr-1 -mt-1 flex-shrink-0">
+            <ActionDropdown
+              actions={actions}
+              itemId={assessment.id || assessment.code}
+              openId={openDropdownId}
+              onToggle={onDropdownToggle}
+            />
+          </div>
         </div>
         <div className="mt-2 flex items-center gap-2">
           <StatusBadge status={assessment.status} />

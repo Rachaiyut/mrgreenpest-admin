@@ -152,35 +152,43 @@ export const Button: FC<
       | 'icon';
     icon?: ReactNode;
   }
-> = ({ variant = 'primary', className, children, icon, ...rest }) => {
+> = ({ variant = 'primary', className = '', children, icon, ...rest }) => {
   let type: 'primary' | 'default' | 'dashed' | 'text' | 'link' = 'default';
   let danger = false;
+  let variantClasses = '';
 
   switch (variant) {
     case 'primary':
       type = 'primary';
+      variantClasses = 'rounded-xl h-10 font-medium';
       break;
     case 'secondary':
       type = 'default';
+      variantClasses = 'rounded-xl border-slate-300 text-slate-700 hover:text-slate-900 hover:border-slate-400 h-10 font-medium transition-all';
       break;
     case 'destructive':
       type = 'primary';
       danger = true;
+      variantClasses = 'rounded-xl h-10 font-medium';
       break;
     case 'accent':
       type = 'primary';
+      variantClasses = 'rounded-xl h-10 font-medium';
       break;
     case 'ghost':
       type = 'text';
+      variantClasses = 'rounded-xl h-10 font-medium';
       break;
     case 'outline':
       type = 'default';
+      variantClasses = 'rounded-xl border-slate-300 text-slate-700 hover:text-slate-900 hover:border-slate-400 h-10 font-medium transition-all';
       break;
     case 'icon':
       type = 'text';
       break;
     default:
       type = 'default';
+      variantClasses = 'rounded-xl h-10 font-medium';
   }
 
   const { type: htmlButtonType, onClick, disabled, ...passThrough } = rest;
@@ -189,7 +197,7 @@ export const Button: FC<
     <ButtonUI
       type={type}
       danger={danger}
-      className={className}
+      className={`${variantClasses} ${className}`}
       disabled={disabled}
       icon={icon}
       onClick={onClick as any}

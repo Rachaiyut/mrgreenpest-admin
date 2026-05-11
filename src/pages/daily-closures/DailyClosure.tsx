@@ -8,12 +8,11 @@ import { JobMainStatus, JobStatusLabel } from '@/src/types/enums/job';
 import {
   EyeIcon,
   CheckCircleIcon,
-  ManageIcon,
   LoadingIcon,
   TruckIcon,
   DocumentCheckIcon,
-  ClockIcon,
 } from '../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
 import { Input } from '../../components/common/FormControls';
@@ -67,11 +66,6 @@ const DailyClosure: React.FC = () => {
     useState<DailyJobClosure | null>(null);
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const vehicleScrollRef = useRef<HTMLDivElement>(null);
 
   const toLocalDate = (d: Date) => {
@@ -164,51 +158,6 @@ const DailyClosure: React.FC = () => {
     }
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    closureId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === closureId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      const dropdownHeight = 120;
-      const spaceBelow = window.innerHeight - buttonRect.bottom;
-      const showAbove = spaceBelow < dropdownHeight;
-
-      setOpenDropdownId(closureId);
-      setDropdownPosition({
-        top: showAbove
-          ? buttonRect.top + window.scrollY - dropdownHeight
-          : buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      ) {
-        return;
-      }
-      if (
-        (event.target as HTMLElement).closest('button[data-closure-id]')
-      ) {
-        return;
-      }
-      setOpenDropdownId(null);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openDropdownId]);
 
   return (
     <div className="flex-1 flex flex-col">
@@ -443,16 +392,43 @@ const DailyClosure: React.FC = () => {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <button
-                              data-closure-id={job.id}
-                              onClick={(e) =>
-                                handleDropdownToggle(e, job.id)
-                              }
-                              className="p-1.5 rounded-md hover:bg-slate-100 transition-colors"
-                              title="จัดการ"
-                            >
-                              <ManageIcon className="h-5 w-5 text-slate-500" />
-                            </button>
+                            {(() => {
+                              const closureItem = overviewData.find((v) => v.vehicle_id === job.vehicle_id);
+                              const actions: ActionDropdownItem[] = [
+                                {
+                                  label: 'ดูรายละเอียดสรุปงาน',
+                                  icon: EyeIcon,
+                                  onClick: async () => {
+                                    if (!closureItem?.closure_id) return;
+                                    try {
+                                      const res = await DailyClosureApi.getById(closureItem.closure_id!);
+                                      if (res.data) handleViewDetails(res.data);
+                                    } catch { /* ignore */ }
+                                  },
+                                  hidden: !closureItem?.closure_id,
+                                },
+                                {
+                                  label: 'ปิดย้อนหลัง',
+                                  icon: CheckCircleIcon,
+                                  onClick: async () => {
+                                    if (!closureItem?.closure_id) return;
+                                    try {
+                                      const res = await DailyClosureApi.getById(closureItem.closure_id!);
+                                      if (res.data) handleCloseRetroactive(res.data);
+                                    } catch { /* ignore */ }
+                                  },
+                                  hidden: !closureItem?.closure_id || closureItem.closure_status !== 'PENDING',
+                                },
+                              ];
+                              return (
+                                <ActionDropdown
+                                  actions={actions}
+                                  itemId={job.id}
+                                  openId={openDropdownId}
+                                  onToggle={setOpenDropdownId}
+                                />
+                              );
+                            })()}
                           </td>
                         </tr>
                       );
@@ -475,70 +451,6 @@ const DailyClosure: React.FC = () => {
         )}
       </div>
 
-      {/* Dropdown Menu */}
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-1" role="none">
-            {(() => {
-              const job = jobsData.find((j) => j.id === openDropdownId);
-              if (!job) return null;
-
-              // Find the closure for this job's vehicle
-              const closureItem = overviewData.find((v) => v.vehicle_id === job.vehicle_id);
-
-              return (
-                <>
-                  {closureItem?.closure_id && (
-                    <a
-                      href="#"
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        try {
-                          const res = await DailyClosureApi.getById(closureItem.closure_id!);
-                          if (res.data) handleViewDetails(res.data);
-                        } catch { /* ignore */ }
-                      }}
-                      className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
-                      role="menuitem"
-                    >
-                      <EyeIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-                      <span>ดูรายละเอียดสรุปงาน</span>
-                    </a>
-                  )}
-                  {closureItem?.closure_id && closureItem.closure_status === 'PENDING' && (
-                    <a
-                      href="#"
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        try {
-                          const res = await DailyClosureApi.getById(closureItem.closure_id!);
-                          if (res.data) handleCloseRetroactive(res.data);
-                        } catch { /* ignore */ }
-                      }}
-                      className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
-                      role="menuitem"
-                    >
-                      <CheckCircleIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-                      <span>ปิดย้อนหลัง</span>
-                    </a>
-                  )}
-                </>
-              );
-            })()}
-          </div>
-        </div>
-      )}
 
       {/* Details Modal */}
       <DailyClosureDetailsModal

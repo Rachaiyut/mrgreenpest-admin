@@ -2,7 +2,7 @@ import { isFieldRole, isManagementRole } from '@/src/utils/role';
 import { usePermissions } from '@/src/hooks/usePermissions';
 import { useNotificationFocus } from '@/src/hooks/useNotificationFocus';
 import { renderApprovalDetails, joinName, pickName } from '@/src/utils/approvalSwal';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Swal from '@/src/utils/swal';
 import { useLocation } from 'react-router-dom';
 
@@ -28,7 +28,6 @@ import {
   EyeIcon,
   PencilIcon,
   TrashIcon,
-  ManageIcon,
   PlayIcon,
   ClipboardDocumentListIcon,
   DocumentCheckIcon,
@@ -38,6 +37,7 @@ import {
   CheckCircleIcon,
   LoadingIcon,
 } from '@/src/assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '@/src/components/common/ActionDropdown';
 import { Pagination } from '@/src/components/common/Pagination';
 import { formatThaiDate } from '@/src/utils/date';
 import { AssessmentDetailsModal } from '@/src/components/features/assessments/AssessmentDetailsModal';
@@ -75,12 +75,6 @@ const Assessments: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [serverTotal, setServerTotal] = useState(0);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-    isBottom?: boolean;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedAssessment, setSelectedAssessment] =
     useState<Assessment | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -395,118 +389,35 @@ const Assessments: React.FC = () => {
     await handleDeleteAssessment(assessment.id);
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    assessmentId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === assessmentId) {
-      setOpenDropdownId(null);
-      setSelectedAssessment(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setSelectedAssessment(
-        assessments.find((a) => a.id === assessmentId) || null
-      );
-      setOpenDropdownId(assessmentId);
 
-      // 🌟 เพิ่ม 2 บรรทัดนี้
-      const isBottom = buttonRect.bottom > window.innerHeight - 220;
 
-      setDropdownPosition({
-        top: buttonRect.bottom,
-        left: buttonRect.right,
-        isBottom: isBottom, // 🌟 ส่งค่า isBottom ไปด้วย
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      )
-        return;
-      if ((event.target as HTMLElement).closest('button[data-assessment-id]'))
-        return;
-      setOpenDropdownId(null);
-      setSelectedAssessment(null);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdownId]);
-
-  const renderActions = () => {
-    if (!selectedAssessment) return null;
-
-    const isPending = String(selectedAssessment.status).toUpperCase() === 'PENDING';
-    const isCancelled = String(selectedAssessment.status).toUpperCase() === 'CANCELLED';
+  const getActionsForAssessment = (assessment: Assessment): ActionDropdownItem[] => {
+    const isPending = String(assessment.status).toUpperCase() === 'PENDING';
+    const isCancelled = String(assessment.status).toUpperCase() === 'CANCELLED';
     const canApprove = hasPermission('APPROVE_ASSESSMENT');
 
-    const actions: {
-      label: string;
-      icon: React.FC<any>;
-      onClick: () => void;
-      isDanger?: boolean;
-    }[] = [
-        {
-          label: 'ดูรายละเอียด',
-          icon: EyeIcon,
-          onClick: () => handleViewDetails(selectedAssessment),
-        },
-      ];
-
-    if (isCancelled) return actions.map((action) => (
-      <a
-        key={action.label}
-        href="#"
-        onClick={(e) => {
-          e.preventDefault();
-          action.onClick();
-          setOpenDropdownId(null);
-        }}
-        className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-        role="menuitem"
-      >
-        <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-        <span>{action.label}</span>
-      </a>
-    ));
-
-    if (!isPending || canApprove) {
-      actions.push({
+    const items: ActionDropdownItem[] = [
+      {
+        label: 'ดูรายละเอียด',
+        icon: EyeIcon,
+        onClick: () => handleViewDetails(assessment),
+      },
+      {
         label: 'แก้ไข',
         icon: PencilIcon,
-        onClick: () => handleEdit(selectedAssessment),
-      });
-    }
+        onClick: () => handleEdit(assessment),
+        hidden: isCancelled || (isPending && !canApprove),
+      },
+      {
+        label: 'ยกเลิก',
+        icon: TrashIcon,
+        onClick: () => handleDelete(assessment),
+        isDanger: true,
+        hidden: isCancelled,
+      },
+    ];
 
-    actions.push({
-      label: 'ยกเลิก',
-      icon: TrashIcon,
-      onClick: () => handleDelete(selectedAssessment),
-      isDanger: true,
-    });
-
-    return actions.map((action) => (
-      <a
-        key={action.label}
-        href="#"
-        onClick={(e) => {
-          e.preventDefault();
-          action.onClick();
-          setOpenDropdownId(null);
-        }}
-        className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
-        role="menuitem"
-      >
-        <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-        <span>{action.label}</span>
-      </a>
-    ));
+    return items;
   };
 
   return (
@@ -740,7 +651,9 @@ const Assessments: React.FC = () => {
                         key={assessment.id}
                         assessment={assessment}
                         customerName={getCustomerName(assessment)}
-                        onDropdownToggle={handleDropdownToggle}
+                        actions={getActionsForAssessment(assessment)}
+                        openDropdownId={openDropdownId}
+                        onDropdownToggle={setOpenDropdownId}
                         onViewDetails={handleViewDetails}
                       />
                     ))}
@@ -921,16 +834,12 @@ const Assessments: React.FC = () => {
                                   </span>
                                 )}
                               </Button>
-                              <Button
-                                data-assessment-id={assessment.id}
-                                onClick={(e) =>
-                                  handleDropdownToggle(e, assessment.id)
-                                }
-                                variant="ghost"
-                                className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-                              >
-                                <ManageIcon className="h-5 w-5" />
-                              </Button>
+                              <ActionDropdown
+                                actions={getActionsForAssessment(assessment)}
+                                itemId={assessment.id}
+                                openId={openDropdownId}
+                                onToggle={setOpenDropdownId}
+                              />
                             </div>
                           </td>
                         </tr>
@@ -955,25 +864,6 @@ const Assessments: React.FC = () => {
         </div>
       </div>
 
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'fixed', // 🌟 เปลี่ยนตรงนี้เป็น fixed
-            top: dropdownPosition.isBottom ? 'auto' : `${dropdownPosition.top + 4}px`, // 🌟 อัปเดตตรงนี้
-            bottom: dropdownPosition.isBottom ? `${window.innerHeight - dropdownPosition.top + 36}px` : 'auto', // 🌟 อัปเดตตรงนี้
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="z-[100] w-56 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none border border-slate-100 overflow-hidden" // 🌟 ลบ origin-top-right ออก และแก้ z เป็น 100
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-2" role="none">
-            {renderActions()}
-          </div>
-        </div>
-      )}
 
       <AssessmentModal
         isOpen={isModalOpen}

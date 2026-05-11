@@ -1,4 +1,5 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
+import { ActionDropdown, ActionDropdownItem } from '../../../components/common/ActionDropdown';
 import Swal from '@/src/utils/swal';
 import { Card } from '../../../components/common/Card';
 import { Pagination } from '../../../components/common/Pagination';
@@ -6,7 +7,6 @@ import {
   DocumentCheckIcon,
   LoadingIcon,
   PlusIcon,
-  ManageIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
@@ -54,11 +54,6 @@ const StockAdjustment: React.FC = () => {
   const [adjustmentToEdit, setAdjustmentToEdit] =
     useState<StockAdjustmentType | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
 
@@ -225,43 +220,6 @@ const StockAdjustment: React.FC = () => {
     }
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    adjustmentId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === adjustmentId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setOpenDropdownId(adjustmentId);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      ) {
-        return;
-      }
-      if ((event.target as HTMLElement).closest('button[data-adjustment-id]')) {
-        return;
-      }
-      setOpenDropdownId(null);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openDropdownId]);
 
   const onApproveAdjustment = async (adj: StockAdjustmentType) => {
     setOpenDropdownId(null);
@@ -311,59 +269,42 @@ const StockAdjustment: React.FC = () => {
     }
   };
 
-  const getActionItems = (adj: StockAdjustmentType) => {
-    const items: Array<{
-      label: string;
-      icon: typeof EyeIcon;
-      onClick: () => void;
-      color: string;
-      hoverBg: string;
-    }> = [
+  const getActionItems = (adj: StockAdjustmentType): ActionDropdownItem[] => {
+    const status = (adj as { status?: string }).status;
+    const items: ActionDropdownItem[] = [
       {
         label: 'ดูรายละเอียด',
         icon: EyeIcon,
         onClick: () => handleViewDetails(adj),
-        color: 'text-slate-700',
-        hoverBg: 'hover:bg-slate-50',
       },
-    ];
-    const status = (adj as { status?: string }).status;
-    if (status === 'PENDING') {
-      items.push(
-        {
-          label: 'อนุมัติ',
-          icon: DocumentCheckIcon,
-          onClick: () => onApproveAdjustment(adj),
-          color: 'text-emerald-600',
-          hoverBg: 'hover:bg-emerald-50',
-        },
-        {
-          label: 'ไม่อนุมัติ',
-          icon: XCircleIcon,
-          onClick: () => onRejectAdjustment(adj),
-          color: 'text-red-600',
-          hoverBg: 'hover:bg-red-50',
-        },
-      );
-    }
-    if (status === 'DRAFT') {
-      items.push({
+      {
+        label: 'อนุมัติ',
+        icon: DocumentCheckIcon,
+        onClick: () => onApproveAdjustment(adj),
+        isPrimary: true,
+        hidden: status !== 'PENDING',
+      },
+      {
+        label: 'ไม่อนุมัติ',
+        icon: XCircleIcon,
+        onClick: () => onRejectAdjustment(adj),
+        isDanger: true,
+        hidden: status !== 'PENDING',
+      },
+      {
         label: 'แก้ไข',
         icon: PencilIcon,
         onClick: () => handleEdit(adj),
-        color: 'text-blue-600',
-        hoverBg: 'hover:bg-blue-50',
-      });
-    }
-    if (status === 'DRAFT' || status === 'PENDING') {
-      items.push({
+        hidden: status !== 'DRAFT',
+      },
+      {
         label: 'ยกเลิก',
         icon: TrashIcon,
         onClick: () => handleDelete(adj),
-        color: 'text-red-600',
-        hoverBg: 'hover:bg-red-50',
-      });
-    }
+        isDanger: true,
+        hidden: status !== 'DRAFT' && status !== 'PENDING',
+      },
+    ];
     return items;
   };
 
@@ -542,17 +483,12 @@ const StockAdjustment: React.FC = () => {
                       })()}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
-                      <div className="inline-block">
-                        <Button
-                          data-adjustment-id={adj.id}
-                          onClick={(e) => handleDropdownToggle(e, adj.id)}
-                          variant="icon"
-                          title="ตัวเลือก"
-                        >
-                          <span className="sr-only">Open options</span>
-                          <ManageIcon className="h-5 w-5" aria-hidden="true" />
-                        </Button>
-                      </div>
+                      <ActionDropdown
+                        itemId={adj.id}
+                        openId={openDropdownId}
+                        onToggle={setOpenDropdownId}
+                        actions={getActionItems(adj)}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -570,43 +506,6 @@ const StockAdjustment: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-1" role="none">
-            {(() => {
-              const adjustment = adjustments.find((adj) => adj.id === openDropdownId);
-              if (!adjustment) return null;
-              return getActionItems(adjustment).map((action) => (
-              <a
-                key={action.label}
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  action.onClick();
-                }}
-                className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
-                role="menuitem"
-              >
-                <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                <span>{action.label}</span>
-              </a>
-              ));
-            })()}
-          </div>
-        </div>
-      )}
 
       <AdjustmentModal
         isOpen={isAddModalOpen}

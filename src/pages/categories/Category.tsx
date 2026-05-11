@@ -1,8 +1,6 @@
 import React, {
   useState,
-  useRef,
   useEffect,
-  useMemo,
   useCallback,
 } from 'react';
 import Swal from '@/src/utils/swal';
@@ -19,10 +17,9 @@ import {
   LoadingIcon,
   PlusIcon,
   PencilIcon,
-  TrashIcon,
-  ManageIcon,
-  EyeIcon,
   ArchiveBoxIcon,
+  XCircleIcon,
+  CheckCircleIcon,
 } from '../../assets/icons/Icons';
 
 // Component
@@ -30,8 +27,8 @@ import { Card } from '../../components/common/Card';
 import { Input, Button } from '../../components/common/FormControls';
 import { DropdownSelect } from '@/src/components/common/DropdownSelect';
 import { Pagination } from '../../components/common/Pagination';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 import { CategoryModal } from '../../components/features/category/CategoryModal';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 
 const Categories: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -39,11 +36,6 @@ const Categories: React.FC = () => {
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -147,43 +139,16 @@ const Categories: React.FC = () => {
     [fetchCategories]
   );
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    categoryId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === categoryId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setOpenDropdownId(categoryId);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      ) {
-        return;
-      }
-      if ((event.target as HTMLElement).closest('button[data-category-id]')) {
-        return;
-      }
-      setOpenDropdownId(null);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openDropdownId]);
+  const getCategoryActions = (category: Category): ActionDropdownItem[] => [
+    { label: 'แก้ไข', icon: PencilIcon, onClick: () => handleEdit(category) },
+    {
+      label: category.is_active !== false ? 'ปิดใช้งาน' : 'เปิดใช้งาน',
+      icon: category.is_active !== false ? XCircleIcon : CheckCircleIcon,
+      isDanger: category.is_active !== false,
+      isPrimary: category.is_active === false,
+      onClick: () => handleToggleStatus(category),
+    },
+  ];
 
   useEffect(() => {
     fetchCategories();
@@ -357,17 +322,12 @@ const Categories: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
-                      <div className="inline-block">
-                        <Button
-                          data-package-id={category.id}
-                          onClick={(e) => handleDropdownToggle(e, category.id)}
-                          variant="icon"
-                          title="ตัวเลือก"
-                        >
-                          <span className="sr-only">Open options</span>
-                          <ManageIcon className="h-5 w-5" />
-                        </Button>
-                      </div>
+                      <ActionDropdown
+                        actions={getCategoryActions(category)}
+                        itemId={category.id}
+                        openId={openDropdownId}
+                        onToggle={setOpenDropdownId}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -387,64 +347,6 @@ const Categories: React.FC = () => {
         )}
       </div>
 
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-            zIndex: 50,
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
-        >
-          <div className="py-1">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                const category = categories.find(
-                  (p) => p.id === openDropdownId
-                );
-                if (category) handleEdit(category);
-              }}
-              className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-            >
-              <PencilIcon className="mr-3 h-5 w-5" />
-              <span>แก้ไข</span>
-            </button>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                const category = categories.find(
-                  (p) => p.id === openDropdownId
-                );
-                if (category) handleToggleStatus(category);
-              }}
-              className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-            >
-              {(() => {
-                const category = categories.find((p) => p.id === openDropdownId);
-                return category?.is_active !== false ? (
-                  <>
-                    <svg className="mr-3 h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
-                    </svg>
-                    <span>ปิดใช้งาน</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="mr-3 h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                    </svg>
-                    <span>เปิดใช้งาน</span>
-                  </>
-                );
-              })()}
-            </button>
-          </div>
-        </div>
-      )}
 
       <CategoryModal
         isOpen={isModalOpen}

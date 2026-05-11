@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Swal from '@/src/utils/swal';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
@@ -7,7 +7,6 @@ import { TruncateText } from '../../components/common/TruncateText';
 import { formatThaiDate } from '../../utils/date';
 import {
   PlusIcon,
-  ManageIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
@@ -21,6 +20,7 @@ import {
 import { Pagination } from '../../components/common/Pagination';
 import { Contract, ContractStatus } from '../../types';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common';
 import { Input, Button } from '../../components/common/FormControls';
 import { DropdownSelect } from '@/src/components/common/DropdownSelect';
 import { useData } from '../../contexts/DataContext';
@@ -64,11 +64,6 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -145,43 +140,6 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
     setCurrentPage(1);
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    contractId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === contractId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setSelectedContract(contracts?.find((c) => c.id === contractId) || null);
-      setOpenDropdownId(contractId);
-      const dropdownHeight = 350;
-      const spaceBelow = window.innerHeight - buttonRect.bottom;
-      const showAbove = spaceBelow < dropdownHeight;
-      setDropdownPosition({
-        top: showAbove ? buttonRect.top - dropdownHeight : buttonRect.bottom,
-        left: buttonRect.right,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      )
-        return;
-      if ((event.target as HTMLElement).closest('button[data-contract-id]'))
-        return;
-      setOpenDropdownId(null);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdownId]);
 
   const handleViewDetails = (contract: Contract) => {
     setSelectedContract(contract);
@@ -610,14 +568,70 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                               )}
                               {loadingPdfId === c.id ? 'กำลังโหลด...' : 'ดู PDF'}
                             </Button>
-                            <Button
-                              data-contract-id={c.id}
-                              onClick={(e) => handleDropdownToggle(e, c.id)}
-                              variant="ghost"
-                              className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-                            >
-                              <ManageIcon className="w-5 h-5" />
-                            </Button>
+                            <ActionDropdown
+                              itemId={c.id}
+                              openId={openDropdownId}
+                              onToggle={(id) => {
+                                setOpenDropdownId(id);
+                                if (id) setSelectedContract(contracts?.find((ct) => ct.id === id) || null);
+                              }}
+                              actions={(() => {
+                                const contract = contracts?.find((ct) => ct.id === c.id) || c;
+                                const actions: ActionDropdownItem[] = [
+                                  { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(contract) },
+                                  { label: 'แก้ไข', icon: PencilIcon, onClick: () => handleEdit(contract) },
+                                  { label: 'ต่ออายุสัญญา', icon: ClockIcon, onClick: () => handleRenewClick(contract), isPrimary: true },
+                                  { label: 'สร้างใบแจ้งหนี้', icon: CurrencyDollarIcon, onClick: () => handleCreateInvoice(contract), isPrimary: true },
+                                  { label: 'เปลี่ยนสถานะ', icon: CheckCircleIcon, onClick: () => handleStatusClick(contract) },
+                                  {
+                                    label: 'ส่ง Link Portal ลูกค้า',
+                                    icon: DocumentTextIcon,
+                                    isPrimary: true,
+                                    onClick: async () => {
+                                      if (!contract.customer_id) return;
+                                      try {
+                                        const response = await CustomerApi.generatePortalToken(contract.customer_id);
+                                        const portalUrl = `${window.location.origin}/portal?token=${response.token}`;
+                                        await navigator.clipboard.writeText(portalUrl);
+                                        Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                                      } catch {
+                                        Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์ Portal ได้', icon: 'error', confirmButtonColor: '#d33' });
+                                      }
+                                      setOpenDropdownId(null);
+                                    },
+                                  },
+                                  {
+                                    label: 'ส่ง Link เซ็นสัญญา',
+                                    icon: PencilIcon,
+                                    isPrimary: true,
+                                    hidden: contract.status !== ContractStatus.PENDING,
+                                    onClick: async () => {
+                                      if (!contract.customer_id) return;
+                                      try {
+                                        const response = await ContractApi.generateSigningLink(contract.customer_id, contract.id);
+                                        const signingUrl = `${window.location.origin}/portal/sign?token=${response.token}`;
+                                        await navigator.clipboard.writeText(signingUrl);
+                                        Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์เซ็นสัญญาสำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                                      } catch {
+                                        Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์เซ็นได้', icon: 'error', confirmButtonColor: '#d33' });
+                                      }
+                                      setOpenDropdownId(null);
+                                    },
+                                  },
+                                  {
+                                    label: 'ยกเลิก',
+                                    icon: XCircleIcon,
+                                    isDanger: true,
+                                    onClick: () => {
+                                      setCancellationReason('');
+                                      setIsCancelModalOpen(true);
+                                      setOpenDropdownId(null);
+                                    },
+                                  },
+                                ];
+                                return actions;
+                              })()}
+                            />
                           </div>
                         </td>
                       </tr>
@@ -659,109 +673,6 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
           )}
       </div>
 
-      {/* Dropdown Menu (Portal) */}
-      {openDropdownId && dropdownPosition && selectedContract && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'fixed',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-50 border border-slate-100 overflow-hidden"
-        >
-          <div className="py-1">
-            <button
-              onClick={() => handleViewDetails(selectedContract)}
-              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-            >
-              <EyeIcon className="w-4 h-4 text-slate-400" />
-              ดูรายละเอียด
-            </button>
-            <button
-              onClick={() => handleEdit(selectedContract)}
-              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-            >
-              <PencilIcon className="w-4 h-4 text-slate-400" />
-              แก้ไข
-            </button>
-            <button
-              onClick={() => handleRenewClick(selectedContract)}
-              className="w-full px-4 py-2.5 text-left text-sm text-amber-600 hover:bg-amber-50 flex items-center gap-3 transition-colors"
-            >
-              <ClockIcon className="w-4 h-4 text-amber-500" />
-              ต่ออายุสัญญา
-            </button>
-            <button
-              onClick={() => handleCreateInvoice(selectedContract)}
-              className="w-full px-4 py-2.5 text-left text-sm text-primary hover:bg-slate-50 flex items-center gap-3 transition-colors"
-            >
-              <CurrencyDollarIcon className="w-4 h-4" />
-              สร้างใบแจ้งหนี้
-            </button>
-            <button
-              onClick={() => handleStatusClick(selectedContract)}
-              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-            >
-              <CheckCircleIcon className="w-4 h-4 text-slate-400" />
-              เปลี่ยนสถานะ
-            </button>
-            <button
-              onClick={async () => {
-                if (!selectedContract?.customer_id) return;
-                try {
-                  const response = await CustomerApi.generatePortalToken(selectedContract.customer_id);
-                  const portalUrl = `${window.location.origin}/portal?token=${response.token}`;
-                  await navigator.clipboard.writeText(portalUrl);
-                  Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
-                } catch {
-                  Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์ Portal ได้', icon: 'error', confirmButtonColor: '#d33' });
-                }
-                setOpenDropdownId(null);
-              }}
-              className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
-            >
-              <DocumentTextIcon className="w-4 h-4 text-green-500" />
-              ส่ง Link Portal ลูกค้า
-            </button>
-            {selectedContract?.status === ContractStatus.PENDING && (
-              <button
-                onClick={async () => {
-                  if (!selectedContract?.customer_id) return;
-                  try {
-                    const response = await ContractApi.generateSigningLink(selectedContract.customer_id, selectedContract.id);
-                    const signingUrl = `${window.location.origin}/portal/sign?token=${response.token}`;
-                    await navigator.clipboard.writeText(signingUrl);
-                    Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์เซ็นสัญญาสำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
-                  } catch {
-                    Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์เซ็นได้', icon: 'error', confirmButtonColor: '#d33' });
-                  }
-                  setOpenDropdownId(null);
-                }}
-                className="w-full px-4 py-2.5 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-3 transition-colors"
-              >
-                <PencilIcon className="w-4 h-4 text-emerald-500" />
-                ส่ง Link เซ็นสัญญา
-              </button>
-            )}
-            <hr className="my-1 border-slate-100" />
-            <button
-              onClick={() => {
-                if (selectedContract) {
-                  setCancellationReason('');
-                  setIsCancelModalOpen(true);
-                }
-                setOpenDropdownId(null);
-              }}
-              className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
-            >
-              <XCircleIcon className="w-4 h-4 text-red-500" />
-              ยกเลิก
-            </button>
-          </div>
-        </div>
-      )}
 
       <ContractModal
         isOpen={isCreateModalOpen || isEditModalOpen || isRenewModalOpen || isDetailsModalOpen}

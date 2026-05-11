@@ -38,12 +38,12 @@ import {
   DocumentCheckIcon,
   EyeIcon,
   LoadingIcon,
-  ManageIcon,
   PencilIcon,
   PlusIcon,
   TrashIcon,
   XCircleIcon,
 } from '../../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../../components/common/ActionDropdown';
 
 const Transfers: React.FC = () => {
   const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
@@ -84,11 +84,6 @@ const Transfers: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
   const [transferToEdit, setTransferToEdit] = useState<TransferType | null>(
@@ -274,43 +269,6 @@ const Transfers: React.FC = () => {
     setTransferToDelete(null);
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    transferId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === transferId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setOpenDropdownId(transferId);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      ) {
-        return;
-      }
-      if ((event.target as HTMLElement).closest('button[data-transfer-id]')) {
-        return;
-      }
-      setOpenDropdownId(null);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openDropdownId]);
 
   const handleReject = async (transfer: TransferType) => {
     const r = await Swal.fire({
@@ -378,46 +336,38 @@ const Transfers: React.FC = () => {
     }
   };
 
-  const actions = [
+  const getActions = (transfer: TransferType): ActionDropdownItem[] => [
     {
       label: 'ดูรายละเอียด',
       icon: EyeIcon,
-      handler: handleViewDetails,
-      color: 'text-slate-700',
-      hoverBg: 'hover:bg-slate-50',
+      onClick: () => handleViewDetails(transfer),
     },
     {
       label: 'อนุมัติ',
       icon: CheckCircleIcon,
-      handler: handleApprove,
-      color: 'text-emerald-600',
-      hoverBg: 'hover:bg-emerald-50',
-      show: (t: TransferType) => t.status === TransferStatus.PENDING,
+      onClick: () => handleApprove(transfer),
+      isPrimary: true,
+      hidden: transfer.status !== TransferStatus.PENDING,
     },
     {
       label: 'แก้ไข',
       icon: PencilIcon,
-      handler: handleEdit,
-      color: 'text-blue-600',
-      hoverBg: 'hover:bg-blue-50',
-      show: (t: TransferType) => t.status === TransferStatus.DRAFT,
+      onClick: () => handleEdit(transfer),
+      hidden: transfer.status !== TransferStatus.DRAFT,
     },
     {
       label: 'ไม่อนุมัติ',
       icon: XCircleIcon,
-      handler: handleReject,
-      color: 'text-red-600',
-      hoverBg: 'hover:bg-red-50',
-      show: (t: TransferType) => t.status === TransferStatus.PENDING,
+      onClick: () => handleReject(transfer),
+      isDanger: true,
+      hidden: transfer.status !== TransferStatus.PENDING,
     },
     {
       label: 'ยกเลิก',
       icon: TrashIcon,
-      handler: handleCancel,
-      color: 'text-red-600',
-      hoverBg: 'hover:bg-red-50',
-      show: (t: TransferType) =>
-        t.status === TransferStatus.DRAFT || t.status === TransferStatus.PENDING,
+      onClick: () => handleCancel(transfer),
+      isDanger: true,
+      hidden: transfer.status !== TransferStatus.DRAFT && transfer.status !== TransferStatus.PENDING,
     },
   ];
 
@@ -616,22 +566,12 @@ const Transfers: React.FC = () => {
                         })()}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
-                        <div className="inline-block">
-                          <Button
-                            data-transfer-id={transfer.id}
-                            onClick={(e) =>
-                              handleDropdownToggle(e, transfer.id)
-                            }
-                            variant="icon"
-                            title="ตัวเลือก"
-                          >
-                            <span className="sr-only">Open options</span>
-                            <ManageIcon
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </Button>
-                        </div>
+                        <ActionDropdown
+                          itemId={transfer.id}
+                          openId={openDropdownId}
+                          onToggle={setOpenDropdownId}
+                          actions={getActions(transfer)}
+                        />
                       </td>
                     </tr>
                   );
@@ -651,49 +591,6 @@ const Transfers: React.FC = () => {
         </div>
       </div>
 
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-1" role="none">
-            {actions
-              .filter((action) => {
-                const transfer = transfers.find((t) => t.id === openDropdownId);
-                return transfer && (!action.show || action.show(transfer));
-              })
-              .map((action) => (
-                <a
-                  key={action.label}
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const transfer = transfers.find(
-                      (t) => t.id === openDropdownId
-                    );
-                    if (transfer) {
-                      action.handler(transfer);
-                    }
-                    setOpenDropdownId(null);
-                  }}
-                  className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
-                  role="menuitem"
-                >
-                  <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                  <span>{action.label}</span>
-                </a>
-              ))}
-          </div>
-        </div>
-      )}
       <AddTransferModal
         isOpen={isAddModalOpen}
         onClose={() => {

@@ -3,7 +3,7 @@ import Swal from '@/src/utils/swal';
 import SignatureCanvas from 'react-signature-canvas';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { Modal } from '../../common/Modal';
-import { Textarea, Input } from '../../common/FormControls';
+import { Textarea, Input, Button } from '../../common/FormControls';
 import { DropdownSelect } from '../../common';
 import {
   FieldJob,
@@ -1441,13 +1441,14 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       footer={
         readOnly ? (
           <div className="flex justify-end w-full">
-            <button
+            <Button
+              variant="secondary"
               type="button"
               onClick={onClose}
-              className="py-2.5 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300 transition-all"
+              className="rounded-xl border-slate-300 text-slate-700 hover:text-slate-900 hover:border-slate-400 h-10 px-4 font-medium transition-all"
             >
               ปิด
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="flex justify-between items-center gap-4 w-full">
@@ -1455,13 +1456,14 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               * กรุณาตรวจสอบข้อมูลก่อนบันทึก
             </div>
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="secondary"
                 type="button"
                 onClick={onClose}
-                className="py-2.5 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300 transition-all"
+                className="rounded-xl border-slate-300 text-slate-700 hover:text-slate-900 hover:border-slate-400 h-10 px-4 font-medium transition-all"
               >
                 ยกเลิก
-              </button>
+              </Button>
               <button
                 type="submit"
                 form="service-report-form"

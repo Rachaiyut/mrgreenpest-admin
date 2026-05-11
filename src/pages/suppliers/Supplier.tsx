@@ -1,6 +1,5 @@
 import React, {
   useState,
-  useRef,
   useEffect,
   useCallback,
 } from 'react';
@@ -20,9 +19,11 @@ import {
   PlusIcon,
   EyeIcon,
   PencilIcon,
-  ManageIcon,
   TruckIcon,
+  XCircleIcon,
+  CheckCircleIcon,
 } from '../../assets/icons/Icons';
+import { ActionDropdown } from '../../components/common/ActionDropdown';
 import { Pagination } from '../../components/common/Pagination';
 import { SupplierModal } from '../../components/features/suppliers/SupplierModal';
 import { SupplierDetailsModal } from '../../components/features/suppliers/SupplierDetailsModal';
@@ -43,11 +44,6 @@ const Suppliers: React.FC = () => {
   const [formModalMode, setFormModalMode] = useState<'create' | 'edit'>('create');
   const [supplierToEdit, setSupplierToEdit] = useState<Supplier | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
     null
@@ -85,22 +81,6 @@ const Suppliers: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    supplierId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === supplierId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setOpenDropdownId(supplierId);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
 
   const fetchSupplier = useCallback(async () => {
     setLoading(true);
@@ -123,26 +103,6 @@ const Suppliers: React.FC = () => {
     }
   }, [currentPage, itemsPerPage, searchQuery, typeFilter, statusFilter]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      ) {
-        return;
-      }
-      if ((event.target as HTMLElement).closest('button[data-supplier-id]')) {
-        return;
-      }
-      setOpenDropdownId(null);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openDropdownId]);
 
   useEffect(() => {
     fetchSupplier();
@@ -361,17 +321,30 @@ const Suppliers: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
-                      <div className="inline-block text-left">
-                        <Button
-                          data-supplier-id={supplier.id}
-                          onClick={(e) => handleDropdownToggle(e, supplier.id)}
-                          variant="icon"
-                          title="ตัวเลือก"
-                        >
-                          <span className="sr-only">Open options</span>
-                          <ManageIcon className="h-5 w-5" aria-hidden="true" />
-                        </Button>
-                      </div>
+                      <ActionDropdown
+                        actions={[
+                          {
+                            label: 'ดูรายละเอียด',
+                            icon: EyeIcon,
+                            onClick: () => handleViewDetails(supplier),
+                          },
+                          {
+                            label: 'แก้ไข',
+                            icon: PencilIcon,
+                            onClick: () => handleEdit(supplier),
+                          },
+                          {
+                            label: supplier.is_active !== false ? 'ปิดใช้งาน' : 'เปิดใช้งาน',
+                            icon: supplier.is_active !== false ? XCircleIcon : CheckCircleIcon,
+                            onClick: () => handleToggleStatus(supplier),
+                            isDanger: supplier.is_active !== false,
+                            isPrimary: supplier.is_active === false,
+                          },
+                        ]}
+                        itemId={supplier.id}
+                        openId={openDropdownId}
+                        onToggle={setOpenDropdownId}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -394,72 +367,6 @@ const Suppliers: React.FC = () => {
         )}
       </div>
 
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-1" role="none">
-            <button
-              onClick={() => {
-                const supplier = suppliers.find((s) => s.id === openDropdownId);
-                if (supplier) handleViewDetails(supplier);
-              }}
-              className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-              role="menuitem"
-            >
-              <EyeIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-              <span>ดูรายละเอียด</span>
-            </button>
-            <button
-              onClick={() => {
-                const supplier = suppliers.find((s) => s.id === openDropdownId);
-                if (supplier) handleEdit(supplier);
-              }}
-              className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-              role="menuitem"
-            >
-              <PencilIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-              <span>แก้ไข</span>
-            </button>
-            {(() => {
-              const supplier = suppliers.find((s) => s.id === openDropdownId);
-              if (!supplier) return null;
-              return (
-                <button
-                  onClick={() => handleToggleStatus(supplier)}
-                  className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                  role="menuitem"
-                >
-                  {supplier.is_active !== false ? (
-                    <>
-                      <svg className="mr-3 h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
-                      </svg>
-                      <span>ปิดใช้งาน</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="mr-3 h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                      </svg>
-                      <span>เปิดใช้งาน</span>
-                    </>
-                  )}
-                </button>
-              );
-            })()}
-          </div>
-        </div>
-      )}
 
       <SupplierModal
         isOpen={isFormModalOpen}

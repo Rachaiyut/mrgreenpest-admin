@@ -33,7 +33,7 @@ const Button = ({
       icon={icon}
       danger={danger}
       htmlType={htmlType}
-      style={{ borderRadius: '8px', transition: 'all 0.2s' }}
+      style={{ borderRadius: '12px', transition: 'all 0.2s' }}
       {...rest}
     >
       {children}

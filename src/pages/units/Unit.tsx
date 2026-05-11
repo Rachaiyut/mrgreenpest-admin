@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Swal from '@/src/utils/swal';
 import { Card } from '../../components/common/Card';
 import { IUnit } from '@/src/types/entity/unit.interface';
@@ -7,9 +7,11 @@ import {
   LoadingIcon,
   PlusIcon,
   PencilIcon,
-  ManageIcon,
   ArchiveBoxIcon,
+  XCircleIcon,
+  CheckCircleIcon,
 } from '../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 import { Pagination } from '../../components/common/Pagination';
 import { UnitModal } from '../../components/features/units/UnitModal';
 import { Input, Button } from '../../components/common/FormControls';
@@ -29,8 +31,6 @@ const Units: React.FC = () => {
   const [unitToEdit, setUnitToEdit] = useState<IUnit | null>(null);
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchUnits = useCallback(async () => {
     setLoading(true);
@@ -56,28 +56,16 @@ const Units: React.FC = () => {
     fetchUnits();
   }, [fetchUnits]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (dropdownRef.current && dropdownRef.current.contains(event.target as Node)) return;
-      if ((event.target as HTMLElement).closest('button[data-unit-id]')) return;
-      setOpenDropdownId(null);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdownId]);
-
-  const handleDropdownToggle = (unitId: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (openDropdownId === unitId) {
-      setOpenDropdownId(null);
-      return;
-    }
-    const button = event.currentTarget as HTMLElement;
-    const rect = button.getBoundingClientRect();
-    setDropdownPosition({ top: rect.bottom + 4, left: rect.right - 160 });
-    setOpenDropdownId(unitId);
-  };
+  const getUnitActions = (unit: IUnit): ActionDropdownItem[] => [
+    { label: 'แก้ไข', icon: PencilIcon, onClick: () => handleEdit(unit) },
+    {
+      label: unit.is_active !== false ? 'ปิดใช้งาน' : 'เปิดใช้งาน',
+      icon: unit.is_active !== false ? XCircleIcon : CheckCircleIcon,
+      isDanger: unit.is_active !== false,
+      isPrimary: unit.is_active === false,
+      onClick: () => handleToggleStatus(unit),
+    },
+  ];
 
   const handleEdit = (unit: IUnit) => {
     setUnitToEdit(unit);
@@ -216,9 +204,12 @@ const Units: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <button data-unit-id={unit.id} onClick={(e) => handleDropdownToggle(unit.id, e)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
-                          <ManageIcon className="w-5 h-5" />
-                        </button>
+                        <ActionDropdown
+                          actions={getUnitActions(unit)}
+                          itemId={unit.id}
+                          openId={openDropdownId}
+                          onToggle={setOpenDropdownId}
+                        />
                       </td>
                     </tr>
                   ))
@@ -251,47 +242,6 @@ const Units: React.FC = () => {
         )}
       </div>
 
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{ position: 'fixed', top: dropdownPosition.top, left: dropdownPosition.left, zIndex: 50 }}
-          className="bg-white rounded-lg shadow-lg border border-slate-200 py-1 w-44"
-        >
-          <button
-            onClick={() => { const unit = units.find((u) => u.id === openDropdownId); if (unit) handleEdit(unit); }}
-            className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-          >
-            <PencilIcon className="w-4 h-4 text-slate-400" />
-            แก้ไข
-          </button>
-          {(() => {
-            const unit = units.find((u) => u.id === openDropdownId);
-            if (!unit) return null;
-            return (
-              <button
-                onClick={() => handleToggleStatus(unit)}
-                className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-              >
-                {unit.is_active !== false ? (
-                  <>
-                    <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
-                    </svg>
-                    ปิดใช้งาน
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                    </svg>
-                    เปิดใช้งาน
-                  </>
-                )}
-              </button>
-            );
-          })()}
-        </div>
-      )}
 
       <UnitModal
         isOpen={isFormModalOpen}

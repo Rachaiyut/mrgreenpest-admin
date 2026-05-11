@@ -1,18 +1,19 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 
 import { Card } from '../../components/common/Card';
 import { Input, Button } from '../../components/common/FormControls';
 import { Pagination } from '../../components/common/Pagination';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 import {
   LoadingIcon,
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  ManageIcon,
   EyeIcon,
   ArchiveBoxIcon,
+  XIcon,
 } from '../../assets/icons/Icons';
 import { ChemicalCatalogApi } from '@/src/api/chemical-catalog';
 import { ChemicalCatalog } from '@/src/types/entity/chemical-catalog.interface';
@@ -35,8 +36,6 @@ const ChemicalCatalogPage: React.FC = () => {
   const [itemToDelete, setItemToDelete] = useState<ChemicalCatalog | null>(null);
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -63,27 +62,6 @@ const ChemicalCatalogPage: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (dropdownRef.current && dropdownRef.current.contains(event.target as Node)) return;
-      if ((event.target as HTMLElement).closest('button[data-cc-id]')) return;
-      setOpenDropdownId(null);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdownId]);
-
-  const handleDropdownToggle = (id: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (openDropdownId === id) {
-      setOpenDropdownId(null);
-      return;
-    }
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    setDropdownPosition({ top: rect.bottom + 4, left: rect.right - 160 });
-    setOpenDropdownId(id);
-  };
 
   const handleEdit = (item: ChemicalCatalog) => {
     setSelectedItem(item);
@@ -198,13 +176,16 @@ const ChemicalCatalogPage: React.FC = () => {
                         <td className="px-4 py-3 text-sm text-slate-600">{formatThaiDate(item.created_at)}</td>
                         <td className="px-4 py-3 text-sm text-slate-600">{getCreatorName(item)}</td>
                         <td className="px-4 py-3 text-center">
-                          <button
-                            data-cc-id={item.id}
-                            onClick={(e) => handleDropdownToggle(item.id, e)}
-                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
-                          >
-                            <ManageIcon className="w-5 h-5" />
-                          </button>
+                          <ActionDropdown
+                            itemId={item.id}
+                            openId={openDropdownId}
+                            onToggle={setOpenDropdownId}
+                            actions={[
+                              { label: 'ดูรูป', icon: EyeIcon, onClick: () => { setPreviewImage(item.image_url || null); } },
+                              { label: 'แก้ไข', icon: PencilIcon, onClick: () => handleEdit(item) },
+                              { label: 'ลบ', icon: TrashIcon, isDanger: true, onClick: () => handleDelete(item) },
+                            ]}
+                          />
                         </td>
                       </tr>
                     ))
@@ -237,47 +218,6 @@ const ChemicalCatalogPage: React.FC = () => {
         )}
       </div>
 
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{ position: 'fixed', top: dropdownPosition.top, left: dropdownPosition.left, zIndex: 50 }}
-          className="bg-white rounded-lg shadow-lg border border-slate-200 py-1 w-44"
-        >
-          <button
-            onClick={() => {
-              const item = items.find((i) => i.id === openDropdownId);
-              if (item) {
-                setPreviewImage(item.image_url || null);
-                setOpenDropdownId(null);
-              }
-            }}
-            className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-          >
-            <EyeIcon className="w-4 h-4 text-slate-400" />
-            ดูรูป
-          </button>
-          <button
-            onClick={() => {
-              const item = items.find((i) => i.id === openDropdownId);
-              if (item) handleEdit(item);
-            }}
-            className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-          >
-            <PencilIcon className="w-4 h-4 text-slate-400" />
-            แก้ไข
-          </button>
-          <button
-            onClick={() => {
-              const item = items.find((i) => i.id === openDropdownId);
-              if (item) handleDelete(item);
-            }}
-            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-          >
-            <TrashIcon className="w-4 h-4 text-red-400" />
-            ลบ
-          </button>
-        </div>
-      )}
 
       <ChemicalCatalogModal
         isOpen={isFormModalOpen}
@@ -307,10 +247,21 @@ const ChemicalCatalogPage: React.FC = () => {
 
       {previewImage && (
         <div
-          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-8 cursor-pointer"
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-8"
           onClick={() => setPreviewImage(null)}
         >
-          <img src={previewImage} alt="preview" className="max-w-full max-h-full object-contain rounded-lg" />
+          <button
+            onClick={() => setPreviewImage(null)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-2 transition-colors"
+          >
+            <XIcon className="h-6 w-6" />
+          </button>
+          <img
+            src={previewImage}
+            alt="preview"
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

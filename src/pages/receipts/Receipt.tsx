@@ -1,20 +1,19 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Swal from '@/src/utils/swal';
 import { Card } from '../../components/common/Card';
 import { formatThaiDate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import {
-  ManageIcon,
   CurrencyDollarIcon,
   DocumentTextIcon,
   CheckCircleIcon,
   PlusIcon,
   TrashIcon,
-  PencilIcon,
   EyeIcon,
   LoadingIcon,
 } from '../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 import { Pagination } from '../../components/common/Pagination';
 import { Receipt, ReceiptStatus } from '../../types';
 import { Input, Button } from '../../components/common/FormControls';
@@ -91,11 +90,6 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
   const [openReceiptDropdownId, setOpenReceiptDropdownId] = useState<
     string | null
   >(null);
-  const [receiptDropdownPosition, setReceiptDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const receiptDropdownRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
 
   // Form State
@@ -215,22 +209,6 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
     return { total, todayCount, todayAmount, totalAmount };
   }, [receiptData]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        openReceiptDropdownId &&
-        receiptDropdownRef.current &&
-        !receiptDropdownRef.current.contains(event.target as Node) &&
-        !(event.target as HTMLElement).closest('button[data-receipt-id]')
-      ) {
-        setOpenReceiptDropdownId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openReceiptDropdownId]);
 
   const handleReceiptItemsPerPageChange = (size: number) => {
     setReceiptItemsPerPage(size);
@@ -546,31 +524,60 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                             )}
                             {isDownloading === r.id ? 'กำลังโหลด...' : 'ดู PDF'}
                           </Button>
-                          <div className="inline-block text-left">
-                            <Button
-                              data-receipt-id={r.id}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const rect = (
-                                  e.currentTarget as HTMLButtonElement
-                                ).getBoundingClientRect();
-                                setSelectedReceipt(r);
-                                setOpenReceiptDropdownId(r.id);
-                                setReceiptDropdownPosition({
-                                  top: rect.bottom + window.scrollY,
-                                  left: rect.right + window.scrollX,
-                                });
-                              }}
-                              variant="icon"
-                              title="ตัวเลือก"
-                            >
-                              <span className="sr-only">Open options</span>
-                              <ManageIcon
-                                className="h-5 w-5"
-                                aria-hidden="true"
-                              />
-                            </Button>
-                          </div>
+                          <ActionDropdown
+                            actions={(() => {
+                              const actions: ActionDropdownItem[] = [
+                                {
+                                  label: 'ดูรายละเอียด',
+                                  icon: EyeIcon,
+                                  onClick: () => {
+                                    setSelectedReceipt(r);
+                                    setIsReceiptModalOpen(true);
+                                  },
+                                },
+                                {
+                                  label: 'เปลี่ยนสถานะ',
+                                  icon: CheckCircleIcon,
+                                  onClick: () => {
+                                    setSelectedReceipt(r);
+                                    handleStatusClick(r);
+                                  },
+                                  hidden: !onUpdateReceipt,
+                                },
+                                {
+                                  label: 'ส่ง Link Portal ลูกค้า',
+                                  icon: DocumentTextIcon,
+                                  isPrimary: true,
+                                  onClick: async () => {
+                                    if (!r.customer_id) return;
+                                    try {
+                                      const response = await CustomerApi.generatePortalToken(r.customer_id);
+                                      const portalUrl = `${window.location.origin}/portal?token=${response.token}`;
+                                      await navigator.clipboard.writeText(portalUrl);
+                                      Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                                    } catch {
+                                      Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์ Portal ได้', icon: 'error', confirmButtonColor: '#d33' });
+                                    }
+                                  },
+                                  hidden: !r.customer_id,
+                                },
+                                {
+                                  label: 'ลบ',
+                                  icon: TrashIcon,
+                                  isDanger: true,
+                                  onClick: () => {
+                                    setSelectedReceipt(r);
+                                    handleDeleteClick(r);
+                                  },
+                                  hidden: !onDeleteReceipt,
+                                },
+                              ];
+                              return actions;
+                            })()}
+                            itemId={r.id}
+                            openId={openReceiptDropdownId}
+                            onToggle={setOpenReceiptDropdownId}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -591,76 +598,6 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
         </div>
       </div>
 
-      {openReceiptDropdownId && receiptDropdownPosition && (
-        <div
-          ref={receiptDropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${receiptDropdownPosition.top}px`,
-            left: `${receiptDropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-30 border border-slate-100 overflow-hidden"
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-1" role="none">
-            <button
-              onClick={() => {
-                setIsReceiptModalOpen(true);
-                setOpenReceiptDropdownId(null);
-              }}
-              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-            >
-              <EyeIcon className="w-4 h-4 text-slate-400" />
-              ดูรายละเอียด
-            </button>
-            {onUpdateReceipt && selectedReceipt && (
-              <button
-                onClick={() => handleStatusClick(selectedReceipt)}
-                className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-              >
-                <CheckCircleIcon className="w-4 h-4 text-slate-400" />
-                เปลี่ยนสถานะ
-              </button>
-            )}
-
-            {selectedReceipt?.customer_id && (
-              <button
-                onClick={async () => {
-                  if (!selectedReceipt?.customer_id) return;
-                  try {
-                    const response = await CustomerApi.generatePortalToken(selectedReceipt.customer_id);
-                    const portalUrl = `${window.location.origin}/portal?token=${response.token}`;
-                    await navigator.clipboard.writeText(portalUrl);
-                    Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
-                  } catch {
-                    Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์ Portal ได้', icon: 'error', confirmButtonColor: '#d33' });
-                  }
-                  setOpenReceiptDropdownId(null);
-                }}
-                className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
-              >
-                <DocumentTextIcon className="w-4 h-4 text-green-500" />
-                ส่ง Link Portal ลูกค้า
-              </button>
-            )}
-
-            {onDeleteReceipt && selectedReceipt && (
-              <>
-                <hr className="my-1 border-slate-100" />
-                <button
-                  onClick={() => handleDeleteClick(selectedReceipt)}
-                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
-                >
-                  <TrashIcon className="w-4 h-4 text-red-500" />
-                  ลบ
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
 
       <Modal
         isOpen={isAddReceiptModalOpen}

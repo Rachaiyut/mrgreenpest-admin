@@ -1,6 +1,6 @@
 // ===== React =====
 import Swal from '@/src/utils/swal';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 // ===== Enums =====
 import { CategoryType } from '@/src/types/enums/category';
@@ -23,11 +23,11 @@ import { ProductModal } from '@/src/components/features/products/ProductModal';
 import { Card } from '../../../components/common/Card';
 import { Input, Button } from '../../../components/common/FormControls';
 import { Pagination } from '../../../components/common/Pagination';
+import { ActionDropdown, ActionDropdownItem } from '../../../components/common/ActionDropdown';
 
 // ===== Assets =====
 import {
   LoadingIcon,
-  ManageIcon,
   PencilIcon,
   PlusIcon,
   TrashIcon,
@@ -51,11 +51,6 @@ const Product: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
@@ -220,43 +215,6 @@ const Product: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    productId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === productId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setOpenDropdownId(productId);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      ) {
-        return;
-      }
-      if ((event.target as HTMLElement).closest('button[data-product-id]')) {
-        return;
-      }
-      setOpenDropdownId(null);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openDropdownId]);
 
   const handleEdit = (product: IProduct) => {
     setSelectedProduct(product);
@@ -521,17 +479,25 @@ const Product: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
-                      <div className="inline-block text-left">
-                        <Button
-                          data-product-id={product.id}
-                          onClick={(e) => handleDropdownToggle(e, product.id)}
-                          variant="icon"
-                          title="ตัวเลือก"
-                        >
-                          <span className="sr-only">Open options</span>
-                          <ManageIcon className="h-5 w-5" aria-hidden="true" />
-                        </Button>
-                      </div>
+                      <ActionDropdown
+                        itemId={product.id}
+                        openId={openDropdownId}
+                        onToggle={setOpenDropdownId}
+                        actions={[
+                          {
+                            label: 'แก้ไข',
+                            icon: PencilIcon,
+                            onClick: () => handleEdit(product),
+                          },
+                          {
+                            label: product.is_active !== false ? 'ปิดใช้งาน' : 'เปิดใช้งาน',
+                            icon: TrashIcon,
+                            onClick: () => handleToggleStatus(product),
+                            isDanger: product.is_active !== false,
+                            isPrimary: product.is_active === false,
+                          },
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -550,62 +516,6 @@ const Product: React.FC = () => {
         </div>
         )}
       </div>
-
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-1" role="none">
-            <button
-              onClick={() => {
-                const product = products.find((p) => p.id === openDropdownId);
-                if (product) handleEdit(product);
-              }}
-              className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-              role="menuitem"
-            >
-              <PencilIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-              <span>แก้ไข</span>
-            </button>
-            {(() => {
-              const product = products.find((p) => p.id === openDropdownId);
-              if (!product) return null;
-              return (
-                <button
-                  onClick={() => handleToggleStatus(product)}
-                  className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                  role="menuitem"
-                >
-                  {product.is_active !== false ? (
-                    <>
-                      <svg className="mr-3 h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
-                      </svg>
-                      <span>ปิดใช้งาน</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="mr-3 h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                      </svg>
-                      <span>เปิดใช้งาน</span>
-                    </>
-                  )}
-                </button>
-              );
-            })()}
-          </div>
-        </div>
-      )}
 
       <ProductModal
         isOpen={isModalOpen}

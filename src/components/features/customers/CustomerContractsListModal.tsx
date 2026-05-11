@@ -91,12 +91,7 @@ export const CustomerContractsListModal: React.FC<
         size="4xl"
         footer={
           <div className="flex w-full justify-end">
-            <Button
-              type="button"
-              onClick={onClose}
-              className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300"
-              variant="outline"
-            >
+            <Button variant="secondary" onClick={onClose} type="button">
               ปิด
             </Button>
           </div>

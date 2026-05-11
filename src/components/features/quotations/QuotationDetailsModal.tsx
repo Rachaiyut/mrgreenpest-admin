@@ -452,15 +452,6 @@ export const QuotationDetailsModal: FC<QuotationDetailsModalProps> = ({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="bg-slate-50 p-4 border-t flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium text-sm transition-colors"
-          >
-            ปิดหน้าต่าง
-          </button>
-        </div>
       </div>
     </Modal>
   );

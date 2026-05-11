@@ -1,5 +1,6 @@
 import { FC, ReactNode, ReactElement, cloneElement, useEffect, useState } from 'react';
 import { Modal } from '../../common/Modal';
+import { Button } from '../../common/FormControls';
 import {
   Assessment,
   Customer,
@@ -123,10 +124,19 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
       size="5xl"
       footer={
         <div className="flex w-full items-center justify-between">
-          <span className="text-slate-500 font-medium text-sm">ยอดรวมทั้งหมดสุทธิ</span>
-          <p className="text-2xl font-bold text-primary">
-            {Number(data.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
-          </p>
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500 font-medium text-sm">ยอดรวมทั้งหมดสุทธิ</span>
+            <p className="text-2xl font-bold text-primary">
+              {Number(data.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={onClose}
+            className="rounded-xl border-slate-300 text-slate-700 hover:text-slate-900 hover:border-slate-400 h-10 px-4 font-medium transition-all"
+          >
+            ปิด
+          </Button>
         </div>
       }
     >

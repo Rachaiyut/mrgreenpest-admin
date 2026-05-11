@@ -1,24 +1,21 @@
 import React, {
   useState,
-  useRef,
   useEffect,
-  useMemo,
   useCallback,
 } from 'react';
 import { Card } from '../../components/common/Card';
 import {
   PlusIcon,
-  ManageIcon,
   PencilIcon,
-  TrashIcon,
   EyeIcon,
   LimitIcon,
   NewWarehouseIcon,
   TruckIcon,
   CheckCircleIcon,
   ChartPieIcon,
-  LoadingIcon, // Added LoadingIcon
+  LoadingIcon,
 } from '../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 import { Button, Input } from '../../components/common/FormControls';
 import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { AddWarehouseModal } from '../../components/features/warehouses/AddWarehouseModal';
@@ -58,11 +55,6 @@ const Warehouse: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -283,38 +275,7 @@ const Warehouse: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    warehouseId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === warehouseId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setOpenDropdownId(warehouseId);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      )
-        return;
-      if ((event.target as HTMLElement).closest('button[data-warehouse-id]'))
-        return;
-      setOpenDropdownId(null);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdownId]);
 
   // State for stock map
   const [stockMap, setStockMap] = useState<
@@ -465,67 +426,52 @@ const Warehouse: React.FC = () => {
     }
   };
 
-  const actions = [
-    {
-      label: 'ดูรายละเอียด',
-      icon: EyeIcon,
-      action: handleViewDetails,
-      color: 'text-slate-700',
-      iconColor: 'text-slate-400',
-      hoverBg: 'hover:bg-slate-50',
-    },
-    {
-      label: 'แก้ไข',
-      icon: PencilIcon,
-      action: handleEdit,
-      color: 'text-blue-600',
-      iconColor: 'text-blue-500',
-      hoverBg: 'hover:bg-blue-50',
-    },
-    {
-      label: 'จำกัดการเบิก',
-      icon: ChartPieIcon,
-      action: handleSetLimits,
-      color: 'text-amber-600',
-      iconColor: 'text-amber-500',
-      hoverBg: 'hover:bg-amber-50',
-      // Limits apply to vehicle warehouses (บาง backend ส่งเป็น SUB แต่มี vehicle)
-      condition: (w: WarehouseType) =>
-        !!w.vehicle ||
-        w.type === WarehouseTypeEnum.SUB ||
-        w.type === WarehouseTypeEnum.VEHICLE,
-    },
-    {
-      label: 'คืนสินค้าเข้าคลังหลัก',
-      icon: NewWarehouseIcon,
-      action: handleReturnStock,
-      color: 'text-sky-600',
-      iconColor: 'text-sky-500',
-      hoverBg: 'hover:bg-sky-50',
-      // Only for Vehicle Warehouses
-      condition: (w: WarehouseType) =>
-        !!w.vehicle || w.type === WarehouseTypeEnum.VEHICLE,
-    },
-    {
-      label: 'เปิดใช้งาน',
-      icon: CheckCircleIcon,
-      action: handleActivate,
-      color: 'text-emerald-600',
-      iconColor: 'text-emerald-500',
-      hoverBg: 'hover:bg-emerald-50',
-      condition: (w: WarehouseType) => (w.status as unknown as string) === 'INACTIVE',
-    },
-    {
-      label: 'ปิดใช้งาน',
-      icon: LimitIcon,
-      isDanger: true,
-      action: handleDelete,
-      color: 'text-red-600',
-      iconColor: 'text-red-500',
-      hoverBg: 'hover:bg-red-50',
-      condition: (w: WarehouseType) => (w.status as unknown as string) !== 'INACTIVE',
-    },
-  ];
+  const getActionsForWarehouse = (warehouse: WarehouseType): ActionDropdownItem[] => {
+    const isVehicle =
+      !!warehouse.vehicle ||
+      warehouse.type === WarehouseTypeEnum.SUB ||
+      warehouse.type === WarehouseTypeEnum.VEHICLE;
+    const isInactive = (warehouse.status as unknown as string) === 'INACTIVE';
+
+    return [
+      {
+        label: 'ดูรายละเอียด',
+        icon: EyeIcon,
+        onClick: () => handleViewDetails(warehouse),
+      },
+      {
+        label: 'แก้ไข',
+        icon: PencilIcon,
+        onClick: () => handleEdit(warehouse),
+      },
+      {
+        label: 'จำกัดการเบิก',
+        icon: ChartPieIcon,
+        onClick: () => handleSetLimits(warehouse),
+        hidden: !isVehicle,
+      },
+      {
+        label: 'คืนสินค้าเข้าคลังหลัก',
+        icon: NewWarehouseIcon,
+        onClick: () => handleReturnStock(warehouse),
+        hidden: !(!!warehouse.vehicle || warehouse.type === WarehouseTypeEnum.VEHICLE),
+      },
+      {
+        label: 'เปิดใช้งาน',
+        icon: CheckCircleIcon,
+        onClick: () => handleActivate(warehouse),
+        isPrimary: true,
+        hidden: !isInactive,
+      },
+      {
+        label: 'ปิดใช้งาน',
+        icon: LimitIcon,
+        onClick: () => handleDelete(warehouse),
+        isDanger: true,
+        hidden: isInactive,
+      },
+    ];
+  };
 
   return (
     <div className="flex-1 flex flex-col">
@@ -756,14 +702,12 @@ const Warehouse: React.FC = () => {
                         />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
-                        <Button
-                          data-warehouse-id={warehouse.id}
-                          onClick={(e) => handleDropdownToggle(e, warehouse.id)}
-                          variant="icon"
-                          className="text-slate-400 hover:text-slate-600"
-                        >
-                          <ManageIcon className="h-5 w-5" />
-                        </Button>
+                        <ActionDropdown
+                          actions={getActionsForWarehouse(warehouse)}
+                          itemId={warehouse.id}
+                          openId={openDropdownId}
+                          onToggle={setOpenDropdownId}
+                        />
                       </td>
                     </tr>
                   ))
@@ -794,44 +738,6 @@ const Warehouse: React.FC = () => {
         </div>
       </div>
 
-      {/* Dropdown Menu */}
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
-        >
-          <div className="py-1">
-            {(() => {
-              const warehouse = warehouses.find((w) => w.id === openDropdownId);
-              if (!warehouse) return null;
-
-              return actions.map((action) => {
-                if (action.condition && !action.condition(warehouse))
-                  return null;
-                return (
-                  <button
-                    key={action.label}
-                    onClick={() => action.action(warehouse)}
-                    className={`flex w-full items-center px-4 py-2.5 text-sm transition-colors ${action.color} ${action.hoverBg}`}
-                  >
-                    <action.icon
-                      className={`mr-3 h-5 w-5 ${action.iconColor}`}
-                      aria-hidden="true"
-                    />
-                    {action.label}
-                  </button>
-                );
-              });
-            })()}
-          </div>
-        </div>
-      )}
 
       {/* Modals */}
       <AddWarehouseModal

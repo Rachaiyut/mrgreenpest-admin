@@ -147,7 +147,7 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
       size="4xl"
       footer={
         <div className="flex w-full justify-end">
-          <Button type="button" onClick={onClose} variant="outline" className="py-2 px-4">
+          <Button variant="secondary" onClick={onClose} type="button">
             ปิด
           </Button>
         </div>

@@ -1,10 +1,10 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card } from '../../../components/common/Card';
 import { Pagination } from '../../../components/common/Pagination';
+import { ActionDropdown, ActionDropdownItem } from '../../../components/common/ActionDropdown';
 import {
   DocumentCheckIcon,
   PlusIcon,
-  ManageIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
@@ -40,11 +40,6 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedRequisition, setSelectedRequisition] =
     useState<RequisitionType | null>(null);
@@ -187,69 +182,29 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
     setSelectedRequisition(null);
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    reqId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === reqId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setOpenDropdownId(reqId);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      ) {
-        return;
-      }
-      if ((event.target as HTMLElement).closest('button[data-req-id]')) {
-        return;
-      }
-      setOpenDropdownId(null);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openDropdownId]);
-
-  const actions = [
+  const getActions = (req: RequisitionType): ActionDropdownItem[] => [
     {
       label: 'ดูรายละเอียด',
       icon: EyeIcon,
-      isDanger: false,
-      onClick: (req: RequisitionType) => handleViewDetails(req),
+      onClick: () => handleViewDetails(req),
     },
-    // { label: 'แก้ไข', icon: PencilIcon, isDanger: false, onClick: () => { } }, // Implement edit later
     {
       label: 'อนุมัติ',
       icon: EyeIcon,
-      isDanger: false,
-      onClick: (req: RequisitionType) => handleApprovalAction(req, 'approve'),
-    }, // Using EyeIcon as placeholder or need CheckIcon
+      onClick: () => handleApprovalAction(req, 'approve'),
+      isPrimary: true,
+    },
     {
       label: 'ปฏิเสธ',
       icon: TrashIcon,
+      onClick: () => handleApprovalAction(req, 'reject'),
       isDanger: true,
-      onClick: (req: RequisitionType) => handleApprovalAction(req, 'reject'),
     },
     {
       label: 'ลบ',
       icon: TrashIcon,
+      onClick: () => handleDelete(req),
       isDanger: true,
-      onClick: (req: RequisitionType) => handleDelete(req),
     },
   ];
 
@@ -379,16 +334,12 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
-                      <div className="inline-block text-left">
-                        <Button
-                          data-req-id={item.id}
-                          onClick={(e) => handleDropdownToggle(e, item.id)}
-                          variant="icon"
-                          title="ตัวเลือก"
-                        >
-                          <ManageIcon className="h-5 w-5" aria-hidden="true" />
-                        </Button>
-                      </div>
+                      <ActionDropdown
+                        itemId={item.id}
+                        openId={openDropdownId}
+                        onToggle={setOpenDropdownId}
+                        actions={getActions(item)}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -406,43 +357,6 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
           </div>
         </div>
       </div>
-
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
-          role="menu"
-        >
-          <div className="py-1" role="none">
-            {actions.map((action) => (
-              <a
-                key={action.label}
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const req = requisitions.find((r) => r.id === openDropdownId);
-                  if (!req) {
-                    setOpenDropdownId(null);
-                    return;
-                  }
-                  action.onClick(req);
-                }}
-                className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
-                role="menuitem"
-              >
-                <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                <span>{action.label}</span>
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Placeholders for Modals */}
       <AddRequisitionModal

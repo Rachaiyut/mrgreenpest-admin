@@ -1,26 +1,19 @@
-import { Button, Card } from 'antd';
-
-// Enum
+import { Card } from 'antd';
 import { CustomerType } from '@/src/types/enums/customer';
-
-// Interface
 import { Customer } from '@/src/types/entity/app.interface';
-
-// Icon
 import {
-  ManageIcon,
   PhoneIcon,
   EnvelopeIcon,
   UserIcon,
 } from '../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 
 const CustomerCardView: React.FC<{
   customers: Customer[];
-  handleDropdownToggle: (
-    event: React.MouseEvent<HTMLElement>,
-    customerId: string
-  ) => void;
-}> = ({ customers, handleDropdownToggle }) => (
+  getActions: (customer: Customer) => ActionDropdownItem[];
+  openDropdownId: string | null;
+  setOpenDropdownId: (id: string | null) => void;
+}> = ({ customers, getActions, openDropdownId, setOpenDropdownId }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
     {customers.length === 0 ? (
       <div className="col-span-full flex flex-col items-center justify-center text-slate-400 py-16">
@@ -44,16 +37,13 @@ const CustomerCardView: React.FC<{
                   : 'บุคคลธรรมดา'}
               </span>
             </div>
-            <div className="relative">
-              <Button
-                data-customer-id={customer.id}
-                onClick={(e) => handleDropdownToggle(e, customer.id)}
-                className="-mr-2 -mt-1"
-                title="ตัวเลือก"
-              >
-                <span className="sr-only">Open options</span>
-                <ManageIcon className="h-5 w-5" />
-              </Button>
+            <div className="relative -mr-2 -mt-1">
+              <ActionDropdown
+                actions={getActions(customer)}
+                itemId={customer.id}
+                openId={openDropdownId}
+                onToggle={setOpenDropdownId}
+              />
             </div>
           </div>
           <div className="space-y-3 text-sm text-slate-600">
@@ -78,18 +68,9 @@ const CustomerCardView: React.FC<{
             </div>
           </div>
         </div>
-        {/* {customer.contractUntil && (
-          <div className="mt-4 pt-4 border-t border-slate-200 text-xs">
-            <p className="text-slate-500">
-              <span className="font-semibold">สัญญาถึง:</span>{' '}
-              {formatThaiDate(customer.contractUntil)}
-            </p>
-          </div>
-        )} */}
       </Card>
     ))}
   </div>
-
 );
 
 export default CustomerCardView;

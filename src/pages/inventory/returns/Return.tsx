@@ -1,17 +1,16 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import Swal from '@/src/utils/swal';
 import { Card } from '../../../components/common/Card';
 import { Pagination } from '../../../components/common/Pagination';
 import {
   PlusIcon,
-  ManageIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
-  CheckCircleIcon,
   DocumentCheckIcon,
   XCircleIcon,
 } from '../../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../../components/common/ActionDropdown';
 import { Button } from '../../../components/common/FormControls';
 import { formatThaiDate } from '../../../utils/date';
 import { AddReturnModal } from '../../../components/features/inventory/return/AddReturnModal';
@@ -55,11 +54,6 @@ const Returns: React.FC<ReturnsProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [returnToEdit, setReturnToEdit] = useState<ReturnType | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedReturn, setSelectedReturn] = useState<ReturnType | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -134,43 +128,7 @@ const Returns: React.FC<ReturnsProps> = ({
     setReturnToDelete(null);
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    returnId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === returnId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setOpenDropdownId(returnId);
-      setDropdownPosition({
-        top: buttonRect.bottom, // Use viewport coordinates directly if using fixed
-        left: buttonRect.right,
-      });
-    }
-  };
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      ) {
-        return;
-      }
-      if ((event.target as HTMLElement).closest('button[data-return-id]')) {
-        return;
-      }
-      setOpenDropdownId(null);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openDropdownId]);
 
   const handleApprove = async (returnItem: ReturnType) => {
     try {
@@ -200,50 +158,47 @@ const Returns: React.FC<ReturnsProps> = ({
     }
   };
 
-  const actionItems = (item: ReturnType) => [
-    {
-      label: 'ดูรายละเอียด',
-      icon: EyeIcon,
-      color: 'text-slate-700',
-      hoverBg: 'hover:bg-slate-50',
-      onClick: () => handleViewDetails(item),
-    },
-    ...(item.status !== 'COMPLETED' &&
-    item.status !== 'APPROVED' &&
-    item.status !== 'REJECTED' &&
-    item.status !== 'CANCELLED'
-      ? [
-          {
-            label: 'แก้ไข',
-            icon: PencilIcon,
-            color: 'text-blue-600',
-            hoverBg: 'hover:bg-blue-50',
-            onClick: () => handleEdit(item),
-          },
-          {
-            label: 'อนุมัติ',
-            icon: DocumentCheckIcon,
-            color: 'text-green-600',
-            hoverBg: 'hover:bg-green-50',
-            onClick: () => handleApprove(item),
-          },
-          {
-            label: 'ไม่อนุมัติ',
-            icon: XCircleIcon,
-            color: 'text-red-600',
-            hoverBg: 'hover:bg-red-50',
-            onClick: () => handleReject(item),
-          },
-        ]
-      : []),
-    {
-      label: 'ยกเลิก',
-      icon: TrashIcon,
-      color: 'text-red-600',
-      hoverBg: 'hover:bg-red-50',
-      onClick: () => handleDelete(item),
-    },
-  ];
+  const getActions = (item: ReturnType): ActionDropdownItem[] => {
+    const isFinalized =
+      item.status === 'COMPLETED' ||
+      item.status === 'APPROVED' ||
+      item.status === 'REJECTED' ||
+      item.status === 'CANCELLED';
+
+    return [
+      {
+        label: 'ดูรายละเอียด',
+        icon: EyeIcon,
+        onClick: () => handleViewDetails(item),
+      },
+      {
+        label: 'แก้ไข',
+        icon: PencilIcon,
+        onClick: () => handleEdit(item),
+        hidden: isFinalized,
+      },
+      {
+        label: 'อนุมัติ',
+        icon: DocumentCheckIcon,
+        onClick: () => handleApprove(item),
+        isPrimary: true,
+        hidden: isFinalized,
+      },
+      {
+        label: 'ไม่อนุมัติ',
+        icon: XCircleIcon,
+        onClick: () => handleReject(item),
+        isDanger: true,
+        hidden: isFinalized,
+      },
+      {
+        label: 'ยกเลิก',
+        icon: TrashIcon,
+        onClick: () => handleDelete(item),
+        isDanger: true,
+      },
+    ];
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -441,20 +396,12 @@ const Returns: React.FC<ReturnsProps> = ({
                         {getStatusBadge(item.status)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
-                        <div className="inline-block text-left">
-                          <Button
-                            data-return-id={item.id}
-                            onClick={(e) => handleDropdownToggle(e, item.id)}
-                            variant="icon"
-                            title="ตัวเลือก"
-                          >
-                            <span className="sr-only">Open options</span>
-                            <ManageIcon
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </Button>
-                        </div>
+                        <ActionDropdown
+                          itemId={item.id}
+                          openId={openDropdownId}
+                          onToggle={setOpenDropdownId}
+                          actions={getActions(item)}
+                        />
                       </td>
                     </tr>
                   );
@@ -473,43 +420,6 @@ const Returns: React.FC<ReturnsProps> = ({
           </div>
         </div>
       </div>
-
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'fixed',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-1" role="none">
-            {(() => {
-              const returnItem = returns.find((r) => r.id === openDropdownId);
-              if (!returnItem) return null;
-
-              return actionItems(returnItem).map((action, index) => (
-                <button
-                  key={index}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (action.onClick) action.onClick();
-                  }}
-                  className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
-                  role="menuitem"
-                >
-                  <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                  <span>{action.label}</span>
-                </button>
-              ));
-            })()}
-          </div>
-        </div>
-      )}
 
       <AddReturnModal
         isOpen={isAddModalOpen}

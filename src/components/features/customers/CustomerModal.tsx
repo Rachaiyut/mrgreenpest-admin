@@ -29,21 +29,11 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   };
 
   const footer = (
-    <div className="flex gap-2 w-full justify-end">
-      <Button
-        type="button"
-        onClick={onClose}
-        variant="outline"
-        className="py-2 px-4"
-      >
+    <div className="flex gap-3 w-full justify-end">
+      <Button variant="secondary" onClick={onClose} type="button">
         ยกเลิก
       </Button>
-      <Button
-        type="submit"
-        form="customer-form" // ต้องตรงกับ ID ใน CustomerForm
-        variant="primary"
-        className="py-2 px-4"
-      >
+      <Button variant="primary" type="submit" form="customer-form">
         {mode === 'create' ? 'สร้างลูกค้า' : 'บันทึกการเปลี่ยนแปลง'}
       </Button>
     </div>

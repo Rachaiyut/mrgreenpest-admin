@@ -146,7 +146,7 @@ export const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
         footer={
           <div className="flex w-full items-center justify-between">
             <p className="text-sm text-slate-500">ทั้งหมด {jobs.length} รายการ{hasMore ? ' (เลื่อนลงเพื่อดูเพิ่ม)' : ''}</p>
-            <Button type="button" onClick={onClose} variant="outline" className="py-2 px-5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300">
+            <Button variant="secondary" onClick={onClose} type="button">
               ปิด
             </Button>
           </div>

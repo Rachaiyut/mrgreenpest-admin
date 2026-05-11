@@ -39,14 +39,16 @@ export const Modal: React.FC<ModalProps> = ({
 
   const maxWidthClass = sizeClasses[size];
 
-  const renderFooter =
-    footer === undefined ? (
-      <Button variant="primary" type="button" onClick={onClose}>
-        ปิด
-      </Button>
-    ) : (
-      footer
-    );
+  const defaultFooter = (
+    <Button
+      variant="secondary"
+      type="button"
+      onClick={onClose}
+      className="rounded-xl border-slate-300 text-slate-700 hover:text-slate-900 hover:border-slate-400 h-10 px-4 font-medium transition-all"
+    >
+      ปิด
+    </Button>
+  );
 
   return (
     <div
@@ -74,11 +76,9 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         </div>
         <div className="p-4 sm:p-6 overflow-y-auto">{children}</div>
-        {footer && (
-          <div className="flex justify-end items-center p-4 border-t border-slate-200 bg-slate-50 rounded-b-lg flex-shrink-0">
-            {footer}
-          </div>
-        )}
+        <div className="flex justify-end items-center p-4 border-t border-slate-200 bg-slate-50 rounded-b-lg flex-shrink-0">
+          {footer ?? defaultFooter}
+        </div>
       </div>
       <style>{`
         @keyframes fade-in-scale {

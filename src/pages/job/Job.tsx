@@ -49,6 +49,7 @@ import { JobStatusLabel } from '@/src/types/enums/job';
 import { Input, Button } from '../../components/common/FormControls';
 import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { SearchableSelect } from '../../components/common/SearchableSelect';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common';
 
 // ===== Local Components =====
 import JobCard from './JobCard';
@@ -80,7 +81,6 @@ import {
   JobDateIcon,
   ListBulletIcon,
   LoadingIcon,
-  ManageIcon,
   PencilIcon,
   PlayIcon,
   PlusIcon,
@@ -758,7 +758,6 @@ const Job: React.FC<JobProps> = ({
   const [jobForReport, setJobForReport] = useState<any | null>(null);
   const [reportFinalStatus, setReportFinalStatus] = useState<JobStatus>(JobStatus.Completed);
   const [reportReadOnly, setReportReadOnly] = useState(false);
-  const [isReportTabDropdown, setIsReportTabDropdown] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -767,13 +766,7 @@ const Job: React.FC<JobProps> = ({
   const [reportTotal, setReportTotal] = useState(0);
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-    isBottom: boolean;
-  } | null>(null);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const kanbanContainerRef = useRef<HTMLDivElement>(null);
 
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
@@ -1377,37 +1370,6 @@ const Job: React.FC<JobProps> = ({
     return vehicle.license_plate || vehicle.vehicle_registration || vehicle.name || '-';
   })();
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    jobId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === jobId) {
-      setOpenDropdownId(null);
-      setSelectedJob(null);
-
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      // หา job จากทั้ง jobs ปกติและ unassignedJobs (tab รอจัดคิว)
-      const found =
-        jobs.find((j) => j.id === jobId) ||
-        unassignedJobs.find((j) => j.id === jobId) ||
-        null;
-      setSelectedJob(found);
-      setOpenDropdownId(jobId);
-      setIsReportTabDropdown(false);
-
-
-      const threshold = 220;
-      const isBottom = buttonRect.bottom > window.innerHeight - threshold;
-
-      setDropdownPosition({
-        top: buttonRect.bottom,
-        left: buttonRect.right,
-        isBottom: isBottom,
-      });
-    }
-  };
 
   // Fetch all vehicles for dropdown (once)
   useEffect(() => {
@@ -1466,225 +1428,76 @@ const Job: React.FC<JobProps> = ({
     return () => clearTimeout(timeoutId);
   }, [unassignedSearch]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (dropdownRef.current && dropdownRef.current.contains(event.target as Node)) return;
-      if ((event.target as HTMLElement).closest('button[data-job-id]')) return;
-      setOpenDropdownId(null);
-      setSelectedJob(null);
 
-    };
 
-    const handleScroll = () => {
-      if (openDropdownId) {
-        setOpenDropdownId(null);
-        setSelectedJob(null);
-  
-      }
-    };
+  const getKanbanActions = (job: FieldJob): ActionDropdownItem[] => {
+    const status = job.status as unknown as string;
+    const actions: ActionDropdownItem[] = [];
 
-    document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('scroll', handleScroll, true);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', handleScroll, true);
-    };
-  }, [openDropdownId]);
-
-  const renderActions = () => {
-    if (!selectedJob) return null;
-    const { status } = selectedJob;
-
-    const actions: {
-      label: string;
-      icon: React.FC<any>;
-      onClick: () => void;
-      isDanger?: boolean;
-    }[] = [];
-
-    if (isReportTabDropdown) {
-      actions.push(
-        {
-          label: 'ดูรายละเอียด',
-          icon: EyeIcon,
-          onClick: () => {
-            setReportReadOnly(true);
-            handleWriteReport(selectedJob);
-          },
-        },
-        {
-          label: 'แก้ไขใบรายงานบริการ',
-          icon: DocumentCheckIcon,
-          onClick: () => {
-            setReportReadOnly(false);
-            handleWriteReport(selectedJob);
-          },
-        },
-      );
-
-      return actions.map((action) => (
-        <a
-          key={action.label}
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            action.onClick();
-          }}
-          className="flex items-center w-full text-left px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-          role="menuitem"
-        >
-          <action.icon className="mr-3 h-5 w-5 text-slate-400" aria-hidden="true" />
-          <span>{action.label}</span>
-        </a>
-      ));
-    }
-
-    // UNASSIGNED (รอจัดคิว) — เฉพาะ tab ภาคสนาม > รอจัดคิว
-    // Actions: จัดคิวงาน / ยกเลิก / ลบ
-    if ((status as unknown as string) === 'UNASSIGNED') {
-      actions.push({
-        label: 'จัดคิวงาน',
-        icon: PencilIcon,
-        onClick: () => handleEdit(selectedJob),
-      });
-      actions.push({
-        label: 'ยกเลิกงาน',
-        icon: XCircleIcon,
-        onClick: () => handleCancel(selectedJob),
-        isDanger: true,
-      });
+    if (status === 'UNASSIGNED') {
+      actions.push({ label: 'จัดคิวงาน', icon: PencilIcon, onClick: () => handleEdit(job) });
+      actions.push({ label: 'ยกเลิกงาน', icon: XCircleIcon, onClick: () => handleCancel(job), isDanger: true });
       if (hasPermission('DELETE_OPERATION')) {
-        actions.push({
-          label: 'ลบงาน',
-          icon: TrashIcon,
-          onClick: () => handleDelete(selectedJob),
-          isDanger: true,
-        });
+        actions.push({ label: 'ลบงาน', icon: TrashIcon, onClick: () => handleDelete(job), isDanger: true });
       }
-
-      return actions.map((action) => (
-        <a
-          key={action.label}
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            action.onClick();
-          }}
-          className={`flex items-center w-full text-left px-4 py-3 text-sm font-medium transition-colors ${
-            action.isDanger
-              ? 'text-red-600 hover:bg-red-50'
-              : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
-          }`}
-          role="menuitem"
-        >
-          <action.icon className={`mr-3 h-5 w-5 ${action.isDanger ? 'text-red-400' : 'text-slate-400'}`} aria-hidden="true" />
-          <span>{action.label}</span>
-        </a>
-      ));
+      return actions;
     }
 
-    actions.push({
-      label: 'ดูรายละเอียด',
-      icon: EyeIcon,
-      onClick: () => handleViewDetails(selectedJob),
-    });
+    actions.push({ label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(job) });
 
-    const isRejectedStatus = status === JobStatus.Rejected;
-    const isCreatorOfSelected =
-      !!currentUser?.id && !!(selectedJob as FieldJob).created_by &&
-      (selectedJob as FieldJob).created_by === currentUser.id;
-    const canEditRejectedDropdown =
-      isRejectedStatus && hasPermission('UPDATE_OPERATION') &&
-      (isCreatorOfSelected || hasPermission('APPROVE_OPERATION'));
+    const isRejectedStatus = status === String(JobStatus.Rejected);
+    const isCreatorOfJob = !!currentUser?.id && !!job.created_by && job.created_by === currentUser.id;
+    const canEditRejectedJob = isRejectedStatus && hasPermission('UPDATE_OPERATION') && (isCreatorOfJob || hasPermission('APPROVE_OPERATION'));
 
     if (
-      status === JobStatus.Planned ||
-      status === JobStatus.Pending ||
-      status === JobStatus.InProgress ||
-      status === JobStatus.Paused ||
-      canEditRejectedDropdown
+      status === String(JobStatus.Planned) ||
+      status === String(JobStatus.Pending) ||
+      status === String(JobStatus.InProgress) ||
+      status === String(JobStatus.Paused) ||
+      canEditRejectedJob
     ) {
       actions.push({
-        label: isRejectedStatus ? 'แก้ไขและส่งอนุมัติใหม่' : 'แก้ไขงาน',
+        label: isRejectedStatus ? 'แก้ไขและส่งอนุมัติใหม่' : 'จัดคิวงาน',
         icon: PencilIcon,
         onClick: () => handleEdit(selectedJob),
       });
     }
 
     if (
-      status === JobStatus.Completed ||
-      status === JobStatus.Draft ||
-      status === JobStatus.InProgress ||
-      (status as unknown as string) === 'IN_PROGRESS'
+      status === String(JobStatus.Completed) ||
+      status === String(JobStatus.Draft) ||
+      status === String(JobStatus.InProgress) ||
+      status === 'IN_PROGRESS'
     ) {
       actions.push({
-        label: 'แก้ไข',
+        label: 'แก้ไขใบรายงานบริการ',
         icon: DocumentCheckIcon,
-        onClick: () => {
-          setReportReadOnly(false);
-          handleWriteReport(selectedJob);
-        },
+        onClick: () => { setReportReadOnly(false); handleWriteReport(job); },
       });
     }
 
     if (
-      status === JobStatus.Planned ||
-      status === JobStatus.Pending ||
-      status === JobStatus.InProgress
+      status === String(JobStatus.Planned) ||
+      status === String(JobStatus.Pending) ||
+      status === String(JobStatus.InProgress)
     ) {
-      actions.push({
-        label: 'ยกเลิกงาน',
-        icon: XCircleIcon,
-        onClick: () => handleCancel(selectedJob),
-        isDanger: true,
-      });
+      actions.push({ label: 'ยกเลิกงาน', icon: XCircleIcon, onClick: () => handleCancel(job), isDanger: true });
     }
 
-    if (status === JobStatus.Rejected || status === JobStatus.PendingApproval) {
-      actions.push({
-        label: 'ดูประวัติการปฏิเสธ',
-        icon: ClipboardDocumentListIcon,
-        onClick: () => handleViewRejectionHistory(selectedJob.id),
-      });
+    if (status === String(JobStatus.Rejected) || status === String(JobStatus.PendingApproval)) {
+      actions.push({ label: 'ดูประวัติการปฏิเสธ', icon: ClipboardDocumentListIcon, onClick: () => handleViewRejectionHistory(job.id) });
     }
 
     if (
-      (status === JobStatus.Pending ||
-        status === JobStatus.Planned ||
-        status === JobStatus.InProgress) &&
+      (status === String(JobStatus.Pending) ||
+        status === String(JobStatus.Planned) ||
+        status === String(JobStatus.InProgress)) &&
       hasPermission('DELETE_OPERATION')
     ) {
-      actions.push({
-        label: 'ลบงาน',
-        icon: TrashIcon,
-        onClick: () => handleDelete(selectedJob),
-        isDanger: true,
-      });
+      actions.push({ label: 'ลบงาน', icon: TrashIcon, onClick: () => handleDelete(job), isDanger: true });
     }
 
-    return actions.map((action) => (
-      <a
-        key={action.label}
-        href="#"
-        onClick={(e) => {
-          e.preventDefault();
-          action.onClick();
-        }}
-        className={`flex items-center w-full text-left px-4 py-3 text-sm font-medium transition-colors ${action.isDanger
-          ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
-          : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
-          }`}
-        role="menuitem"
-      >
-        <action.icon
-          className={`mr-3 h-5 w-5 ${action.isDanger ? 'text-red-500' : 'text-slate-400'}`}
-          aria-hidden="true"
-        />
-        <span>{action.label}</span>
-      </a>
-    ));
+    return actions;
   };
 
   const scrollKanban = (direction: 'left' | 'right') => {
@@ -2111,7 +1924,7 @@ const Job: React.FC<JobProps> = ({
                 emptyBoardText="ไม่พบรถให้บริการ"
                 emptyColumnText="ไม่มีงาน"
                 accentColorClass="bg-primary"
-                onDropdownToggle={handleDropdownToggle}
+                getActions={getKanbanActions}
                 onStatusChange={handleStatusChange}
                 onViewDetails={handleViewDetails}
                 onWriteReport={handleWriteReport}
@@ -2173,14 +1986,39 @@ const Job: React.FC<JobProps> = ({
                           </td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex items-center justify-center">
-                              <Button
-                                data-job-id={job.id}
-                                onClick={(e) => handleDropdownToggle(e, job.id)}
-                                variant="ghost"
-                                className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-                              >
-                                <ManageIcon className="h-5 w-5" />
-                              </Button>
+                              <ActionDropdown
+                                itemId={job.id}
+                                openId={openDropdownId}
+                                onToggle={(id) => {
+                                  setOpenDropdownId(id);
+                                  setSelectedJob(id ? job : null);
+                                }}
+                                actions={[
+                                  {
+                                    label: 'ดูรายละเอียด',
+                                    icon: EyeIcon,
+                                    onClick: () => handleViewDetails(job),
+                                  },
+                                  {
+                                    label: 'จัดคิวงาน',
+                                    icon: PencilIcon,
+                                    onClick: () => handleEdit(job),
+                                  },
+                                  {
+                                    label: 'ยกเลิกงาน',
+                                    icon: XCircleIcon,
+                                    onClick: () => handleCancel(job),
+                                    isDanger: true,
+                                  },
+                                  {
+                                    label: 'ลบงาน',
+                                    icon: TrashIcon,
+                                    onClick: () => handleDelete(job),
+                                    isDanger: true,
+                                    hidden: !hasPermission('DELETE_OPERATION'),
+                                  },
+                                ]}
+                              />
                             </div>
                           </td>
                         </tr>
@@ -2246,7 +2084,7 @@ const Job: React.FC<JobProps> = ({
                 emptyBoardText="ไม่มีงานรออนุมัติ / ถูกปฏิเสธ"
                 emptyColumnText="ไม่มีงาน"
                 accentColorClass="bg-orange-500"
-                onDropdownToggle={handleDropdownToggle}
+                getActions={getKanbanActions}
                 onStatusChange={handleStatusChange}
                 onViewDetails={handleViewDetails}
                 onWriteReport={handleWriteReport}
@@ -2309,67 +2147,22 @@ const Job: React.FC<JobProps> = ({
                               </span>
                             </td>
                             <td className="px-4 py-3 text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  className="text-xs py-1.5 px-3"
-                                  onClick={() => handleViewDetails(job)}
-                                >
-                                  ดูรายละเอียด
-                                </Button>
-                                {isPA && hasPermission('APPROVE_OPERATION') && (
-                                  <>
-                                    <Button
-                                      variant="primary"
-                                      className="text-xs py-1.5 px-3 bg-green-500 hover:bg-green-600"
-                                      onClick={() => handleApproveJob(job.id)}
-                                    >
-                                      อนุมัติ
-                                    </Button>
-                                    <Button
-                                      variant="primary"
-                                      className="text-xs py-1.5 px-3 bg-red-500 hover:bg-red-600"
-                                      onClick={() =>
-                                        Swal.fire({
-                                          title: 'ปฏิเสธงานนี้?',
-                                          html: `
-                                            <div class="text-left">
-                                              <label class="block text-sm font-medium text-slate-700 mb-1">เหตุผลการปฏิเสธ <span class="text-red-500">*</span></label>
-                                              <textarea id="swal-reject-reason" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm text-slate-900" rows="3" placeholder="กรอกเหตุผล..."></textarea>
-                                              <p id="swal-reject-error" class="text-red-500 text-xs mt-1 font-medium hidden">กรุณากรอกเหตุผล</p>
-                                            </div>
-                                          `,
-                                          showCancelButton: true,
-                                          confirmButtonText: 'ปฏิเสธ',
-                                          cancelButtonText: 'ยกเลิก',
-                                          confirmButtonColor: '#ef4444',
-                                          focusConfirm: false,
-                                          didOpen: () => {
-                                            const textarea = document.getElementById('swal-reject-reason') as HTMLTextAreaElement;
-                                            const errorEl = document.getElementById('swal-reject-error');
-                                            textarea?.focus();
-                                            textarea?.addEventListener('input', () => { if (errorEl) errorEl.classList.add('hidden'); });
-                                          },
-                                          preConfirm: () => {
-                                            const reason = (document.getElementById('swal-reject-reason') as HTMLTextAreaElement)?.value?.trim();
-                                            if (!reason) {
-                                              const errorEl = document.getElementById('swal-reject-error');
-                                              if (errorEl) errorEl.classList.remove('hidden');
-                                              return false;
-                                            }
-                                            return reason;
-                                          },
-                                        }).then((r) => {
-                                          if (r.isConfirmed && r.value) {
-                                            handleRejectJob(job.id, r.value.trim());
-                                          }
-                                        })
-                                      }
-                                    >
-                                      ปฏิเสธ
-                                    </Button>
-                                  </>
-                                )}
+                              <div className="flex items-center justify-center">
+                                <ActionDropdown
+                                  itemId={job.id}
+                                  openId={openDropdownId}
+                                  onToggle={(id) => {
+                                    setOpenDropdownId(id);
+                                    setSelectedJob(id ? job : null);
+                                  }}
+                                  actions={[
+                                    {
+                                      label: 'ดูรายละเอียด',
+                                      icon: EyeIcon,
+                                      onClick: () => handleViewDetails(job),
+                                    },
+                                  ]}
+                                />
                               </div>
                             </td>
                           </tr>
@@ -2509,14 +2302,87 @@ const Job: React.FC<JobProps> = ({
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                             <div className="flex items-center justify-center">
-                              <Button
-                                data-job-id={job.id}
-                                onClick={(e) => handleDropdownToggle(e, job.id)}
-                                variant="ghost"
-                                className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-                              >
-                                <ManageIcon className="h-5 w-5" />
-                              </Button>
+                              <ActionDropdown
+                                itemId={job.id}
+                                openId={openDropdownId}
+                                onToggle={(id) => {
+                                  setOpenDropdownId(id);
+                                  setSelectedJob(id ? job : null);
+                                }}
+                                actions={(() => {
+                                  const status = job.status;
+                                  const isRejectedStatus = status === JobStatus.Rejected;
+                                  const isCreatorOfJob =
+                                    !!currentUser?.id && !!(job as FieldJob).created_by &&
+                                    (job as FieldJob).created_by === currentUser.id;
+                                  const canEditRejected =
+                                    isRejectedStatus && hasPermission('UPDATE_OPERATION') &&
+                                    (isCreatorOfJob || hasPermission('APPROVE_OPERATION'));
+
+                                  return [
+                                    {
+                                      label: 'ดูรายละเอียด',
+                                      icon: EyeIcon,
+                                      onClick: () => handleViewDetails(job),
+                                    },
+                                    {
+                                      label: isRejectedStatus ? 'แก้ไขและส่งอนุมัติใหม่' : 'จัดคิวงาน',
+                                      icon: PencilIcon,
+                                      onClick: () => handleEdit(job),
+                                      hidden: !(
+                                        status === JobStatus.Planned ||
+                                        status === JobStatus.Pending ||
+                                        status === JobStatus.InProgress ||
+                                        status === JobStatus.Paused ||
+                                        canEditRejected
+                                      ),
+                                    },
+                                    {
+                                      label: 'แก้ไข',
+                                      icon: DocumentCheckIcon,
+                                      onClick: () => {
+                                        setReportReadOnly(false);
+                                        handleWriteReport(job);
+                                      },
+                                      hidden: !(
+                                        status === JobStatus.Completed ||
+                                        status === JobStatus.Draft ||
+                                        status === JobStatus.InProgress ||
+                                        (status as unknown as string) === 'IN_PROGRESS'
+                                      ),
+                                    },
+                                    {
+                                      label: 'ยกเลิกงาน',
+                                      icon: XCircleIcon,
+                                      onClick: () => handleCancel(job),
+                                      isDanger: true,
+                                      hidden: !(
+                                        status === JobStatus.Planned ||
+                                        status === JobStatus.Pending ||
+                                        status === JobStatus.InProgress
+                                      ),
+                                    },
+                                    {
+                                      label: 'ดูประวัติการปฏิเสธ',
+                                      icon: ClipboardDocumentListIcon,
+                                      onClick: () => handleViewRejectionHistory(job.id),
+                                      hidden: !(status === JobStatus.Rejected || status === JobStatus.PendingApproval),
+                                    },
+                                    {
+                                      label: 'ลบงาน',
+                                      icon: TrashIcon,
+                                      onClick: () => handleDelete(job),
+                                      isDanger: true,
+                                      hidden: !(
+                                        (status === JobStatus.Pending ||
+                                          status === JobStatus.Planned ||
+                                          status === JobStatus.InProgress) &&
+                                        hasPermission('DELETE_OPERATION')
+                                      ),
+                                    },
+                                  ] as ActionDropdownItem[];
+                                })()}
+                              />
                             </div>
                           </td>
                         </tr>
@@ -2670,49 +2536,58 @@ const Job: React.FC<JobProps> = ({
                                     </span>
                                   )}
                                 </Button>
-                                <Button
-                                  onClick={(e) => {
-                                    const reportJob = rData.job;
-                                    const techList: any[] = [];
-                                    if (reportJob?.primary_technician) {
-                                      techList.push({ ...reportJob.primary_technician, name: `${reportJob.primary_technician.first_name || ''} ${reportJob.primary_technician.last_name || ''}`.trim() });
-                                    }
-                                    if (reportJob?.job_team_members) {
-                                      reportJob.job_team_members.filter((m: any) => m.id !== reportJob?.primary_technician?.id).forEach((m: any) => {
-                                        techList.push({ ...m, name: `${m.first_name || ''} ${m.last_name || ''}`.trim() });
-                                      });
-                                    }
-                                    const targetJob = job || {
-                                      id: report.job_id,
-                                      customer_id: report.customer_id,
-                                      customerName: report.customer_name || '-',
-                                      service_report: report,
-                                      technicians: techList,
-                                      work_areas: [],
-                                      status: report.status,
-                                      assessment_id: reportJob?.assessment_id,
-                                      contract_id: reportJob?.contract_id,
-                                    } as unknown as FieldJob;
+                                {(() => {
+                                  const reportJob = rData.job;
+                                  const techList: any[] = [];
+                                  if (reportJob?.primary_technician) {
+                                    techList.push({ ...reportJob.primary_technician, name: `${reportJob.primary_technician.first_name || ''} ${reportJob.primary_technician.last_name || ''}`.trim() });
+                                  }
+                                  if (reportJob?.job_team_members) {
+                                    reportJob.job_team_members.filter((m: any) => m.id !== reportJob?.primary_technician?.id).forEach((m: any) => {
+                                      techList.push({ ...m, name: `${m.first_name || ''} ${m.last_name || ''}`.trim() });
+                                    });
+                                  }
+                                  const targetJob = job || {
+                                    id: report.job_id,
+                                    customer_id: report.customer_id,
+                                    customerName: report.customer_name || '-',
+                                    service_report: report,
+                                    technicians: techList,
+                                    work_areas: [],
+                                    status: report.status,
+                                    assessment_id: reportJob?.assessment_id,
+                                    contract_id: reportJob?.contract_id,
+                                  } as unknown as FieldJob;
 
-                                    const jId = targetJob.id;
-                                    if (openDropdownId === jId) {
-                                      setOpenDropdownId(null);
-                                      setSelectedJob(null);
-                                    } else {
-                                      const buttonRect = e.currentTarget.getBoundingClientRect();
-                                      setSelectedJob(targetJob as any);
-                                      setOpenDropdownId(jId);
-                                      setIsReportTabDropdown(true);
-                                      const threshold = 220;
-                                      const isBottom = buttonRect.bottom > window.innerHeight - threshold;
-                                      setDropdownPosition({ top: buttonRect.bottom, left: buttonRect.right, isBottom });
-                                    }
-                                  }}
-                                  variant="ghost"
-                                  className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-                                >
-                                  <ManageIcon className="h-5 w-5" />
-                                </Button>
+                                  return (
+                                    <ActionDropdown
+                                      itemId={targetJob.id}
+                                      openId={openDropdownId}
+                                      onToggle={(id) => {
+                                        setOpenDropdownId(id);
+                                        setSelectedJob(id ? targetJob : null);
+                                      }}
+                                      actions={[
+                                        {
+                                          label: 'ดูรายละเอียด',
+                                          icon: EyeIcon,
+                                          onClick: () => {
+                                            setReportReadOnly(true);
+                                            handleWriteReport(targetJob);
+                                          },
+                                        },
+                                        {
+                                          label: 'แก้ไขใบรายงานบริการ',
+                                          icon: DocumentCheckIcon,
+                                          onClick: () => {
+                                            setReportReadOnly(false);
+                                            handleWriteReport(targetJob);
+                                          },
+                                        },
+                                      ]}
+                                    />
+                                  );
+                                })()}
                               </div>
                             </td>
                           </tr>
@@ -2905,24 +2780,6 @@ const Job: React.FC<JobProps> = ({
             </div>
           )}
 
-          {selectedJob && openDropdownId && dropdownPosition && (
-            <div
-              ref={dropdownRef}
-              style={{
-                position: 'fixed',
-                top: dropdownPosition.isBottom ? 'auto' : dropdownPosition.top + 4,
-                bottom: dropdownPosition.isBottom
-                  ? window.innerHeight - dropdownPosition.top + 36
-                  : 'auto',
-                left: dropdownPosition.left,
-              }}
-              className="z-[100] w-48 sm:w-52 rounded-2xl shadow-xl bg-white ring-1 ring-black/5 transform -translate-x-full overflow-hidden"
-            >
-              <div className="py-2" role="menu">
-                {renderActions()}
-              </div>
-            </div>
-          )}
         </div>
       </div>
       </div>

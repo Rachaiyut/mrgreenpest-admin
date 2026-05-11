@@ -1,11 +1,12 @@
 // ===== React / Core =====
-import React, { 
-  useCallback, 
-  useEffect, 
-  useMemo, 
-  useRef, 
-  useState 
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
 } from 'react';
+import { ActionDropdown, ActionDropdownItem } from '../../../components/common/ActionDropdown';
 
 // ===== Absolute Imports =====
 import {
@@ -40,12 +41,11 @@ import Swal from '@/src/utils/swal';
 import {
   DocumentCheckIcon,
   EyeIcon,
-  ManageIcon,
   PencilIcon,
   PlusIcon,
   TrashIcon,
   XCircleIcon,
-  LoadingIcon, // 🌟 เพิ่ม LoadingIcon
+  LoadingIcon,
 } from '../../../assets/icons/Icons';
 
 // FIX: Define props interface
@@ -88,8 +88,6 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
   const [editingReceipt, setEditingReceipt] = useState<GoodsReceiveType | null>(null);
   const [selectedReceipt, setSelectedReceipt] = useState<GoodsReceiveType | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -226,20 +224,13 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
     setOpenDropdownId(null);
   };
 
-  const handleDropdownToggle = (event: React.MouseEvent<HTMLButtonElement>, receiptId: string) => {
-    event.stopPropagation();
-    if (openDropdownId === receiptId) {
-      setOpenDropdownId(null);
-      setSelectedReceipt(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      const found = receipts.find((r) => r.id === receiptId);
+  const handleDropdownToggle = (id: string | null) => {
+    setOpenDropdownId(id);
+    if (id) {
+      const found = receipts.find((r) => r.id === id);
       setSelectedReceipt(found || null);
-      setOpenDropdownId(receiptId);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
+    } else {
+      setSelectedReceipt(null);
     }
   };
 
@@ -354,115 +345,50 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
     }
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (dropdownRef.current && dropdownRef.current.contains(event.target as Node)) return;
-      if ((event.target as HTMLElement).closest('button[data-receipt-id]')) return;
-      setOpenDropdownId(null);
-    };
+  const getActions = (receipt: GoodsReceiveType): ActionDropdownItem[] => {
+    const isPending = receipt.status === 'PENDING' || receipt.status === Status.PendingApproval;
+    const isDraft = receipt.status === 'DRAFT' || receipt.status === Status.Draft;
+    const canCancel = isDraft || isPending;
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openDropdownId]);
-
-  const renderActions = () => {
-    if (!selectedReceipt) return null;
-
-    const actions = [
-      <a
-        key="view"
-        href="#"
-        onClick={(e) => {
-          e.preventDefault();
-          handleViewDetails(selectedReceipt);
-        }}
-        className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
-        role="menuitem"
-      >
-        <EyeIcon className="mr-3 h-5 w-5 text-slate-400" aria-hidden="true" />
-        <span>ดูรายละเอียด</span>
-      </a>,
+    return [
+      {
+        label: 'ดูรายละเอียด',
+        icon: EyeIcon,
+        onClick: () => handleViewDetails(receipt),
+      },
+      {
+        label: 'อนุมัติ',
+        icon: DocumentCheckIcon,
+        onClick: () => handleApprovalAction('approve'),
+        isPrimary: true,
+        hidden: !isPending,
+      },
+      {
+        label: 'ไม่อนุมัติ',
+        icon: XCircleIcon,
+        onClick: () => handleApprovalAction('reject'),
+        isDanger: true,
+        hidden: !isPending,
+      },
+      {
+        label: 'แก้ไข',
+        icon: PencilIcon,
+        onClick: () => {
+          setEditingReceipt(receipt);
+          setIsViewMode(false);
+          setIsAddModalOpen(true);
+          setOpenDropdownId(null);
+        },
+        hidden: !isDraft,
+      },
+      {
+        label: 'ยกเลิก',
+        icon: TrashIcon,
+        onClick: () => handleCancel(receipt.id),
+        isDanger: true,
+        hidden: !canCancel,
+      },
     ];
-
-    if (selectedReceipt.status === 'PENDING' || selectedReceipt.status === Status.PendingApproval) {
-      actions.push(
-        <a
-          key="approve"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            handleApprovalAction('approve');
-          }}
-          className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
-          role="menuitem"
-        >
-          <DocumentCheckIcon className="mr-3 h-5 w-5 text-emerald-500" aria-hidden="true" />
-          <span>อนุมัติ</span>
-        </a>,
-        <a
-          key="reject"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            handleApprovalAction('reject');
-          }}
-          className="flex items-center w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-          role="menuitem"
-        >
-          <XCircleIcon className="mr-3 h-5 w-5 text-red-500" aria-hidden="true" />
-          <span>ไม่อนุมัติ</span>
-        </a>
-      );
-    }
-
-    if (selectedReceipt.status === 'DRAFT' || selectedReceipt.status === Status.Draft) {
-      actions.push(
-        <a
-          key="edit"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            setEditingReceipt(selectedReceipt);
-            setIsViewMode(false);
-            setIsAddModalOpen(true);
-            setOpenDropdownId(null);
-          }}
-          className="flex items-center w-full text-left px-4 py-2.5 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
-          role="menuitem"
-        >
-          <PencilIcon className="mr-3 h-5 w-5 text-blue-500" aria-hidden="true" />
-          <span>แก้ไข</span>
-        </a>
-      );
-    }
-
-    if (
-      selectedReceipt.status === 'DRAFT' ||
-      selectedReceipt.status === 'PENDING' ||
-      selectedReceipt.status === Status.Draft ||
-      selectedReceipt.status === Status.PendingApproval
-    ) {
-      actions.push(
-        <a
-          key="cancel"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            handleCancel(selectedReceipt.id);
-          }}
-          className="flex items-center w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-          role="menuitem"
-        >
-          <TrashIcon className="mr-3 h-5 w-5 text-red-500" aria-hidden="true" />
-          <span>ยกเลิก</span>
-        </a>
-      );
-    }
-
-    return actions;
   };
 
   return (
@@ -635,16 +561,12 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                             </div>
                           </div>
                         </div>
-                        <Button
-                          data-receipt-id={receipt.id}
-                          onClick={(e) => handleDropdownToggle(e, receipt.id)}
-                          variant="icon"
-                          title="ตัวเลือก"
-                          className="shrink-0"
-                        >
-                          <span className="sr-only">Open options</span>
-                          <ManageIcon className="h-5 w-5 text-slate-400 hover:text-slate-600" aria-hidden="true" />
-                        </Button>
+                        <ActionDropdown
+                          itemId={receipt.id}
+                          openId={openDropdownId}
+                          onToggle={handleDropdownToggle}
+                          actions={getActions(receipt)}
+                        />
                       </div>
                     </li>
                   );
@@ -717,12 +639,12 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                         })()}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
-                        <div className="inline-block">
-                          <Button data-receipt-id={receipt.id} onClick={(e) => handleDropdownToggle(e, receipt.id)} variant="icon" title="ตัวเลือก">
-                            <span className="sr-only">Open options</span>
-                            <ManageIcon className="h-5 w-5 text-slate-400 hover:text-slate-600" aria-hidden="true" />
-                          </Button>
-                        </div>
+                        <ActionDropdown
+                          itemId={receipt.id}
+                          openId={openDropdownId}
+                          onToggle={handleDropdownToggle}
+                          actions={getActions(receipt)}
+                        />
                       </td>
                     </tr>
                   ))
@@ -752,26 +674,6 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Dropdown Menu */}
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30 overflow-hidden"
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-1" role="none">
-            {renderActions()}
-          </div>
-        </div>
-      )}
 
       {/* 🟢 6. เปลี่ยน onCreateReceipt ส่งเป็น handleCreate แทน */}
       {isAddModalOpen && (

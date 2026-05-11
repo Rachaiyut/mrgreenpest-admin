@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActionDropdown, ActionDropdownItem } from '../../../components/common/ActionDropdown';
 import Swal from '@/src/utils/swal';
 
 // ===== Types =====
@@ -32,7 +33,6 @@ import { formatThaiDate } from '../../../utils/date';
 // ===== Assets =====
 import {
   PlusIcon,
-  ManageIcon,
   EyeIcon,
   DocumentCheckIcon,
   XCircleIcon,
@@ -71,8 +71,6 @@ const ReturnToSupplierPage: React.FC = () => {
 
   // ===== Dropdown =====
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // ===== Master fetch on mount =====
   useEffect(() => {
@@ -278,106 +276,42 @@ const ReturnToSupplierPage: React.FC = () => {
     }
   };
 
-  const handleDropdownToggle = (event: React.MouseEvent<HTMLButtonElement>, id: string) => {
-    event.stopPropagation();
-    if (openDropdownId === id) {
-      setOpenDropdownId(null);
-      setSelectedReturn(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setSelectedReturn(returns.find((r) => r.id === id) || null);
-      setOpenDropdownId(id);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (dropdownRef.current && dropdownRef.current.contains(event.target as Node)) return;
-      if ((event.target as HTMLElement).closest('button[data-return-id]')) return;
-      setOpenDropdownId(null);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdownId]);
-
-  const renderActions = () => {
-    if (!selectedReturn) return null;
-    const status = (selectedReturn as { status?: string }).status;
-
-    const actions = [
-      <a
-        key="view"
-        href="#"
-        onClick={(e) => { e.preventDefault(); handleViewDetails(selectedReturn); }}
-        className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
-        role="menuitem"
-      >
-        <EyeIcon className="mr-3 h-5 w-5 text-slate-400" aria-hidden="true" />
-        <span>ดูรายละเอียด</span>
-      </a>,
+  const getActions = (item: ReturnToSupplier): ActionDropdownItem[] => {
+    const status = (item as { status?: string }).status;
+    return [
+      {
+        label: 'ดูรายละเอียด',
+        icon: EyeIcon,
+        onClick: () => handleViewDetails(item),
+      },
+      {
+        label: 'อนุมัติ',
+        icon: DocumentCheckIcon,
+        onClick: () => handleApprove(item),
+        isPrimary: true,
+        hidden: status !== 'PENDING',
+      },
+      {
+        label: 'ไม่อนุมัติ',
+        icon: XCircleIcon,
+        onClick: () => handleReject(item),
+        isDanger: true,
+        hidden: status !== 'PENDING',
+      },
+      {
+        label: 'แก้ไข',
+        icon: PencilIcon,
+        onClick: () => handleEdit(item),
+        hidden: status !== 'DRAFT',
+      },
+      {
+        label: 'ยกเลิก',
+        icon: TrashIcon,
+        onClick: () => handleCancel(item),
+        isDanger: true,
+        hidden: status !== 'DRAFT' && status !== 'PENDING',
+      },
     ];
-
-    if (status === 'PENDING') {
-      actions.push(
-        <a
-          key="approve"
-          href="#"
-          onClick={(e) => { e.preventDefault(); handleApprove(selectedReturn); }}
-          className="flex items-center w-full text-left px-4 py-2.5 text-sm text-emerald-600 hover:bg-emerald-50 transition-colors"
-          role="menuitem"
-        >
-          <DocumentCheckIcon className="mr-3 h-5 w-5 text-emerald-500" aria-hidden="true" />
-          <span>อนุมัติ</span>
-        </a>,
-        <a
-          key="reject"
-          href="#"
-          onClick={(e) => { e.preventDefault(); handleReject(selectedReturn); }}
-          className="flex items-center w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-          role="menuitem"
-        >
-          <XCircleIcon className="mr-3 h-5 w-5 text-red-500" aria-hidden="true" />
-          <span>ไม่อนุมัติ</span>
-        </a>,
-      );
-    }
-
-    if (status === 'DRAFT') {
-      actions.push(
-        <a
-          key="edit"
-          href="#"
-          onClick={(e) => { e.preventDefault(); handleEdit(selectedReturn); }}
-          className="flex items-center w-full text-left px-4 py-2.5 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
-          role="menuitem"
-        >
-          <PencilIcon className="mr-3 h-5 w-5 text-blue-500" aria-hidden="true" />
-          <span>แก้ไข</span>
-        </a>,
-      );
-    }
-
-    if (status === 'DRAFT' || status === 'PENDING') {
-      actions.push(
-        <a
-          key="cancel"
-          href="#"
-          onClick={(e) => { e.preventDefault(); handleCancel(selectedReturn); }}
-          className="flex items-center w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-          role="menuitem"
-        >
-          <TrashIcon className="mr-3 h-5 w-5 text-red-500" aria-hidden="true" />
-          <span>ยกเลิก</span>
-        </a>,
-      );
-    }
-
-    return actions;
   };
 
   return (
@@ -547,17 +481,12 @@ const ReturnToSupplierPage: React.FC = () => {
                         })()}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
-                        <div className="inline-block">
-                          <Button
-                            data-return-id={r.id}
-                            onClick={(e) => handleDropdownToggle(e, r.id)}
-                            variant="icon"
-                            title="ตัวเลือก"
-                          >
-                            <span className="sr-only">Open options</span>
-                            <ManageIcon className="h-5 w-5 text-slate-400 hover:text-slate-600" aria-hidden="true" />
-                          </Button>
-                        </div>
+                        <ActionDropdown
+                          itemId={r.id}
+                          openId={openDropdownId}
+                          onToggle={setOpenDropdownId}
+                          actions={getActions(r)}
+                        />
                       </td>
                     </tr>
                   ))
@@ -576,25 +505,6 @@ const ReturnToSupplierPage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30 overflow-hidden"
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-1" role="none">
-            {renderActions()}
-          </div>
-        </div>
-      )}
 
       <AddReturnToSupplierModal
         isOpen={isAddModalOpen}

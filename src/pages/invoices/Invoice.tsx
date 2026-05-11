@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Swal from '@/src/utils/swal';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
@@ -7,7 +7,6 @@ import { formatThaiDate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import {
-  ManageIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
@@ -24,6 +23,7 @@ import { Pagination } from '../../components/common/Pagination';
 import { Invoice } from '../../types';
 import { InvoiceStatus, InvoiceStatusLabel, InvoiceStatusColor } from '../../types/enums/invoice';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common';
 import { Input, Button } from '../../components/common/FormControls';
 import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { useData } from '../../contexts/DataContext';
@@ -198,45 +198,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     return { total, pending, paid, overdue, totalValue, pendingValue };
   }, [invoiceData]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        openInvoiceDropdownId &&
-        invoiceDropdownRef.current &&
-        !invoiceDropdownRef.current.contains(event.target as Node) &&
-        !(event.target as HTMLElement).closest('button[data-invoice-id]')
-      ) {
-        setOpenInvoiceDropdownId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openInvoiceDropdownId]);
-
   const handleInvoiceItemsPerPageChange = (size: number) => {
     setInvoiceItemsPerPage(size);
     setInvoicePage(1);
-  };
-
-  const handleInvoiceDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    id: string,
-    invoice: Invoice
-  ) => {
-    event.stopPropagation();
-    if (openInvoiceDropdownId === id) {
-      setOpenInvoiceDropdownId(null);
-    } else {
-      const rect = event.currentTarget.getBoundingClientRect();
-      setSelectedInvoice(invoice);
-      setOpenInvoiceDropdownId(id);
-      setInvoiceDropdownPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.right + window.scrollX,
-      });
-    }
   };
 
   const handleViewInvoice = (invoice: Invoice) => {
@@ -718,20 +682,63 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                               </span>
                             )}
                           </Button>
-                          <Button
-                            data-invoice-id={i.id}
-                            onClick={(e) =>
-                              handleInvoiceDropdownToggle(e, i.id, i)
-                            }
-                            variant="icon"
-                            title="ตัวเลือก"
-                          >
-                            <span className="sr-only">Open options</span>
-                            <ManageIcon
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </Button>
+                          <ActionDropdown
+                            itemId={i.id}
+                            openId={openInvoiceDropdownId}
+                            onToggle={(id) => {
+                              setOpenInvoiceDropdownId(id);
+                              if (id) setSelectedInvoice(invoiceData.find((inv) => inv.id === id) || i);
+                            }}
+                            actions={(() => {
+                              const invoice = i;
+                              const actions: ActionDropdownItem[] = [
+                                { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewInvoice(invoice) },
+                                {
+                                  label: 'ตรวจสอบรายรับ',
+                                  icon: CheckCircleIcon,
+                                  isPrimary: true,
+                                  hidden: !(invoice.status === InvoiceStatus.PENDING_REVIEW && hasPermission('APPROVE_INVOICE')),
+                                  onClick: () => handleAdminApprove(invoice),
+                                },
+                                {
+                                  label: 'อนุมัติรายรับ',
+                                  icon: CheckCircleIcon,
+                                  isPrimary: true,
+                                  hidden: !(invoice.status === InvoiceStatus.PENDING_ACCOUNTING_REVIEW && hasPermission('APPROVE_RECEIPT')),
+                                  onClick: () => handleAccountingApprove(invoice),
+                                },
+                                {
+                                  label: 'ปฏิเสธรายรับ',
+                                  icon: TrashIcon,
+                                  hidden: !(
+                                    (invoice.status === InvoiceStatus.PENDING_REVIEW || invoice.status === InvoiceStatus.PENDING_ACCOUNTING_REVIEW) &&
+                                    (hasPermission('APPROVE_INVOICE') || hasPermission('APPROVE_RECEIPT'))
+                                  ),
+                                  onClick: () => handleRejectApproval(invoice),
+                                },
+                                { label: 'แก้ไข', icon: PencilIcon, onClick: () => handleEditInvoice(invoice) },
+                                {
+                                  label: 'ส่ง Link Portal ลูกค้า',
+                                  icon: DocumentTextIcon,
+                                  isPrimary: true,
+                                  onClick: async () => {
+                                    if (!invoice.customer_id) return;
+                                    try {
+                                      const response = await CustomerApi.generatePortalToken(invoice.customer_id);
+                                      const portalUrl = `${window.location.origin}/portal?token=${response.token}`;
+                                      await navigator.clipboard.writeText(portalUrl);
+                                      Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                                    } catch {
+                                      Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์ Portal ได้', icon: 'error', confirmButtonColor: '#d33' });
+                                    }
+                                    setOpenInvoiceDropdownId(null);
+                                  },
+                                },
+                                { label: 'ยกเลิก', icon: TrashIcon, isDanger: true, onClick: () => handleDeleteInvoice(invoice) },
+                              ];
+                              return actions;
+                            })()}
+                          />
                         </div>
                       </td>
                     </tr>

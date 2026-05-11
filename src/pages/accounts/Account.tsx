@@ -1,11 +1,11 @@
-import { FC, MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import Swal from '@/src/utils/swal';
 
 import { Card } from '../../components/common/Card';
 import { Input, Button } from '../../components/common/FormControls';
 import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { Pagination } from '../../components/common/Pagination';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 import { AccountApi } from '../../api/account';
 import { Account as AccountType } from '../../types/entity/account.interface';
 import {
@@ -14,7 +14,6 @@ import {
   LoadingIcon,
   BuildingOfficeIcon,
   CurrencyDollarIcon,
-  ManageIcon,
   XCircleIcon,
   EyeIcon,
 } from '../../assets/icons/Icons';
@@ -57,32 +56,6 @@ const AccountPage: FC = () => {
   const [historyAccount, setHistoryAccount] = useState<AccountType | null>(null);
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const handleDropdownToggle = (event: ReactMouseEvent<HTMLButtonElement>, accountId: string) => {
-    event.stopPropagation();
-    if (openDropdownId === accountId) {
-      setOpenDropdownId(null);
-      return;
-    }
-    const rect = event.currentTarget.getBoundingClientRect();
-    setOpenDropdownId(accountId);
-    setDropdownPosition({ top: rect.bottom + window.scrollY, left: rect.right + window.scrollX });
-  };
-
-  useEffect(() => {
-    if (!openDropdownId) return;
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        if (!(e.target as HTMLElement).closest('button[data-account-id]')) {
-          setOpenDropdownId(null);
-        }
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [openDropdownId]);
 
   const fetchList = useCallback(async () => {
     setIsLoading(true);
@@ -156,41 +129,12 @@ const AccountPage: FC = () => {
     }
   };
 
-  const getActionItems = (a: AccountType) => {
-    const items: Array<{ label: string; icon: typeof PencilIcon; color: string; hoverBg: string; onClick: () => void }> = [
-      {
-        label: 'ดูประวัติรายการ',
-        icon: EyeIcon,
-        color: 'text-slate-700',
-        hoverBg: 'hover:bg-slate-50',
-        onClick: () => openHistory(a),
-      },
-      {
-        label: 'บันทึกรายการ',
-        icon: CurrencyDollarIcon,
-        color: 'text-amber-600',
-        hoverBg: 'hover:bg-amber-50',
-        onClick: () => openTransaction(a),
-      },
-      {
-        label: 'แก้ไข',
-        icon: PencilIcon,
-        color: 'text-blue-600',
-        hoverBg: 'hover:bg-blue-50',
-        onClick: () => openEdit(a),
-      },
-    ];
-    if (a.is_active) {
-      items.push({
-        label: 'ปิดบัญชี',
-        icon: XCircleIcon,
-        color: 'text-red-600',
-        hoverBg: 'hover:bg-red-50',
-        onClick: () => handleCloseAccount(a),
-      });
-    }
-    return items;
-  };
+  const getActionItems = (a: AccountType): ActionDropdownItem[] => [
+    { label: 'ดูประวัติรายการ', icon: EyeIcon, onClick: () => openHistory(a) },
+    { label: 'บันทึกรายการ', icon: CurrencyDollarIcon, isPrimary: true, onClick: () => openTransaction(a) },
+    { label: 'แก้ไข', icon: PencilIcon, onClick: () => openEdit(a) },
+    { label: 'ปิดบัญชี', icon: XCircleIcon, isDanger: true, onClick: () => handleCloseAccount(a), hidden: !a.is_active },
+  ];
 
   const handleSubmitAccount = async (payload: Partial<AccountType>) => {
     try {
@@ -350,16 +294,12 @@ const AccountPage: FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center text-sm">
-                        <div className="inline-block">
-                          <Button
-                            variant="icon"
-                            data-account-id={a.id}
-                            onClick={(e) => handleDropdownToggle(e, a.id)}
-                          >
-                            <span className="sr-only">จัดการ</span>
-                            <ManageIcon className="h-5 w-5" aria-hidden="true" />
-                          </Button>
-                        </div>
+                        <ActionDropdown
+                          actions={getActionItems(a)}
+                          itemId={a.id}
+                          openId={openDropdownId}
+                          onToggle={setOpenDropdownId}
+                        />
                       </td>
                     </tr>
                   ))
@@ -385,43 +325,6 @@ const AccountPage: FC = () => {
         </div>
       </div>
 
-      {openDropdownId &&
-        dropdownPosition &&
-        createPortal(
-          <div
-            ref={dropdownRef}
-            style={{
-              position: 'absolute',
-              top: `${dropdownPosition.top}px`,
-              left: `${dropdownPosition.left}px`,
-              transform: 'translateX(-100%)',
-            }}
-            className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
-            role="menu"
-          >
-            <div className="py-1">
-              {(() => {
-                const a = accounts.find((x) => x.id === openDropdownId);
-                if (!a) return null;
-                return getActionItems(a).map((action, i) => (
-                  <button
-                    key={i}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      action.onClick();
-                    }}
-                    className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
-                    role="menuitem"
-                  >
-                    <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                    <span>{action.label}</span>
-                  </button>
-                ));
-              })()}
-            </div>
-          </div>,
-          document.body,
-        )}
 
       <AccountModal
         isOpen={modalOpen}

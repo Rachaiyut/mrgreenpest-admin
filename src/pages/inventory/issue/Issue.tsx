@@ -3,14 +3,12 @@ import Swal from '@/src/utils/swal';
 import {
   FC,
   Fragment,
-  MouseEvent as ReactMouseEvent,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
-import { createPortal } from 'react-dom';
 
 // ===== Types =====
 import {
@@ -62,7 +60,6 @@ import {
   CurrencyDollarIcon,
   DocumentCheckIcon,
   EyeIcon,
-  ManageIcon,
   PencilIcon,
   PlusIcon,
   TrashIcon,
@@ -72,6 +69,7 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
 } from '../../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../../components/common/ActionDropdown';
 
 const Issue: FC = () => {
   const { handlers } = useData();
@@ -210,11 +208,6 @@ const Issue: FC = () => {
   const currentUser = users.length > 0 ? users[0] : null;
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedWithdrawal, setSelectedWithdrawal] =
     useState<WithdrawalType | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -368,22 +361,6 @@ const Issue: FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleDropdownToggle = (
-    event: ReactMouseEvent<HTMLButtonElement>,
-    withdrawalId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === withdrawalId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setOpenDropdownId(withdrawalId);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
 
   const handleApprovalAction = async (
     action: 'approve' | 'reject',
@@ -747,138 +724,68 @@ const Issue: FC = () => {
     }
   }, [isDetailsModalOpen]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        if (
-          !(event.target as HTMLElement).closest('button[data-withdrawal-id]')
-        ) {
-          setOpenDropdownId(null);
-        }
-      }
-    };
 
-    if (openDropdownId) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openDropdownId]);
-
-  type ActionEntry =
-    | {
-        kind: 'item';
-        label: string;
-        icon: typeof EyeIcon;
-        color: string;
-        hoverBg: string;
-        onClick: () => void;
-      }
-    | { kind: 'header'; label: string }
-    | { kind: 'divider' };
-
-  const getActionItems = (withdrawal: WithdrawalType): ActionEntry[] => {
-    const actions: ActionEntry[] = [
-      {
-        kind: 'item',
-        label: 'ดูรายละเอียด',
-        icon: EyeIcon,
-        color: 'text-slate-700',
-        hoverBg: 'hover:bg-slate-50',
-        onClick: () => handleViewDetails(withdrawal),
-      },
-    ];
-
+  const getActionItems = (withdrawal: WithdrawalType): ActionDropdownItem[] => {
     const isDraft = withdrawal.lifecycle === WithdrawalLifecycle.DRAFT;
     const isSubmitted = withdrawal.lifecycle === WithdrawalLifecycle.SUBMITTED;
 
-    // แก้ไขได้เฉพาะตอน DRAFT — ส่งแล้วห้ามแก้ (ใช้ flow approve/reject แทน)
-    if (isDraft) {
-      actions.push({
-        kind: 'item',
+    const canApproveStock = hasPermission('APPROVE_STOCK_ISSUE_NOTE');
+    const canApproveExpense = hasPermission('APPROVE_EXPENSE_ISSUE_NOTE');
+    const stockPending = (withdrawal.items || []).some((i) => i.status === WithdrawalLineStatus.PENDING);
+    const expensePending = (withdrawal.expenses || []).some((e) => e.status === WithdrawalLineStatus.PENDING);
+    const showStockActions = categoryTab !== 'expense';
+    const showExpenseActions = categoryTab !== 'stock';
+    const stockGroup = isSubmitted && stockPending && canApproveStock && showStockActions;
+    const expenseGroup = isSubmitted && expensePending && canApproveExpense && showExpenseActions;
+
+    return [
+      {
+        label: 'ดูรายละเอียด',
+        icon: EyeIcon,
+        onClick: () => handleViewDetails(withdrawal),
+      },
+      {
         label: 'แก้ไข',
         icon: PencilIcon,
-        color: 'text-blue-600',
-        hoverBg: 'hover:bg-blue-50',
         onClick: () => handleEditWithdrawal(withdrawal),
-      });
-    }
-
-    if (isSubmitted) {
-      const canApproveStock = hasPermission('APPROVE_STOCK_ISSUE_NOTE');
-      const canApproveExpense = hasPermission('APPROVE_EXPENSE_ISSUE_NOTE');
-      const stockPending = (withdrawal.items || []).some((i) => i.status === WithdrawalLineStatus.PENDING);
-      const expensePending = (withdrawal.expenses || []).some((e) => e.status === WithdrawalLineStatus.PENDING);
-      const showStockActions = categoryTab !== 'expense';
-      const showExpenseActions = categoryTab !== 'stock';
-      const stockGroup = stockPending && canApproveStock && showStockActions;
-      const expenseGroup = expensePending && canApproveExpense && showExpenseActions;
-
-      if (stockGroup) {
-        actions.push(
-          { kind: 'divider' },
-          { kind: 'header', label: 'สินค้า / สารเคมี' },
-          {
-            kind: 'item',
-            label: 'อนุมัติ',
-            icon: DocumentCheckIcon,
-            color: 'text-green-600',
-            hoverBg: 'hover:bg-green-50',
-            onClick: () => handleApprovalAction('approve', undefined, 'STOCK'),
-          },
-          {
-            kind: 'item',
-            label: 'ไม่อนุมัติ',
-            icon: XCircleIcon,
-            color: 'text-red-600',
-            hoverBg: 'hover:bg-red-50',
-            onClick: () => handleApprovalAction('reject', undefined, 'STOCK'),
-          },
-        );
-      }
-
-      if (expenseGroup) {
-        actions.push(
-          { kind: 'divider' },
-          { kind: 'header', label: 'ค่าใช้จ่าย' },
-          {
-            kind: 'item',
-            label: 'อนุมัติ',
-            icon: DocumentCheckIcon,
-            color: 'text-green-600',
-            hoverBg: 'hover:bg-green-50',
-            onClick: () => handleApprovalAction('approve', undefined, 'EXPENSE'),
-          },
-          {
-            kind: 'item',
-            label: 'ไม่อนุมัติ',
-            icon: XCircleIcon,
-            color: 'text-red-600',
-            hoverBg: 'hover:bg-red-50',
-            onClick: () => handleApprovalAction('reject', undefined, 'EXPENSE'),
-          },
-        );
-      }
-
-      actions.push(
-        { kind: 'divider' },
-        {
-          kind: 'item',
-          label: 'ยกเลิก',
-          icon: TrashIcon,
-          color: 'text-red-600',
-          hoverBg: 'hover:bg-red-50',
-          onClick: () => handleCancel(withdrawal.id),
-        },
-      );
-    }
-
-    return actions;
+        hidden: !isDraft,
+      },
+      {
+        label: 'อนุมัติ (สินค้า)',
+        icon: DocumentCheckIcon,
+        onClick: () => handleApprovalAction('approve', undefined, 'STOCK'),
+        isPrimary: true,
+        hidden: !stockGroup,
+      },
+      {
+        label: 'ไม่อนุมัติ (สินค้า)',
+        icon: XCircleIcon,
+        onClick: () => handleApprovalAction('reject', undefined, 'STOCK'),
+        isDanger: true,
+        hidden: !stockGroup,
+      },
+      {
+        label: 'อนุมัติ (ค่าใช้จ่าย)',
+        icon: DocumentCheckIcon,
+        onClick: () => handleApprovalAction('approve', undefined, 'EXPENSE'),
+        isPrimary: true,
+        hidden: !expenseGroup,
+      },
+      {
+        label: 'ไม่อนุมัติ (ค่าใช้จ่าย)',
+        icon: XCircleIcon,
+        onClick: () => handleApprovalAction('reject', undefined, 'EXPENSE'),
+        isDanger: true,
+        hidden: !expenseGroup,
+      },
+      {
+        label: 'ยกเลิก',
+        icon: TrashIcon,
+        onClick: () => handleCancel(withdrawal.id),
+        isDanger: true,
+        hidden: !isSubmitted,
+      },
+    ];
   };
 
   return (
@@ -1278,21 +1185,12 @@ const Issue: FC = () => {
                             className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <div className="inline-block">
-                              <Button
-                                variant="icon"
-                                data-withdrawal-id={withdrawal.id}
-                                onClick={(e) =>
-                                  handleDropdownToggle(e, withdrawal.id)
-                                }
-                              >
-                                <span className="sr-only">จัดการ</span>
-                                <ManageIcon
-                                  className="h-5 w-5"
-                                  aria-hidden="true"
-                                />
-                              </Button>
-                            </div>
+                            <ActionDropdown
+                              itemId={withdrawal.id}
+                              openId={openDropdownId}
+                              onToggle={setOpenDropdownId}
+                              actions={getActionItems(withdrawal)}
+                            />
                           </td>
                         </tr>
                         {isExpanded && (
@@ -1447,64 +1345,6 @@ const Issue: FC = () => {
           )}
         </div>
       </div>
-
-      {openDropdownId &&
-        dropdownPosition &&
-        createPortal(
-          <div
-            ref={dropdownRef}
-            style={{
-              position: 'absolute',
-              top: `${dropdownPosition.top}px`,
-              left: `${dropdownPosition.left}px`,
-              transform: 'translateX(-100%)',
-            }}
-            className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
-            role="menu"
-            aria-orientation="vertical"
-          >
-            <div className="py-1" role="none">
-              {(() => {
-                const withdrawal = withdrawals.find(
-                  (w) => w.id === openDropdownId
-                );
-                if (!withdrawal) return null;
-
-                return getActionItems(withdrawal).map((action, index) => {
-                  if (action.kind === 'divider') {
-                    return <div key={`d-${index}`} className="my-1 border-t border-slate-100" role="none" />;
-                  }
-                  if (action.kind === 'header') {
-                    return (
-                      <div
-                        key={`h-${index}`}
-                        className="px-4 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400"
-                        role="none"
-                      >
-                        {action.label}
-                      </div>
-                    );
-                  }
-                  return (
-                    <button
-                      key={index}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        action.onClick();
-                      }}
-                      className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
-                      role="menuitem"
-                    >
-                      <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                      <span>{action.label}</span>
-                    </button>
-                  );
-                });
-              })()}
-            </div>
-          </div>,
-          document.body
-        )}
 
       <WithdrawalModal
         isOpen={isAddModalOpen}

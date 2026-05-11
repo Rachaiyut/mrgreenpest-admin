@@ -1,13 +1,14 @@
 import { isFieldRole } from '@/src/utils/role';
 import { usePermissions } from '@/src/hooks/usePermissions';
 // ===== React =====
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 // ===== Types =====
 import { FieldJob, JobStatus, User } from "@/src/types";
 
 // ===== Components =====
 import { Button } from "@/src/components/common";
+import { ActionDropdown, ActionDropdownItem } from "@/src/components/common/ActionDropdown";
 import { JobStatusLabel } from '@/src/types/enums/job';
 
 // ===== Utils =====
@@ -20,7 +21,6 @@ import {
   JobDateIcon,
   JobRemarkIcon,
   JobTimeIcon,
-  ManageIcon,
   MapPinIcon,
   PencilIcon,
   PhoneIcon,
@@ -31,10 +31,7 @@ import Swal from "sweetalert2";
 
 const JobCard: React.FC<{
   job: FieldJob;
-  onDropdownToggle: (
-    event: React.MouseEvent<HTMLButtonElement>,
-    jobId: string
-  ) => void;
+  getActions: (job: FieldJob) => ActionDropdownItem[];
   onStatusChange: (jobId: string, newStatus: JobStatus) => void;
   onViewDetails: (job: FieldJob) => void;
   onWriteReport: (job: FieldJob) => void;
@@ -45,7 +42,7 @@ const JobCard: React.FC<{
   isAnyJobInProgressForCurrentUser: boolean;
 }> = ({
   job,
-  onDropdownToggle,
+  getActions,
   onStatusChange,
   onViewDetails,
   onWriteReport,
@@ -103,6 +100,8 @@ const JobCard: React.FC<{
     const hasActions =
       (job.status as unknown as JobStatus) !== JobStatus.Completed &&
       String(job.api_status || '').toUpperCase() !== 'WAITING_CLEAR';
+
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
     const handleApprove = () => {
       if (!onApprove) return;
@@ -294,15 +293,14 @@ const JobCard: React.FC<{
                 </p>
               )}
             </div>
-            <Button
-              data-job-id={job.id}
-              onClick={(e) => onDropdownToggle(e, job.id)}
-              variant="ghost"
-              className="p-1.5 h-auto rounded-lg hover:bg-slate-100 -mr-1 -mt-1 flex-shrink-0"
-              title="ตัวเลือก"
-            >
-              <ManageIcon className="h-4 w-4 text-slate-400" />
-            </Button>
+            <div className="-mr-1 -mt-1 shrink-0">
+              <ActionDropdown
+                actions={getActions(job)}
+                itemId={job.id}
+                openId={openDropdownId}
+                onToggle={setOpenDropdownId}
+              />
+            </div>
           </div>
           <div className="mt-2">
             {(() => {

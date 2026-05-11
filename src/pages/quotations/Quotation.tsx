@@ -12,7 +12,6 @@ import { formatThaiDate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
 import {
   PlusIcon,
-  ManageIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
@@ -53,6 +52,7 @@ const getStatusLabel = (q: Quotation): string => {
 
 import { QuotationModal } from '../../components/features/quotations/QuotationModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common';
 import { Modal } from '../../components/common/Modal';
 import { Input, Button } from '../../components/common/FormControls';
 import { DropdownSelect } from '@/src/components/common/DropdownSelect';
@@ -146,11 +146,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Cancellation reason state
 
@@ -200,42 +195,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     setCurrentPage(1);
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    quotationId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === quotationId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setSelectedQuotation(
-        quotations?.find((q) => q.id === quotationId) || null
-      );
-      setOpenDropdownId(quotationId);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      )
-        return;
-      if ((event.target as HTMLElement).closest('button[data-quotation-id]'))
-        return;
-      setOpenDropdownId(null);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdownId]);
 
   const handleCreate = () => {
     setModalMode('create');
@@ -851,14 +810,117 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                               {loadingPdfId === q.id ? 'กำลังโหลด...' : 'ดู PDF'}
                             </button>
                             </div>
-                            <Button
-                              data-quotation-id={q.id}
-                              onClick={(e) => handleDropdownToggle(e, q.id)}
-                              variant="icon"
-                              title="จัดการ"
-                            >
-                              <ManageIcon className="h-5 w-5" />
-                            </Button>
+                            <ActionDropdown
+                              itemId={q.id}
+                              openId={openDropdownId}
+                              onToggle={(id) => {
+                                setOpenDropdownId(id);
+                                if (id) setSelectedQuotation(quotations?.find((qt) => qt.id === id) || null);
+                              }}
+                              actions={(() => {
+                                const quotation = q;
+                                const actions: ActionDropdownItem[] = [
+                                  {
+                                    label: 'ดูรายละเอียด',
+                                    icon: EyeIcon,
+                                    onClick: () => {
+                                      setSelectedQuotation(quotation);
+                                      setModalMode('detail');
+                                      setIsModalOpen(true);
+                                      setOpenDropdownId(null);
+                                    },
+                                  },
+                                  {
+                                    label: 'ตรวจสอบและอนุมัติ',
+                                    icon: CheckCircleIcon,
+                                    isPrimary: true,
+                                    hidden: !(quotation.status === QuotationStatus.PENDING_APPROVAL && hasPermission('APPROVE_QUOTATION')),
+                                    onClick: () => {
+                                      setSelectedQuotation(quotation);
+                                      setOpenDropdownId(null);
+                                      approveQuotationWithDetails(quotation);
+                                    },
+                                  },
+                                  {
+                                    label: 'แก้ไข',
+                                    icon: PencilIcon,
+                                    onClick: () => {
+                                      setSelectedQuotation(quotation);
+                                      setModalMode('edit');
+                                      setIsModalOpen(true);
+                                      setOpenDropdownId(null);
+                                    },
+                                  },
+                                  {
+                                    label: 'สร้างฉบับใหม่',
+                                    icon: DocumentTextIcon,
+                                    onClick: () => {
+                                      setSelectedQuotation(quotation);
+                                      setModalMode('revise');
+                                      setIsModalOpen(true);
+                                      setOpenDropdownId(null);
+                                    },
+                                  },
+                                  {
+                                    label: 'เปลี่ยนสถานะ',
+                                    icon: CheckCircleIcon,
+                                    hidden: isFieldRole(currentUser?.roleType),
+                                    onClick: () => {
+                                      setSelectedQuotation(quotation);
+                                      setTargetStatus(quotation.status);
+                                      setIsStatusModalOpen(true);
+                                      setOpenDropdownId(null);
+                                    },
+                                  },
+                                  {
+                                    label: 'ส่ง Link Portal ลูกค้า',
+                                    icon: DocumentTextIcon,
+                                    isPrimary: true,
+                                    hidden: isFieldRole(currentUser?.roleType),
+                                    onClick: async () => {
+                                      if (!quotation.customer_id) return;
+                                      try {
+                                        const response = await CustomerApi.generatePortalToken(quotation.customer_id);
+                                        const portalUrl = `${window.location.origin}/portal?token=${response.token}`;
+                                        await navigator.clipboard.writeText(portalUrl);
+                                        Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                                      } catch {
+                                        Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์ Portal ได้', icon: 'error', confirmButtonColor: '#d33' });
+                                      }
+                                      setOpenDropdownId(null);
+                                    },
+                                  },
+                                  {
+                                    label: 'ส่ง Link เซ็นเอกสาร',
+                                    icon: PencilIcon,
+                                    isPrimary: true,
+                                    hidden: !(quotation.status === QuotationStatus.DRAFT || quotation.status === QuotationStatus.APPROVED || quotation.status === QuotationStatus.PENDING_SIGNATURE),
+                                    onClick: async () => {
+                                      if (!quotation.customer_id) return;
+                                      try {
+                                        const response = await QuotationApi.generateSigningLink(quotation.customer_id, quotation.id);
+                                        const signingUrl = `${window.location.origin}/portal/sign?token=${response.token}`;
+                                        await navigator.clipboard.writeText(signingUrl);
+                                        Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์เซ็นเอกสารสำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                                      } catch {
+                                        Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์เซ็นได้', icon: 'error', confirmButtonColor: '#d33' });
+                                      }
+                                      setOpenDropdownId(null);
+                                    },
+                                  },
+                                  {
+                                    label: 'ยกเลิก',
+                                    icon: XCircleIcon,
+                                    isDanger: true,
+                                    onClick: async () => {
+                                      setOpenDropdownId(null);
+                                      await openCancellationSwal(quotation);
+                                    },
+                                  },
+                                ];
+                                return actions;
+                              })()}
+                            />
                           </div>
                         </td>
                       </tr>
@@ -880,163 +942,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         </div>
       </div>
 
-      {/* Dropdown Menu */}
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-30 border border-slate-100 overflow-hidden"
-        >
-          <div className="py-1">
-            <button
-              onClick={() => {
-                if (!selectedQuotation || loadingPdfId) return;
-                setLoadingPdfId(selectedQuotation.id);
-                setOpenDropdownId(null);
-                (async () => {
-                  try {
-                    const blob = await PrintApi.getById(selectedQuotation.id);
-                    const safe = (s: string) => s.replace(/[\\/:*?"<>|]/g, '').trim().replace(/\s+/g, '_');
-                    const customer = customers?.find((c) => c.id === (selectedQuotation as any).customer_id);
-                    const firstName = (customer?.first_name || '').trim();
-                    const lastName = customer?.last_name && customer.last_name !== '-' ? customer.last_name.trim() : '';
-                    const parts: string[] = [];
-                    if (firstName || lastName) {
-                      if (firstName) parts.push(safe(firstName));
-                      if (lastName) parts.push(safe(lastName));
-                    } else {
-                      const cn = ((selectedQuotation as any).customer_name || '').replace(/\s*-\s*$/, '').trim();
-                      if (cn) cn.split(/\s+/).forEach((p: string) => parts.push(safe(p)));
-                      else parts.push('ลูกค้า');
-                    }
-                    const filename = [safe(selectedQuotation.code || selectedQuotation.id), ...parts].filter(Boolean).join('_') + '.pdf';
-
-                    const namedFile = new File([blob], filename, { type: 'application/pdf' });
-                    const url = window.URL.createObjectURL(namedFile);
-                    const win = window.open(url, '_blank');
-                    if (!win) {
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = filename;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                    }
-                    setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
-                  } catch (error) {
-                    console.error('Error viewing PDF:', error);
-                    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิด PDF ได้' });
-                  } finally {
-                    setLoadingPdfId(null);
-                  }
-                })();
-              }}
-              className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 items-center gap-3 transition-colors flex md:hidden"
-            >
-              <EyeIcon className="w-4 h-4 text-green-500" />
-              {loadingPdfId === selectedQuotation?.id ? 'กำลังโหลด...' : 'ดู PDF'}
-            </button>
-            <button
-              onClick={handleViewDetails}
-              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-            >
-              <EyeIcon className="w-4 h-4 text-slate-400" />
-              ดูรายละเอียด
-            </button>
-            {selectedQuotation?.status === QuotationStatus.PENDING_APPROVAL && hasPermission('APPROVE_QUOTATION') && (
-              <button
-                onClick={handleApprove}
-                className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
-              >
-                <CheckCircleIcon className="w-4 h-4 text-green-500" />
-                ตรวจสอบและอนุมัติ
-              </button>
-            )}
-            <button
-              onClick={handleEdit}
-              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-            >
-              <PencilIcon className="w-4 h-4 text-slate-400" />
-              แก้ไข
-            </button>
-            <button
-              onClick={handleRevise}
-              className="w-full px-4 py-2.5 text-left text-sm text-amber-600 hover:bg-amber-50 flex items-center gap-3 transition-colors"
-            >
-              <DocumentTextIcon className="w-4 h-4 text-amber-500" />
-              สร้างฉบับใหม่
-            </button>
-            {!isFieldRole(currentUser?.roleType) && (
-              <button
-                onClick={handleStatusClick}
-                className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-              >
-                <CheckCircleIcon className="w-4 h-4 text-slate-400" />
-                เปลี่ยนสถานะ
-              </button>
-            )}
-            {!isFieldRole(currentUser?.roleType) && (
-              <button
-                onClick={async () => {
-                  if (!selectedQuotation?.customer_id) return;
-                  try {
-                    const response = await CustomerApi.generatePortalToken(selectedQuotation.customer_id);
-                    const portalUrl = `${window.location.origin}/portal?token=${response.token}`;
-                    await navigator.clipboard.writeText(portalUrl);
-                    Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
-                  } catch {
-                    Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์ Portal ได้', icon: 'error', confirmButtonColor: '#d33' });
-                  }
-                  setOpenDropdownId(null);
-                }}
-                className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
-              >
-                <DocumentTextIcon className="w-4 h-4 text-green-500" />
-                ส่ง Link Portal ลูกค้า
-              </button>
-            )}
-            {(selectedQuotation?.status === QuotationStatus.DRAFT || selectedQuotation?.status === QuotationStatus.APPROVED || selectedQuotation?.status === QuotationStatus.PENDING_SIGNATURE) && (
-              <button
-                onClick={async () => {
-                  if (!selectedQuotation?.customer_id) return;
-                  try {
-                    const response = await QuotationApi.generateSigningLink(selectedQuotation.customer_id, selectedQuotation.id);
-                    const signingUrl = `${window.location.origin}/portal/sign?token=${response.token}`;
-                    await navigator.clipboard.writeText(signingUrl);
-                    Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์เซ็นเอกสารสำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
-                  } catch {
-                    Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์เซ็นได้', icon: 'error', confirmButtonColor: '#d33' });
-                  }
-                  setOpenDropdownId(null);
-                }}
-                className="w-full px-4 py-2.5 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-3 transition-colors"
-              >
-                <PencilIcon className="w-4 h-4 text-emerald-500" />
-                ส่ง Link เซ็นเอกสาร
-              </button>
-            )}
-            <hr className="my-1 border-slate-100" />
-            <button
-              onClick={async () => {
-                const q = selectedQuotation;
-                setOpenDropdownId(null);
-                if (q) {
-                  await openCancellationSwal(q);
-                }
-              }}
-              className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
-            >
-              <XCircleIcon className="w-4 h-4 text-red-500" />
-              ยกเลิก
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Modals */}
       <QuotationModal

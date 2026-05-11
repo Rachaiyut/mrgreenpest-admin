@@ -1,7 +1,6 @@
 import Swal from '@/src/utils/swal';
 import React, {
   useState,
-  useRef,
   useEffect,
   useMemo,
   useCallback,
@@ -18,11 +17,13 @@ import { PackageApi, CategoryApi, Unit as UnitApi } from '@/src/api';
 import {
   LoadingIcon,
   PlusIcon,
-  ManageIcon,
   PencilIcon,
   EyeIcon,
   PackageIcon,
+  XCircleIcon,
+  CheckCircleIcon,
 } from '../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 
 import {
   PackageModal,
@@ -39,11 +40,6 @@ const Packages: React.FC = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
@@ -172,38 +168,17 @@ const Packages: React.FC = () => {
     }
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    pkgId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === pkgId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setOpenDropdownId(pkgId);
-      setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      )
-        return;
-      if ((event.target as HTMLElement).closest('button[data-package-id]'))
-        return;
-      setOpenDropdownId(null);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdownId]);
+  const getPackageActions = (pkg: Package): ActionDropdownItem[] => [
+    { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(pkg) },
+    { label: 'แก้ไข', icon: PencilIcon, onClick: () => handleEdit(pkg) },
+    {
+      label: pkg.is_active !== false ? 'ปิดใช้งาน' : 'เปิดใช้งาน',
+      icon: pkg.is_active !== false ? XCircleIcon : CheckCircleIcon,
+      isDanger: pkg.is_active !== false,
+      isPrimary: pkg.is_active === false,
+      onClick: () => handleToggleStatus(pkg),
+    },
+  ];
 
   return (
     <div className="flex-1 flex flex-col">
@@ -402,17 +377,12 @@ const Packages: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
-                      <div className="inline-block text-left">
-                        <Button
-                          data-package-id={pkg.id}
-                          onClick={(e) => handleDropdownToggle(e, pkg.id)}
-                          variant="icon"
-                          title="ตัวเลือก"
-                        >
-                          <span className="sr-only">Open options</span>
-                          <ManageIcon className="h-5 w-5" />
-                        </Button>
-                      </div>
+                      <ActionDropdown
+                        actions={getPackageActions(pkg)}
+                        itemId={pkg.id}
+                        openId={openDropdownId}
+                        onToggle={setOpenDropdownId}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -432,70 +402,6 @@ const Packages: React.FC = () => {
         )}
       </div>
 
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-            zIndex: 50,
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
-        >
-          <div className="py-1">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                const pkg = packages.find((p) => p.id === openDropdownId);
-                if (pkg) handleViewDetails(pkg);
-              }}
-              className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-            >
-              <EyeIcon className="mr-3 h-5 w-5" />
-              <span>ดูรายละเอียด</span>
-            </button>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                const pkg = packages.find((p) => p.id === openDropdownId);
-                if (pkg) handleEdit(pkg);
-              }}
-              className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-            >
-              <PencilIcon className="mr-3 h-5 w-5" />
-              <span>แก้ไข</span>
-            </button>
-            {(() => {
-              const pkg = packages.find((p) => p.id === openDropdownId);
-              if (!pkg) return null;
-              return (
-                <button
-                  onClick={() => handleToggleStatus(pkg)}
-                  className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                >
-                  {pkg.is_active !== false ? (
-                    <>
-                      <svg className="mr-3 h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
-                      </svg>
-                      <span>ปิดใช้งาน</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="mr-3 h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                      </svg>
-                      <span>เปิดใช้งาน</span>
-                    </>
-                  )}
-                </button>
-              );
-            })()}
-          </div>
-        </div>
-      )}
 
       <PackageModal
         isOpen={isModalOpen}

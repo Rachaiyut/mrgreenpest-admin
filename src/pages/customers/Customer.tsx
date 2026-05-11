@@ -1,6 +1,5 @@
 import React, {
   useState,
-  useRef,
   useEffect,
   useCallback,
 } from 'react';
@@ -25,6 +24,7 @@ import {
 import CustomerCardView from './CustomerCardView';
 import CustomerListView from './CustomerListView';
 import { Card } from '../../components/common/Card';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common';
 
 import { CustomerModal } from '../../components/features/customers/CustomerModal';
 
@@ -53,11 +53,6 @@ const Customers: React.FC = () => {
   
   const [isContractsModalOpen, setIsContractsModalOpen] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<'list' | 'card'>('list');
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
@@ -280,65 +275,21 @@ const Customers: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const getActions = (customer?: Customer | null) => {
-    const isInactive = customer?.status === 'INACTIVE';
+  const getActions = (customer: Customer): ActionDropdownItem[] => {
+    const isInactive = customer.status === 'INACTIVE';
     return [
-      { label: 'ดูรายละเอียด', icon: EyeIcon },
-      { label: 'แก้ไข', icon: PencilIcon },
-      { label: 'คัดลอก Link Portal', icon: DocumentCheckIcon },
-      { label: 'สัญญา', icon: DocumentTextIcon },
-      { label: 'ต่อสัญญา', icon: RenewIcon },
-      { label: 'ประวัติ', icon: ClipboardDocumentListIcon },
-      { label: 'ติดตาม', icon: DocumentCheckIcon },
+      { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(customer) },
+      { label: 'แก้ไข', icon: PencilIcon, onClick: () => handleEditClick(customer) },
+      { label: 'คัดลอก Link Portal', icon: DocumentCheckIcon, onClick: () => handleCopyPortalLink(customer) },
+      { label: 'สัญญา', icon: DocumentTextIcon, onClick: () => { setSelectedCustomer(customer); setIsContractsModalOpen(true); setOpenDropdownId(null); } },
+      { label: 'ต่อสัญญา', icon: RenewIcon, onClick: () => { setSelectedCustomer(customer); setIsContractsModalOpen(true); setOpenDropdownId(null); } },
+      { label: 'ประวัติ', icon: ClipboardDocumentListIcon, onClick: () => { setSelectedCustomer(customer); setIsHistoryModalOpen(true); setOpenDropdownId(null); } },
+      { label: 'ติดตาม', icon: DocumentCheckIcon, onClick: () => { setSelectedCustomer(customer); setIsFollowUpModalOpen(true); setOpenDropdownId(null); } },
       isInactive
-        ? { label: 'เปิดใช้งาน', icon: RenewIcon, isPrimary: true }
-        : { label: 'ปิดใช้งาน', icon: TrashIcon, isDanger: true },
+        ? { label: 'เปิดใช้งาน', icon: RenewIcon, onClick: () => handleReactivate(customer), isPrimary: true }
+        : { label: 'ปิดใช้งาน', icon: TrashIcon, onClick: () => handleDelete(customer), isDanger: true },
     ];
   };
-
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    customerId: string
-  ) => {
-    event.stopPropagation();
-    if (openDropdownId === customerId) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      const dropdownHeight = 320; // approximate dropdown height
-      const spaceBelow = window.innerHeight - buttonRect.bottom;
-      const showAbove = spaceBelow < dropdownHeight;
-
-      setOpenDropdownId(customerId);
-      setDropdownPosition({
-        top: showAbove
-          ? buttonRect.top + window.scrollY - dropdownHeight
-          : buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      ) {
-        return;
-      }
-      if ((event.target as HTMLElement).closest('button[data-customer-id]')) {
-        return;
-      }
-      setOpenDropdownId(null);
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [openDropdownId]);
 
   return (
     <div className="flex-1 flex flex-col">
@@ -424,7 +375,9 @@ const Customers: React.FC = () => {
             <div className="overflow-auto w-full flex-1 relative">
               <CustomerListView
                 customers={customers}
-                handleDropdownToggle={handleDropdownToggle}
+                getActions={getActions}
+                openDropdownId={openDropdownId}
+                setOpenDropdownId={setOpenDropdownId}
                 currentPage={currentPage}
                 itemsPerPage={itemsPerPage}
               />
@@ -446,7 +399,9 @@ const Customers: React.FC = () => {
              <div className="flex-1">
               <CustomerCardView
                 customers={customers}
-                handleDropdownToggle={handleDropdownToggle}
+                getActions={getActions}
+                openDropdownId={openDropdownId}
+                setOpenDropdownId={setOpenDropdownId}
               />
             </div>
             {totalItems > 0 && (
@@ -463,75 +418,6 @@ const Customers: React.FC = () => {
           </div>
         )}
       </div>
-
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-1" role="none">
-            {getActions(customers.find((c) => c.id === openDropdownId)).map((action) => (
-              <a
-                key={action.label}
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const customer = customers.find(
-                    (c) => c.id === openDropdownId
-                  );
-                  if (!customer) {
-                    setOpenDropdownId(null);
-                    return;
-                  }
-
-                  if (action.label === 'ดูรายละเอียด') {
-                    handleViewDetails(customer);
-                  } else if (action.label === 'แก้ไข') {
-                    handleEditClick(customer);
-                  } else if (action.label === 'คัดลอก Link Portal') {
-                    handleCopyPortalLink(customer);
-                  } else if (action.label === 'สัญญา') {
-                    setSelectedCustomer(customer);
-                    setIsContractsModalOpen(true);
-                    setOpenDropdownId(null);
-                  } else if (action.label === 'ต่อสัญญา') {
-                    setSelectedCustomer(customer);
-                    setIsContractsModalOpen(true);
-                    setOpenDropdownId(null);
-                  } else if (action.label === 'ประวัติ') {
-                    setSelectedCustomer(customer);
-                    setIsHistoryModalOpen(true);
-                    setOpenDropdownId(null);
-                  } else if (action.label === 'ติดตาม') {
-                    setSelectedCustomer(customer);
-                    setIsFollowUpModalOpen(true);
-                    setOpenDropdownId(null);
-                  } else if (action.label === 'ปิดใช้งาน') {
-                    handleDelete(customer);
-                  } else if (action.label === 'เปิดใช้งาน') {
-                    handleReactivate(customer);
-                  } else {
-                    setOpenDropdownId(null);
-                  }
-                }}
-                className={`flex items-center w-full text-left px-4 py-2.5 text-sm transition-colors ${(action as any).isDanger ? 'text-red-600 hover:bg-red-50' : (action as any).isPrimary ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-700 hover:bg-slate-100'}`}
-                role="menuitem"
-              >
-                <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                <span>{action.label}</span>
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* 🟢 6. เรียกใช้งาน CustomerModal แทน 2 ตัวเก่า */}
       <CustomerModal

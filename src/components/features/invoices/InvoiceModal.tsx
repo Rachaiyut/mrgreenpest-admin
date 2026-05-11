@@ -30,7 +30,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   const footer = (
     <div className="flex gap-3 w-full justify-end">
       <Button variant="secondary" onClick={onClose} type="button">
-        ยกเลิก
+        {mode === 'detail' ? 'ปิด' : 'ยกเลิก'}
       </Button>
       {mode !== 'detail' && (
         <Button variant="primary" type="submit" form="invoice-form">

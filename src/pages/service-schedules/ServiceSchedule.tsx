@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo, FC } from 'react';
+import { useState, useEffect, useCallback, useMemo, FC } from 'react';
 import Swal from '@/src/utils/swal';
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
@@ -11,9 +11,9 @@ import {
   PencilIcon,
   EyeIcon,
   DocumentTextIcon,
-  ManageIcon,
   LoadingIcon,
 } from '../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { isManagementRole, isExecutiveRole } from '../../utils/role';
 import { PackageApi } from '../../api/package';
@@ -91,9 +91,6 @@ const ServiceSchedulePage: FC = () => {
 
   // Dropdown state
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
-  const [selectedSchedule, setSelectedSchedule] = useState<ServiceSchedule | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Load packages
   useEffect(() => {
@@ -125,35 +122,6 @@ const ServiceSchedulePage: FC = () => {
     fetchSchedules();
   }, [fetchSchedules]);
 
-  // Dropdown handlers
-  const handleDropdownToggle = (event: React.MouseEvent<HTMLButtonElement>, schedule: ServiceSchedule) => {
-    event.stopPropagation();
-    if (openDropdownId === schedule.id) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setSelectedSchedule(schedule);
-      setOpenDropdownId(schedule.id);
-      const dropdownHeight = 200;
-      const spaceBelow = window.innerHeight - buttonRect.bottom;
-      const showAbove = spaceBelow < dropdownHeight;
-      setDropdownPosition({
-        top: showAbove ? buttonRect.top - dropdownHeight : buttonRect.bottom,
-        left: buttonRect.right,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (dropdownRef.current && dropdownRef.current.contains(event.target as Node)) return;
-      if ((event.target as HTMLElement).closest('button[data-schedule-id]')) return;
-      setOpenDropdownId(null);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdownId]);
 
   // Open modals
   const openCreateModal = () => {
@@ -450,14 +418,34 @@ const ServiceSchedulePage: FC = () => {
                             )}
                             {loadingPdfId === schedule.id ? 'กำลังโหลด...' : 'ดู PDF'}
                           </Button>
-                          <Button
-                            data-schedule-id={schedule.id}
-                            onClick={(e) => handleDropdownToggle(e, schedule)}
-                            variant="icon"
-                            title="จัดการ"
-                          >
-                            <ManageIcon className="h-5 w-5" />
-                          </Button>
+                          <ActionDropdown
+                            actions={(() => {
+                              const actions: ActionDropdownItem[] = [
+                                {
+                                  label: 'ดูรายละเอียด',
+                                  icon: EyeIcon,
+                                  onClick: () => openDetailModal(schedule),
+                                },
+                                {
+                                  label: 'แก้ไข',
+                                  icon: PencilIcon,
+                                  onClick: () => openEditModal(schedule),
+                                  hidden: !canEdit,
+                                },
+                                {
+                                  label: 'ลบ',
+                                  icon: TrashIcon,
+                                  isDanger: true,
+                                  onClick: () => handleDelete(schedule.id),
+                                  hidden: !canEdit,
+                                },
+                              ];
+                              return actions;
+                            })()}
+                            itemId={schedule.id}
+                            openId={openDropdownId}
+                            onToggle={setOpenDropdownId}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -477,56 +465,6 @@ const ServiceSchedulePage: FC = () => {
           </div>
       </div>
 
-      {/* Dropdown Menu */}
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'fixed',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-30 border border-slate-100 overflow-hidden"
-        >
-          <div className="py-1">
-            <button
-              onClick={() => {
-                if (selectedSchedule) openDetailModal(selectedSchedule);
-                setOpenDropdownId(null);
-              }}
-              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-            >
-              <EyeIcon className="w-4 h-4 text-slate-400" />
-              ดูรายละเอียด
-            </button>
-            {canEdit && (
-              <>
-                <button
-                  onClick={() => {
-                    if (selectedSchedule) openEditModal(selectedSchedule);
-                    setOpenDropdownId(null);
-                  }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-                >
-                  <PencilIcon className="w-4 h-4 text-slate-400" />
-                  แก้ไข
-                </button>
-                <button
-                  onClick={() => {
-                    if (selectedSchedule) handleDelete(selectedSchedule.id);
-                    setOpenDropdownId(null);
-                  }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
-                >
-                  <TrashIcon className="w-4 h-4 text-red-400" />
-                  ลบ
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Role warning */}
       {!canEdit && (

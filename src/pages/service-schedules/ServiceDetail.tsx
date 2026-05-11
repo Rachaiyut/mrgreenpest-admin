@@ -10,9 +10,9 @@ import {
   PencilIcon,
   EyeIcon,
   DocumentTextIcon,
-  ManageIcon,
   LoadingIcon,
 } from '../../assets/icons/Icons';
+import { ActionDropdown, ActionDropdownItem } from '../../components/common/ActionDropdown';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { isManagementRole, isExecutiveRole } from '../../utils/role';
 import { formatThaiDate } from '../../utils/date';
@@ -491,9 +491,6 @@ const ServiceDetailPage: FC = () => {
 
   // Dropdown
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
-  const [selectedDetail, setSelectedDetail] = useState<IServiceProcedureTemplate | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchDetails = useCallback(async () => {
     setLoading(true);
@@ -511,35 +508,6 @@ const ServiceDetailPage: FC = () => {
     fetchDetails();
   }, [fetchDetails]);
 
-  // Dropdown
-  const handleDropdownToggle = (event: React.MouseEvent<HTMLButtonElement>, detail: IServiceProcedureTemplate) => {
-    event.stopPropagation();
-    if (openDropdownId === detail.id) {
-      setOpenDropdownId(null);
-    } else {
-      const buttonRect = event.currentTarget.getBoundingClientRect();
-      setSelectedDetail(detail);
-      setOpenDropdownId(detail.id);
-      const dropdownHeight = 200;
-      const spaceBelow = window.innerHeight - buttonRect.bottom;
-      const showAbove = spaceBelow < dropdownHeight;
-      setDropdownPosition({
-        top: showAbove ? buttonRect.top - dropdownHeight : buttonRect.bottom,
-        left: buttonRect.right,
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!openDropdownId) return;
-      if (dropdownRef.current && dropdownRef.current.contains(event.target as Node)) return;
-      if ((event.target as HTMLElement).closest('button[data-detail-id]')) return;
-      setOpenDropdownId(null);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdownId]);
 
   // Modal
   const openCreateModal = () => {
@@ -760,14 +728,34 @@ const ServiceDetailPage: FC = () => {
                             {loadingPdfId === detail.id ? <LoadingIcon className="h-3.5 w-3.5 animate-spin" /> : <EyeIcon className="h-3.5 w-3.5" />}
                             <span>{loadingPdfId === detail.id ? 'กำลังโหลด...' : 'ดู PDF'}</span>
                           </button>
-                          <Button
-                            data-detail-id={detail.id}
-                            onClick={(e) => handleDropdownToggle(e, detail)}
-                            variant="icon"
-                            title="จัดการ"
-                          >
-                            <ManageIcon className="h-5 w-5" />
-                          </Button>
+                          <ActionDropdown
+                            actions={(() => {
+                              const actions: ActionDropdownItem[] = [
+                                {
+                                  label: 'ดูรายละเอียด',
+                                  icon: EyeIcon,
+                                  onClick: () => openDetailModal(detail),
+                                },
+                                {
+                                  label: 'แก้ไข',
+                                  icon: PencilIcon,
+                                  onClick: () => openEditModal(detail),
+                                  hidden: !canEdit,
+                                },
+                                {
+                                  label: 'ลบ',
+                                  icon: TrashIcon,
+                                  isDanger: true,
+                                  onClick: () => handleDelete(detail.id),
+                                  hidden: !canEdit,
+                                },
+                              ];
+                              return actions;
+                            })()}
+                            itemId={detail.id}
+                            openId={openDropdownId}
+                            onToggle={setOpenDropdownId}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -787,56 +775,6 @@ const ServiceDetailPage: FC = () => {
           </div>
       </div>
 
-      {/* Dropdown Menu */}
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'fixed',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-30 border border-slate-100 overflow-hidden"
-        >
-          <div className="py-1">
-            <button
-              onClick={() => {
-                if (selectedDetail) openDetailModal(selectedDetail);
-                setOpenDropdownId(null);
-              }}
-              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-            >
-              <EyeIcon className="w-4 h-4 text-slate-400" />
-              ดูรายละเอียด
-            </button>
-            {canEdit && (
-              <>
-                <button
-                  onClick={() => {
-                    if (selectedDetail) openEditModal(selectedDetail);
-                    setOpenDropdownId(null);
-                  }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-                >
-                  <PencilIcon className="w-4 h-4 text-slate-400" />
-                  แก้ไข
-                </button>
-                <button
-                  onClick={() => {
-                    if (selectedDetail) handleDelete(selectedDetail.id);
-                    setOpenDropdownId(null);
-                  }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
-                >
-                  <TrashIcon className="w-4 h-4 text-red-400" />
-                  ลบ
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Modal */}
       {isModalOpen && (

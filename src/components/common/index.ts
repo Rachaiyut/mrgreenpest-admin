@@ -1,3 +1,4 @@
+export * from './ActionDropdown';
 export * from './ApprovalModal';
 export * from './Card';
 export * from './ConfirmationModal';

@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import type { FieldJob, JobStatus, User } from '@/src/types';
+import type { ActionDropdownItem } from '@/src/components/common/ActionDropdown';
 
 // Assets
 import { ChevronLeftIcon, ChevronRightIcon } from '@/src/assets/icons/Icons';
@@ -19,7 +20,7 @@ interface JobKanbanBoardProps {
   emptyColumnText?: string;
   accentColorClass?: string;
   showScrollButtons?: boolean;
-  onDropdownToggle: (e: React.MouseEvent<HTMLButtonElement>, jobId: string) => void;
+  getActions: (job: FieldJob) => ActionDropdownItem[];
   onStatusChange: (jobId: string, newStatus: JobStatus) => void;
   onViewDetails: (job: FieldJob) => void;
   onWriteReport: (job: FieldJob) => void;
@@ -36,7 +37,7 @@ const JobKanbanBoard: React.FC<JobKanbanBoardProps> = ({
   emptyColumnText = 'ไม่มีงาน',
   accentColorClass = 'bg-primary',
   showScrollButtons = true,
-  onDropdownToggle,
+  getActions,
   onStatusChange,
   onViewDetails,
   onWriteReport,
@@ -102,7 +103,7 @@ const JobKanbanBoard: React.FC<JobKanbanBoardProps> = ({
                     <JobCard
                       key={job.id}
                       job={job}
-                      onDropdownToggle={onDropdownToggle}
+                      getActions={getActions}
                       onStatusChange={onStatusChange}
                       onViewDetails={onViewDetails}
                       onWriteReport={onWriteReport}
