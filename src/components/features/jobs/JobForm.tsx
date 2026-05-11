@@ -1163,23 +1163,29 @@ export const JobForm: React.FC<JobFormProps> = ({
                 <div className="p-2 bg-slate-100 rounded-lg text-slate-600"><CalendarIcon className="w-5 h-5" /></div>กำหนดการปฏิบัติงาน
               </h3>
               <div className="space-y-6">
-                <div className="p-4 rounded-xl border bg-slate-50/50 border-slate-200/60">
-                  <FormField label="วันที่ปฏิบัติงาน *" htmlFor="work-date" className="mb-0">
-                    <DatePicker
-                      id="work-date"
-                      selected={workDate ? new Date(workDate) : null}
-                      onChange={(date: Date | null) => { if (date) { const yyyy = date.getFullYear(); const mm = String(date.getMonth() + 1).padStart(2, '0'); const dd = String(date.getDate()).padStart(2, '0'); setWorkDate(`${yyyy}-${mm}-${dd}`); setErrors((prev) => ({ ...prev, work_date: '' })); } else { setWorkDate(''); } }}
-                      minDate={mode === 'add' ? new Date() : undefined}
-                      disabled={mode === 'edit'}
-                      wrapperClassName="w-full"
-                      placeholderText="dd/mm/yyyy"
-                      dateFormat="dd/MM/yyyy"
-                      locale="th"
-                      className={`w-full h-12 pr-10 rounded-md focus:border-primary focus:ring-primary shadow-sm ${mode === 'edit' ? 'bg-slate-100 text-slate-500 border-slate-300 cursor-not-allowed' : 'bg-white text-slate-700 border-slate-300'}`}
-                    />
-                  </FormField>
-                  {errors.work_date && <p className="text-red-500 text-xs mt-1 font-medium">{errors.work_date}</p>}
-                </div>
+                {(() => {
+                  const isUnassigned = String(jobToEdit?.api_status || '').toUpperCase() === 'UNASSIGNED';
+                  const dateDisabled = mode === 'edit' && !isUnassigned;
+                  return (
+                    <div className="p-4 rounded-xl border bg-slate-50/50 border-slate-200/60">
+                      <FormField label="วันที่ปฏิบัติงาน *" htmlFor="work-date" className="mb-0">
+                        <DatePicker
+                          id="work-date"
+                          selected={workDate ? new Date(workDate) : null}
+                          onChange={(date: Date | null) => { if (date) { const yyyy = date.getFullYear(); const mm = String(date.getMonth() + 1).padStart(2, '0'); const dd = String(date.getDate()).padStart(2, '0'); setWorkDate(`${yyyy}-${mm}-${dd}`); setErrors((prev) => ({ ...prev, work_date: '' })); } else { setWorkDate(''); } }}
+                          minDate={mode === 'add' || isUnassigned ? new Date() : undefined}
+                          disabled={dateDisabled}
+                          wrapperClassName="w-full"
+                          placeholderText="dd/mm/yyyy"
+                          dateFormat="dd/MM/yyyy"
+                          locale="th"
+                          className={`w-full h-12 pr-10 rounded-md focus:border-primary focus:ring-primary shadow-sm ${dateDisabled ? 'bg-slate-100 text-slate-500 border-slate-300 cursor-not-allowed' : 'bg-white text-slate-700 border-slate-300'}`}
+                        />
+                      </FormField>
+                      {errors.work_date && <p className="text-red-500 text-xs mt-1 font-medium">{errors.work_date}</p>}
+                    </div>
+                  );
+                })()}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
                     <FormField label="เวลาเริ่มต้น *" htmlFor="start-time" className="mb-0">
