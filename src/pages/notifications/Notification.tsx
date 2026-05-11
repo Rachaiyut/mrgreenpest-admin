@@ -157,7 +157,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
           <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-sm">
             <Input
               type="search"
-              placeholder="ค้นหา (สัญญา, รหัส, ชื่อ, โทร)"
+              placeholder="ค้นหา (สัญญา, รหัส, ชื่อ, ที่อยู่, เบอร์โทร)"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10"
