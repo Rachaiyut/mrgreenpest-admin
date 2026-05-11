@@ -3,7 +3,6 @@ import Swal from '@/src/utils/swal';
 
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
-import { DropdownSelect } from '../../common';
 import { AccountApi } from '../../../api/account';
 import { Account, AccountTransactionType } from '../../../types/entity/account.interface';
 
@@ -15,6 +14,76 @@ interface Props {
 }
 
 const todayISO = () => new Date().toISOString().substring(0, 10);
+
+const formatTHB = (n: number) =>
+  n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const formatCompactTHB = (n: number): string => {
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  const fmt = (v: number) => v.toLocaleString('th-TH', { maximumFractionDigits: 2 });
+  if (abs >= 1_000_000_000_000) return `${sign}${fmt(abs / 1_000_000_000_000)}T`;
+  if (abs >= 1_000_000_000) return `${sign}${fmt(abs / 1_000_000_000)}B`;
+  if (abs >= 1_000_000) return `${sign}${fmt(abs / 1_000_000)}M`;
+  if (abs >= 10_000) return `${sign}${fmt(abs / 1_000)}K`;
+  return formatTHB(n);
+};
+
+/* ---------- icons ---------- */
+const IconArrowDown: FC<{ className?: string }> = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m0 0l-6-6m6 6l6-6" />
+  </svg>
+);
+const IconArrowUp: FC<{ className?: string }> = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 20V4m0 0l-6 6m6-6l6 6" />
+  </svg>
+);
+const IconAdjust: FC<{ className?: string }> = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h13m0 0l-3-3m3 3l-3 3M20 18H7m0 0l3 3m-3-3l3-3" />
+  </svg>
+);
+const IconBank: FC<{ className?: string }> = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10l9-6 9 6M5 10v9m4-9v9m6-9v9m4-9v9M3 21h18" />
+  </svg>
+);
+
+const TYPE_META: Record<
+  AccountTransactionType,
+  { label: string; color: 'emerald' | 'rose' | 'amber'; icon: FC<{ className?: string }> }
+> = {
+  DEPOSIT: { label: 'เงินเข้า', color: 'emerald', icon: IconArrowDown },
+  WITHDRAW: { label: 'เงินออก', color: 'rose', icon: IconArrowUp },
+  ADJUSTMENT: { label: 'ปรับปรุงยอด', color: 'amber', icon: IconAdjust },
+  TRANSFER: { label: 'โอน', color: 'emerald', icon: IconArrowUp },
+};
+
+const TYPE_CLASSES: Record<
+  'emerald' | 'rose' | 'amber',
+  { active: string; idle: string; iconActive: string; iconIdle: string }
+> = {
+  emerald: {
+    active: 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-500/20',
+    idle: 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30',
+    iconActive: 'bg-emerald-500 text-white',
+    iconIdle: 'bg-emerald-100 text-emerald-600',
+  },
+  rose: {
+    active: 'border-rose-500 bg-rose-50 ring-2 ring-rose-500/20',
+    idle: 'border-slate-200 bg-white hover:border-rose-300 hover:bg-rose-50/30',
+    iconActive: 'bg-rose-500 text-white',
+    iconIdle: 'bg-rose-100 text-rose-600',
+  },
+  amber: {
+    active: 'border-amber-500 bg-amber-50 ring-2 ring-amber-500/20',
+    idle: 'border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50/30',
+    iconActive: 'bg-amber-500 text-white',
+    iconIdle: 'bg-amber-100 text-amber-600',
+  },
+};
 
 export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, onSubmitted }) => {
   const [type, setType] = useState<AccountTransactionType>('DEPOSIT');
@@ -35,14 +104,16 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
 
   if (!account) return null;
 
-  const previewBalance = (() => {
-    const before = Number(account.current_balance || 0);
-    const amt = Number(amount || 0);
-    if (type === 'DEPOSIT') return before + amt;
-    if (type === 'WITHDRAW') return before - amt;
-    if (type === 'ADJUSTMENT') return before + amt;
-    return before;
-  })();
+  const before = Number(account.current_balance || 0);
+  const amt = Number(amount || 0);
+  const previewBalance =
+    type === 'DEPOSIT' ? before + amt :
+    type === 'WITHDRAW' ? before - amt :
+    type === 'ADJUSTMENT' ? before + amt :
+    before;
+  const delta = previewBalance - before;
+  const deltaPositive = delta > 0;
+  const deltaNegative = delta < 0;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -74,80 +145,143 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
       isOpen={isOpen}
       onClose={onClose}
       title={`บันทึกรายการเดินบัญชี · ${account.account_number}`}
-      size="lg"
+      size="2xl"
       footer={
         <div className="flex gap-2 justify-end w-full">
           <Button type="button" onClick={onClose} variant="ghost" className="bg-white text-slate-700 border border-slate-300 hover:bg-slate-50">
             ยกเลิก
           </Button>
           <Button type="submit" form="account-trx-form" variant="primary" disabled={isSaving}>
-            {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
+            {isSaving ? 'กำลังบันทึก...' : 'บันทึกรายการ'}
           </Button>
         </div>
       }
     >
-      <form id="account-trx-form" onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-md bg-slate-50 border border-slate-200">
-          <div>
-            <p className="text-xs text-slate-500">บัญชี</p>
-            <p className="text-sm font-semibold text-slate-800">{account.account_name}</p>
-            <p className="text-xs text-slate-500">{account.bank_name}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-slate-500">ยอดคงเหลือปัจจุบัน</p>
-            <p className="text-lg font-bold text-slate-800 tabular-nums">
-              {Number(account.current_balance || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
-            </p>
+      <form id="account-trx-form" onSubmit={handleSubmit} className="space-y-5">
+        {/* Account info card */}
+        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white px-4 py-3.5 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-lg bg-emerald-100 text-emerald-600 shrink-0">
+                <IconBank className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-800 truncate">{account.account_name}</p>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <p
+                className="text-lg font-bold text-slate-800 tabular-nums leading-tight"
+                title={`${formatTHB(before)} บาท`}
+              >
+                {formatCompactTHB(before)}
+                <span className="text-xs font-medium text-slate-400 ml-1">บาท</span>
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">ประเภทรายการ <span className="text-red-500">*</span></label>
-            <DropdownSelect
-              value={type}
-              onChange={(v) => setType(v as AccountTransactionType)}
-              options={[
-                { value: 'DEPOSIT', label: 'เงินเข้า (Deposit)' },
-                { value: 'WITHDRAW', label: 'เงินออก (Withdraw)' },
-                { value: 'ADJUSTMENT', label: 'ปรับปรุงยอด (Adjustment)' },
-              ]}
-            />
+        {/* Transaction type tiles */}
+        <div>
+          <p className="text-xs font-medium text-slate-600 mb-2">ประเภทรายการ <span className="text-red-500">*</span></p>
+          <div className="grid grid-cols-3 gap-2">
+            {(['DEPOSIT', 'WITHDRAW', 'ADJUSTMENT'] as const).map((t) => {
+              const meta = TYPE_META[t];
+              const Icon = meta.icon;
+              const cls = TYPE_CLASSES[meta.color];
+              const active = type === t;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setType(t)}
+                  className={`relative rounded-xl border-2 transition-all px-3 py-3 text-left ${active ? cls.active : cls.idle}`}
+                >
+                  <div className={`inline-flex items-center justify-center h-8 w-8 rounded-lg mb-2 transition-colors ${active ? cls.iconActive : cls.iconIdle}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-800 leading-tight">{meta.label}</p>
+                </button>
+              );
+            })}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">วันที่รายการ <span className="text-red-500">*</span></label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+        </div>
+
+        {/* Amount hero */}
+        <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3.5">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-medium text-slate-600">จำนวนเงิน <span className="text-red-500">*</span></span>
+            {type === 'ADJUSTMENT' && (
+              <span className="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                ใส่ − ได้ (เช่น -500)
+              </span>
+            )}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">จำนวนเงิน <span className="text-red-500">*</span></label>
-            <Input
+          <div className="flex items-baseline gap-2">
+            <input
               type="number"
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
               required
+              className="flex-1 min-w-0 text-3xl font-bold text-slate-800 bg-transparent border-0 outline-none focus:ring-0 p-0 tabular-nums placeholder:text-slate-300"
             />
-            {type === 'ADJUSTMENT' && (
-              <p className="text-xs text-slate-500 mt-1">Adjustment ใส่เครื่องหมาย − ได้ (เช่น -500 เพื่อลดยอด)</p>
-            )}
+            <span className="text-sm font-medium text-slate-400">{account.currency || 'THB'}</span>
+          </div>
+        </div>
+
+        {/* Secondary fields */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">วันที่รายการ <span className="text-red-500">*</span></label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">เลขอ้างอิง / เช็ค</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">เลขอ้างอิง / เช็ค</label>
             <Input value={refCode} onChange={(e) => setRefCode(e.target.value)} placeholder="เช่น CHQ-0012345" />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-slate-700 mb-1">รายละเอียด</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">รายละเอียด</label>
             <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="เช่น โอนจากบัญชีกลาง" />
           </div>
         </div>
 
-        <div className="p-3 rounded-md bg-emerald-50 border border-emerald-200 text-sm">
-          <p className="text-slate-600">
-            ยอดคงเหลือหลังรายการนี้จะเป็น:{' '}
-            <span className="font-bold text-emerald-700 tabular-nums">
-              {previewBalance.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
-            </span>
-          </p>
+        {/* Balance preview */}
+        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+          <div className="grid grid-cols-3 divide-x divide-slate-100">
+            <div className="px-5 py-4 min-w-0">
+              <p className="text-xs uppercase tracking-wider text-slate-400 font-medium">ยอดก่อน</p>
+              <p
+                className="text-2xl font-bold text-slate-700 tabular-nums mt-1.5 leading-tight truncate"
+                title={`${formatTHB(before)} บาท`}
+              >
+                {formatCompactTHB(before)}
+                <span className="text-xs font-medium text-slate-400 ml-1">บาท</span>
+              </p>
+            </div>
+            <div className="px-5 py-4 min-w-0">
+              <p className="text-xs uppercase tracking-wider text-slate-400 font-medium">การเปลี่ยนแปลง</p>
+              <p
+                className={`text-2xl font-bold tabular-nums mt-1.5 leading-tight truncate ${
+                  deltaPositive ? 'text-emerald-600' : deltaNegative ? 'text-rose-600' : 'text-slate-700'
+                }`}
+                title={`${deltaPositive ? '+' : ''}${formatTHB(delta)} บาท`}
+              >
+                {deltaPositive ? '+' : ''}{formatCompactTHB(delta)}
+                <span className={`text-xs font-medium ml-1 ${deltaPositive ? 'text-emerald-400' : deltaNegative ? 'text-rose-400' : 'text-slate-400'}`}>บาท</span>
+              </p>
+            </div>
+            <div className="px-5 py-4 bg-emerald-50/60 min-w-0">
+              <p className="text-xs uppercase tracking-wider text-emerald-700/80 font-medium">ยอดหลังบันทึก</p>
+              <p
+                className="text-2xl font-bold text-emerald-700 tabular-nums mt-1.5 leading-tight truncate"
+                title={`${formatTHB(previewBalance)} บาท`}
+              >
+                {formatCompactTHB(previewBalance)}
+                <span className="text-xs font-medium text-emerald-600/70 ml-1">บาท</span>
+              </p>
+            </div>
+          </div>
         </div>
       </form>
     </Modal>

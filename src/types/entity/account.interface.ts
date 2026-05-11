@@ -15,6 +15,7 @@ export interface Account extends IBase {
   currency: string;
   is_active: boolean;
   notes?: string;
+  qr_code?: string;
   created_by?: string;
   updated_by?: string;
 }
