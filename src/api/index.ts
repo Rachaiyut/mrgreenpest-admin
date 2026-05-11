@@ -31,3 +31,4 @@ export * from './price-engine';
 export * from './role';
 export * from './storage';
 export * from './account';
+export * from './payment';
