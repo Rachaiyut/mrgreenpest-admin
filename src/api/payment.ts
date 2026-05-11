@@ -19,6 +19,11 @@ class PaymentService extends AuthService {
     const res = await this.http.post(this.path, data);
     return res.data;
   }
+
+  async update(id: string, data: { payment_proof?: string; notes?: string }): Promise<any> {
+    const res = await this.http.patch(`${this.path}/${id}`, data);
+    return res.data;
+  }
 }
 
 export const PaymentApi = new PaymentService();

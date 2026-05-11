@@ -814,7 +814,6 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             {selectedInvoice &&
               selectedInvoice.status !== InvoiceStatus.PAID &&
               selectedInvoice.status !== InvoiceStatus.CANCELLED &&
-              selectedInvoice.status !== InvoiceStatus.PENDING_REVIEW &&
               selectedInvoice.status !== InvoiceStatus.PENDING_ACCOUNTING_REVIEW && (
                 <button
                   className="w-full px-4 py-2.5 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-3 transition-colors"
