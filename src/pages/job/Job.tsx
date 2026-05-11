@@ -277,7 +277,7 @@ const Job: React.FC<JobProps> = ({
               end_time: job.end_date,
               actual_start_time: job.actual_start_time,
               actual_end_time: job.actual_end_time,
-              primary_technician: job.primary_technician || null,
+              primary_technician: job.primary_technician || null, secondary_technician: job.secondary_technician || null, primary_tech_id: job.primary_tech_id, secondary_tech_id: job.secondary_tech_id,
               technicians: techniciansList,
               work_areas: [],
               status: mappedStatus,
@@ -343,7 +343,7 @@ const Job: React.FC<JobProps> = ({
             end_time: job.end_date,
             actual_start_time: job.actual_start_time,
             actual_end_time: job.actual_end_time,
-            primary_technician: job.primary_technician || null,
+            primary_technician: job.primary_technician || null, secondary_technician: job.secondary_technician || null, primary_tech_id: job.primary_tech_id, secondary_tech_id: job.secondary_tech_id,
             technicians: [],
             work_areas: [],
             status: JobStatus.Planned,
@@ -446,7 +446,7 @@ const Job: React.FC<JobProps> = ({
             end_time: job.end_date,
             actual_start_time: job.actual_start_time,
             actual_end_time: job.actual_end_time,
-            primary_technician: job.primary_technician || null,
+            primary_technician: job.primary_technician || null, secondary_technician: job.secondary_technician || null, primary_tech_id: job.primary_tech_id, secondary_tech_id: job.secondary_tech_id,
             technicians: techniciansList,
             work_areas: [],
             status: mappedStatus,
@@ -1607,7 +1607,7 @@ const Job: React.FC<JobProps> = ({
       canEditRejectedDropdown
     ) {
       actions.push({
-        label: isRejectedStatus ? 'แก้ไขและส่งอนุมัติใหม่' : 'จัดคิวงาน',
+        label: isRejectedStatus ? 'แก้ไขและส่งอนุมัติใหม่' : 'แก้ไขงาน',
         icon: PencilIcon,
         onClick: () => handleEdit(selectedJob),
       });

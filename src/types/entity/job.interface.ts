@@ -22,6 +22,7 @@ export interface Job extends IBase {
   assessment_id?: string;
   invoice_id?: string;
   primary_tech_id: string;
+  secondary_tech_id?: string;
   vehicle_id: string;
 
   appointment_date: Date,
@@ -34,6 +35,7 @@ export interface Job extends IBase {
   // Relations
   customer?: Customer;
   primary_technician?: User;
+  secondary_technician?: User;
   job_team_members?: TeamMember[];
   team_member?: TeamMember[];
   vehicle?: Vehicle;

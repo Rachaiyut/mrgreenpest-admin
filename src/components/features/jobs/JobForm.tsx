@@ -114,6 +114,7 @@ export const JobForm: React.FC<JobFormProps> = ({
   const [packages, setPackages] = useState<Package[]>([]);
 
   const [leadTechnicianId, setLeadTechnicianId] = useState('');
+  const [secondaryTechnicianId, setSecondaryTechnicianId] = useState('');
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<string[]>([]);
   const [workDate, setWorkDate] = useState('');
   const [startTime, setStartTime] = useState('');
@@ -225,17 +226,21 @@ export const JobForm: React.FC<JobFormProps> = ({
         setServiceSystem(jobToEdit.service_system || '');
 
         let leadId = '';
+        let secondaryLeadId = '';
         let memberIds: string[] = [];
         if (jobToEdit.primary_tech_id) leadId = jobToEdit.primary_tech_id;
         else if (jobToEdit.primary_technician?.id) leadId = jobToEdit.primary_technician.id;
+        if (jobToEdit.secondary_tech_id) secondaryLeadId = jobToEdit.secondary_tech_id;
+        else if (jobToEdit.secondary_technician?.id) secondaryLeadId = jobToEdit.secondary_technician.id;
 
         if (jobToEdit.team_member && Array.isArray(jobToEdit.team_member)) {
           memberIds = jobToEdit.team_member.map((m: any) => m.user_id || m.id);
         } else if (jobToEdit.technicians && Array.isArray(jobToEdit.technicians)) {
           memberIds = jobToEdit.technicians.map((t: any) => t.id);
         }
-        memberIds = memberIds.filter(id => id !== leadId);
+        memberIds = memberIds.filter(id => id !== leadId && id !== secondaryLeadId);
         setLeadTechnicianId(leadId);
+        setSecondaryTechnicianId(secondaryLeadId);
         setSelectedTechnicianIds(memberIds);
 
         const targetAssessmentId = actualAssessmentId;
@@ -811,7 +816,7 @@ export const JobForm: React.FC<JobFormProps> = ({
     const endDateTime = new Date(`${workDate}T${endTime}`).toISOString();
     const finalStatus = status;
 
-    const allTechnicianIds = [leadTechnicianId, ...selectedTechnicianIds];
+    const allTechnicianIds = [leadTechnicianId, secondaryTechnicianId, ...selectedTechnicianIds].filter(Boolean);
     const uniqueTechnicianIds = [...new Set(allTechnicianIds)];
 
     let assessmentId = '';
@@ -830,6 +835,7 @@ export const JobForm: React.FC<JobFormProps> = ({
       invoice_id: selectedInvoiceId || undefined,
       customer_id: selectedCustomerId,
       primary_tech_id: leadTechnicianId,
+      secondary_tech_id: secondaryTechnicianId || undefined,
       appointment_date: new Date(workDate),
       start_date: new Date(startDateTime),
       end_date: new Date(endDateTime),
@@ -1014,8 +1020,13 @@ export const JobForm: React.FC<JobFormProps> = ({
   };
 
   const additionalTechnicians = useMemo(
-    () => additionalTechnicianOptions.filter((tech) => tech.id !== leadTechnicianId),
-    [additionalTechnicianOptions, leadTechnicianId]
+    () => additionalTechnicianOptions.filter((tech) => tech.id !== leadTechnicianId && tech.id !== secondaryTechnicianId),
+    [additionalTechnicianOptions, leadTechnicianId, secondaryTechnicianId]
+  );
+
+  const secondaryLeadOptions = useMemo(
+    () => leadTechnicianOptions.filter((tech) => tech.id !== leadTechnicianId),
+    [leadTechnicianOptions, leadTechnicianId]
   );
 
   const steps = [
@@ -1394,7 +1405,8 @@ export const JobForm: React.FC<JobFormProps> = ({
                 </div>
               </div>
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
-                <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2"><div className="p-2 bg-primary/10 rounded-lg text-primary"><UserIcon className="w-5 h-5" /></div>หัวหน้าทีม (Leader)</h3>
+                <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2"><div className="p-2 bg-primary/10 rounded-lg text-primary"><UserIcon className="w-5 h-5" /></div>หัวหน้าทีม
+                </h3>
                 <div className="mb-4">
                   <SearchableSelect
                   label="หัวหน้าช่าง"
@@ -1408,6 +1420,24 @@ export const JobForm: React.FC<JobFormProps> = ({
                   required
                 />
                 {errors.lead_technician_id && <p className="text-red-500 text-xs mt-1 font-medium">{errors.lead_technician_id}</p>}
+                </div>
+                <div className="mb-4">
+                  <SearchableSelect
+                    label="หัวหน้าช่างคนที่ 2 (ไม่บังคับ)"
+                    name="secondary_tech_id"
+                    options={secondaryLeadOptions.map((tech) => ({ value: tech.id, label: `${getTechnicianName(tech)} ${tech.nick_name ? `(${tech.nick_name})` : ''}`, description: tech.phone || '' }))}
+                    value={secondaryTechnicianId}
+                    onChange={(id) => {
+                      setSecondaryTechnicianId(id);
+                      setSelectedTechnicianIds((prev) => prev.filter((memberId) => memberId !== id));
+                    }}
+                    onSearchChange={setLeadTechSearch}
+                    placeholder="ค้นหาหัวหน้าช่าง..."
+                    disabled={isDisableTeamEdit || !leadTechnicianId}
+                  />
+                  {!leadTechnicianId && (
+                    <p className="text-xs text-slate-400 mt-1">เลือกหัวหน้าช่างคนแรกก่อน</p>
+                  )}
                 </div>
               </div>
             </div>

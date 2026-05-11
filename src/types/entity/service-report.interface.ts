@@ -185,7 +185,10 @@ export interface FieldJob {
   end_dare?: Date
 
   customer?: Customer;
+  primary_tech_id?: string;
+  secondary_tech_id?: string;
   primary_technician?: User;
+  secondary_technician?: User;
   job_team_members?: TeamMember[];
   team_member?: TeamMember[];
   vehicle?: Vehicle;
