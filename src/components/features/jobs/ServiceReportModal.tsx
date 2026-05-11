@@ -18,7 +18,10 @@ import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
 import { Quotation } from '@/src/types';
 import { QuotationApi } from '@/src/api';
+import { AccountApi } from '@/src/api/account';
+import { Account } from '@/src/types/entity/account.interface';
 import { SearchableSelect } from '../../common/SearchableSelect';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   CalendarIcon,
   DocumentIcon,
@@ -102,6 +105,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   }>>({});
   
   const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [addDaysSelection, setAddDaysSelection] = useState<string>('');
   const [customDays, setCustomDays] = useState<string>('');
 
@@ -275,6 +280,38 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       console.error('Failed to search quotations:', error);
     }
   };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const fetchAccounts = async () => {
+      try {
+        const res = await AccountApi.getAll({ limit: 10, is_active: true });
+        setAccounts(res.data || []);
+      } catch (error) {
+        console.error('Failed to fetch accounts:', error);
+      }
+    };
+    fetchAccounts();
+    setSelectedAccountId('');
+  }, [isOpen]);
+
+  const handleAccountSearch = async (value: string) => {
+    try {
+      const res = await AccountApi.getAll({
+        limit: 10,
+        is_active: true,
+        search: value,
+      });
+      setAccounts(res.data || []);
+    } catch (error) {
+      console.error('Failed to search accounts:', error);
+    }
+  };
+
+  const selectedAccount = useMemo(
+    () => accounts.find((a) => a.id === selectedAccountId) || null,
+    [accounts, selectedAccountId],
+  );
 
   useEffect(() => {
     if (isOpen && job) {
@@ -1873,9 +1910,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           </div>
           <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
-              <div className="flex flex-col">
-                {job.invoice ? (
-                  <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50/30 rounded-2xl border border-green-200/60 p-6 shadow-sm h-full flex flex-col justify-center">
+              <div className="flex flex-col gap-4">
+                {/* Standalone invoice card — only when QR card is not shown */}
+                {job.invoice && !(reportState.payment_condition === 'TRANSFER' && selectedAccount?.qr_code) && (
+                  <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50/30 rounded-2xl border border-green-200/60 p-6 shadow-sm flex flex-col justify-center">
                     <div className="absolute -right-8 -top-8 w-32 h-32 bg-green-500/5 rounded-full blur-2xl"></div>
                     <div className="relative z-10 flex flex-col gap-6">
                       <div className="flex items-center justify-between border-b border-green-200/60 pb-4">
@@ -1897,12 +1935,91 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                       )}
                     </div>
                   </div>
-                ) : (
+                )}
+                {reportState.payment_condition === 'TRANSFER' && selectedAccount?.qr_code ? (
+                  <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-emerald-50/30 rounded-2xl border border-emerald-200/60 p-5 shadow-sm h-full flex flex-col">
+                    <div className="absolute -right-10 -top-10 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl" />
+                    {/* Header */}
+                    <div className="relative flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-emerald-500 text-white shadow-sm">
+                          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                          </svg>
+                        </div>
+                        <span className="text-sm font-semibold text-emerald-900">สแกนเพื่อชำระ</span>
+                      </div>
+                      <span className="bg-white text-emerald-700 px-2.5 py-1 rounded-md text-xs font-semibold shadow-sm border border-emerald-100 max-w-[140px] truncate" title={selectedAccount.bank_name}>
+                        {selectedAccount.bank_name}
+                      </span>
+                    </div>
+
+                    {/* Invoice reference (when service report links to an invoice) */}
+                    {job.invoice && (
+                      <div className="relative mb-4 flex items-center justify-between gap-3 bg-white/70 rounded-lg px-4 py-3 border border-emerald-100 shadow-sm">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-xs uppercase tracking-wider text-emerald-700/70 font-medium shrink-0">ใบแจ้งหนี้</span>
+                          <span className="text-base font-bold text-emerald-800 truncate" title={job.invoice.code}>
+                            {job.invoice.code}
+                          </span>
+                        </div>
+                        {job.invoice.term && (
+                          <span className="inline-flex items-center gap-1.5 bg-emerald-100/80 text-emerald-800 px-2.5 py-1 rounded-md text-xs font-semibold shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            งวดที่ {job.invoice.term}{job.invoice.installment_id ? ' (ผ่อน)' : ''}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* QR with corner brackets */}
+                    <div className="relative flex-1 flex items-center justify-center">
+                      <div className="bg-white rounded-2xl p-4 shadow-sm relative">
+                        <span className="absolute top-1.5 left-1.5 w-3 h-3 border-t-2 border-l-2 border-emerald-500 rounded-tl-md" />
+                        <span className="absolute top-1.5 right-1.5 w-3 h-3 border-t-2 border-r-2 border-emerald-500 rounded-tr-md" />
+                        <span className="absolute bottom-1.5 left-1.5 w-3 h-3 border-b-2 border-l-2 border-emerald-500 rounded-bl-md" />
+                        <span className="absolute bottom-1.5 right-1.5 w-3 h-3 border-b-2 border-r-2 border-emerald-500 rounded-br-md" />
+                        <QRCodeSVG value={selectedAccount.qr_code} size={160} level="M" />
+                      </div>
+                    </div>
+
+                    {/* Account details */}
+                    <div className="relative mt-4 pt-3 border-t border-emerald-200/60 space-y-1.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-[11px] uppercase tracking-wider text-emerald-700/70 font-medium shrink-0 mt-0.5">ชื่อบัญชี</span>
+                        <span className="text-sm font-semibold text-slate-800 truncate text-right" title={selectedAccount.account_name}>
+                          {selectedAccount.account_name}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[11px] uppercase tracking-wider text-emerald-700/70 font-medium">เลขบัญชี</span>
+                        <span className="text-sm font-mono font-semibold text-slate-700 tabular-nums">
+                          {selectedAccount.account_number}
+                        </span>
+                      </div>
+                      {(() => {
+                        const amount = job.invoice?.total ?? Number(reportState.payment_amount || 0);
+                        return amount > 0 ? (
+                          <div className="mt-2 flex items-center justify-between bg-emerald-500 text-white rounded-lg px-3 py-2 shadow-sm">
+                            <span className="text-xs font-medium">จำนวนที่ต้องชำระ</span>
+                            <span className="text-base font-bold tabular-nums">
+                              {Number(amount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ฿
+                            </span>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                  </div>
+                ) : !job.invoice ? (
                   <div className="bg-slate-50 rounded-2xl p-8 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 h-full min-h-[200px]">
                     <CreditCardIcon className="w-8 h-8 mb-2 opacity-50" />
-                    <span className="text-sm font-medium">ไม่มีข้อมูลใบแจ้งหนี้</span>
+                    <span className="text-sm font-medium">
+                      {reportState.payment_condition === 'TRANSFER'
+                        ? 'เลือกบัญชีโอนเพื่อแสดง QR'
+                        : 'ไม่มีข้อมูลใบแจ้งหนี้'}
+                    </span>
                   </div>
-                )}
+                ) : null}
               </div>
 
               <div className="flex flex-col justify-center">
@@ -1946,6 +2063,24 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                           className="w-full pl-4 pr-12 text-lg font-semibold text-green-700 border-slate-200 rounded-lg focus:border-green-500 focus:ring-green-500/20"
                         />
                       </div>
+
+                      {reportState.payment_condition === 'TRANSFER' && (
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1.5">บัญชีรับโอน</label>
+                          <SearchableSelect
+                            value={selectedAccountId}
+                            onChange={(v) => setSelectedAccountId(v)}
+                            onSearchChange={handleAccountSearch}
+                            options={accounts.map((a) => ({
+                              value: a.id,
+                              label: `${a.account_number} - ${a.bank_name} (${a.account_name})`,
+                            }))}
+                            placeholder="ค้นหาบัญชี (พิมพ์เพื่อค้นหา)"
+                            disabled={readOnly}
+                            className="w-full"
+                          />
+                        </div>
+                      )}
 
                       {reportState.payment_condition === 'TRANSFER' && (
                         <div>
