@@ -69,6 +69,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   const prevAreaSizeRef = useRef(area.area_size);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isItemsCollapsed, setIsItemsCollapsed] = useState(!area.items || area.items.length === 0);
   const [isAreaSizeFocused, setIsAreaSizeFocused] = useState(false);
   const [selectedStandardPrice, setSelectedStandardPrice] = useState<
     number | undefined
@@ -917,12 +918,25 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
               {renderPriceSection()}
 
+              {(!readOnly || (area.items && area.items.length > 0)) && (
               <div className="border border-slate-200 p-2 rounded-lg bg-white">
                 <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-semibold text-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsItemsCollapsed((v) => !v)}
+                    className="flex items-center gap-2 font-semibold text-slate-800 hover:text-primary transition-colors"
+                  >
+                    <ChevronDownIcon
+                      className={`h-4 w-4 transition-transform ${isItemsCollapsed ? '-rotate-90' : ''}`}
+                    />
                     รายการสินค้า/บริการ (เพิ่มเติม)
-                  </h3>
-                  {!readOnly && (
+                    {area.items && area.items.length > 0 && (
+                      <span className="text-xs text-slate-500 font-normal">
+                        ({area.items.length} รายการ)
+                      </span>
+                    )}
+                  </button>
+                  {!readOnly && !isItemsCollapsed && (
                     <button
                       type="button"
                       onClick={() => setIsProductModalOpen(true)}
@@ -933,6 +947,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     </button>
                   )}
                 </div>
+                {!isItemsCollapsed && (
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead className="bg-slate-50">
@@ -1029,7 +1044,9 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     </tbody>
                   </table>
                 </div>
+                )}
               </div>
+              )}
 
               {/* Original Values Display (when editing) */}
               {isEditing && originalArea && (
