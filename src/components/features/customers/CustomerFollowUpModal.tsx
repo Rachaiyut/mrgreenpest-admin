@@ -297,10 +297,10 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
   const fullName = `${customer.first_name} ${customer.last_name || ''}`.trim();
   const title =
     view === 'detail'
-      ? `รายละเอียดการติดตาม · ${fullName}`
+      ? `รายละเอียดการติดตาม: ${fullName}`
       : view === 'history'
-        ? `ประวัติการติดตาม · ${fullName}`
-        : `การติดตาม · ${fullName}`;
+        ? `ประวัติการติดตาม: ${fullName}`
+        : `การติดตาม: ${fullName}`;
 
   return (
     <Modal
