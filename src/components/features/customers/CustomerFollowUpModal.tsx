@@ -342,7 +342,7 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
               variant="primary"
               className="px-5"
             >
-              บันทึกการติดตาม
+              ย้อนกลับ
             </Button>
           </div>
         )
@@ -497,6 +497,24 @@ const FormSection: React.FC<{
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <FormField label={<>ผลการติดตาม{!readOnly && <span className="text-red-500"> *</span>}</>} htmlFor="fu-result">
+            <Input
+              id="fu-result"
+              value={formData.result}
+              onChange={(e) => setFormData({ ...formData, result: e.target.value })}
+              placeholder="เช่น สนใจ, ติดต่อกลับภายหลัง"
+              disabled={readOnly}
+            />
+          </FormField>
+          <FormField label="ช่องทางการติดตาม" htmlFor="fu-method">
+            <Input
+              id="fu-method"
+              value={formData.contact_method}
+              onChange={(e) => setFormData({ ...formData, contact_method: e.target.value })}
+              placeholder="เช่น โทรศัพท์"
+              disabled={readOnly}
+            />
+          </FormField>
           <FormField label="วันนัดติดตามครั้งถัดไป" htmlFor="fu-next-date">
             <BuddhistDatePicker
               id="fu-next-date"
@@ -510,24 +528,6 @@ const FormSection: React.FC<{
               locale="th"
               wrapperClassName="w-full"
               className={dateInputClass}
-              disabled={readOnly}
-            />
-          </FormField>
-          <FormField label="ช่องทางการติดตาม" htmlFor="fu-method">
-            <Input
-              id="fu-method"
-              value={formData.contact_method}
-              onChange={(e) => setFormData({ ...formData, contact_method: e.target.value })}
-              placeholder="เช่น โทรศัพท์"
-              disabled={readOnly}
-            />
-          </FormField>
-          <FormField label={<>ผลการติดตาม{!readOnly && <span className="text-red-500"> *</span>}</>} htmlFor="fu-result">
-            <Input
-              id="fu-result"
-              value={formData.result}
-              onChange={(e) => setFormData({ ...formData, result: e.target.value })}
-              placeholder="เช่น สนใจ, ติดต่อกลับภายหลัง"
               disabled={readOnly}
             />
           </FormField>
