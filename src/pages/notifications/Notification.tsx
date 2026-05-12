@@ -8,18 +8,25 @@ import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import UpcomingVisitsTab from './UpcomingVisitsTab';
 import NotificationsTable, { isContractExpired, NotificationRow } from './NotificationsTable';
 
-type TabKey = 'contracts' | 'upcoming-visits';
+type TabKey = 'contracts' | 'upcoming-visits' | 'expired-contracts';
 
 interface NotificationsProps {}
 
 const Notifications: React.FC<NotificationsProps> = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab: TabKey = searchParams.get('tab') === 'contracts' ? 'contracts' : 'upcoming-visits';
+  const tabParam = searchParams.get('tab');
+  const initialTab: TabKey =
+    tabParam === 'contracts'
+      ? 'contracts'
+      : tabParam === 'expired-contracts'
+        ? 'expired-contracts'
+        : 'upcoming-visits';
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
     if (activeTab === 'contracts') next.set('tab', 'contracts');
+    else if (activeTab === 'expired-contracts') next.set('tab', 'expired-contracts');
     else next.delete('tab');
     setSearchParams(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -60,11 +67,20 @@ const Notifications: React.FC<NotificationsProps> = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Expired-contracts tab forces the server-side "หมดอายุแล้ว" filter
+        // regardless of the dropdown — the dropdown is hidden in that view.
+        const effectiveFilterType =
+          activeTab === 'expired-contracts'
+            ? 'หมดอายุแล้ว'
+            : filterType !== 'ทั้งหมด'
+              ? filterType
+              : undefined;
+
         const res = await NotificationApi.getDashboardData({
           page: currentPage,
           limit: itemsPerPage,
           search: debouncedSearch || undefined,
-          filter_type: filterType !== 'ทั้งหมด' ? filterType : undefined,
+          filter_type: effectiveFilterType,
           start_date: startDate || undefined,
           end_date: endDate || undefined,
           invoice_status: invoiceStatus !== 'ทั้งหมด' ? invoiceStatus : undefined,
@@ -82,7 +98,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
     };
 
     fetchData();
-  }, [currentPage, itemsPerPage, debouncedSearch, filterType, startDate, endDate, invoiceStatus]);
+  }, [currentPage, itemsPerPage, debouncedSearch, filterType, startDate, endDate, invoiceStatus, activeTab]);
 
   const filteredData: NotificationRow[] = useMemo(() => {
     return data.map((item) => ({
@@ -133,6 +149,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
         {([
           { key: 'upcoming-visits', label: 'นัดหมายเข้าบริการ' },
           { key: 'contracts', label: 'สัญญา / การชำระเงิน' },
+          { key: 'expired-contracts', label: 'สัญญาที่หมดอายุ' },
         ] as { key: TabKey; label: string }[]).map((t) => (
           <button
             key={t.key}
@@ -166,35 +183,39 @@ const Notifications: React.FC<NotificationsProps> = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <DropdownSelect
-            value={filterType}
-            onChange={(val) => setFilterType(val as typeof filterType)}
-            className="w-full sm:w-fit"
-            options={[
-              { value: 'ทั้งหมด', label: 'ประเภท: ทั้งหมด' },
-              { value: 'ใกล้หมดสัญญา', label: 'ใกล้หมดสัญญา' },
-              { value: 'ใกล้กำหนดตรวจ', label: 'ใกล้กำหนดตรวจ' },
-              { value: 'ค้างชำระ', label: 'ค้างชำระ' },
-            ]}
-          />
+          {activeTab !== 'expired-contracts' && (
+            <DropdownSelect
+              value={filterType}
+              onChange={(val) => setFilterType(val as typeof filterType)}
+              className="w-full sm:w-fit"
+              options={[
+                { value: 'ทั้งหมด', label: 'ประเภท: ทั้งหมด' },
+                { value: 'ใกล้หมดสัญญา', label: 'ใกล้หมดสัญญา' },
+                { value: 'ใกล้กำหนดตรวจ', label: 'ใกล้กำหนดตรวจ' },
+                { value: 'ค้างชำระ', label: 'ค้างชำระ' },
+              ]}
+            />
+          )}
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เริ่มต้น" isClearable className="w-full pr-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
             <span className="text-slate-400">-</span>
             <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่สิ้นสุด" isClearable className="w-full pr-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
           </div>
-          <DropdownSelect
-            value={invoiceStatus}
-            onChange={(val) => setInvoiceStatus(val)}
-            className="w-full sm:w-fit"
-            options={[
-              { value: 'ทั้งหมด', label: 'Invoice: ทั้งหมด' },
-              { value: 'PAID', label: 'ชำระแล้ว' },
-              { value: 'PENDING', label: 'รอชำระ' },
-              { value: 'OVERDUE', label: 'เกินกำหนด' },
-              { value: 'DRAFT', label: 'ร่าง' },
-              { value: 'SENT', label: 'ส่งแล้ว' },
-            ]}
-          />
+          {activeTab !== 'expired-contracts' && (
+            <DropdownSelect
+              value={invoiceStatus}
+              onChange={(val) => setInvoiceStatus(val)}
+              className="w-full sm:w-fit"
+              options={[
+                { value: 'ทั้งหมด', label: 'Invoice: ทั้งหมด' },
+                { value: 'PAID', label: 'ชำระแล้ว' },
+                { value: 'PENDING', label: 'รอชำระ' },
+                { value: 'OVERDUE', label: 'เกินกำหนด' },
+                { value: 'DRAFT', label: 'ร่าง' },
+                { value: 'SENT', label: 'ส่งแล้ว' },
+              ]}
+            />
+          )}
         </div>
       </Card>
 
