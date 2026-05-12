@@ -281,10 +281,10 @@ export const Pagination: React.FC<PaginationProps> = ({
                   key={`${page}-${index}`}
                   onClick={() => onPageChange(page)}
                   aria-current={currentPage === page ? 'page' : undefined}
-                  className={`relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium ${
+                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                     currentPage === page
-                      ? 'z-10 bg-primary/10 border-primary text-primary'
-                      : 'bg-white text-slate-500 hover:bg-slate-50'
+                      ? 'z-10 bg-primary border-primary text-white'
+                      : 'bg-white border-slate-300 text-slate-500 hover:bg-slate-50'
                   }`}
                 >
                   {page}
