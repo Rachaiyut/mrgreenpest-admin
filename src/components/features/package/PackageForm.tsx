@@ -6,7 +6,7 @@ import { Package, PackagePrice, Category, CategoryType, Unit } from '@/src/types
 import { ContractDuration, ContractDurationLabel } from '@/src/types/enums/package';
 
 interface PackageFormProps {
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'view';
   initialValues?: Partial<Package>;
   categories: Category[];
   units: Unit[];
@@ -37,6 +37,7 @@ const PackageForm: FC<PackageFormProps> = ({
   onSubmit,
   onCancel,
 }) => {
+  const readOnly = mode === 'view';
   const [code, setCode] = useState(initialValues?.code || '');
   const [name, setName] = useState(initialValues?.name || '');
   const [categoryId, setCategoryId] = useState(initialValues?.category_id || '');
@@ -99,7 +100,29 @@ const PackageForm: FC<PackageFormProps> = ({
   const priceFieldHasError = (idx: number, field: PriceField): boolean => {
     if (!submitted) return false;
     const cond = conditions[idx];
-    if (isPriceFieldEmpty(cond, field)) return true;
+
+    // area_range and unit_id are always required
+    if (field === 'area_range' || field === 'unit_id') {
+      return isPriceFieldEmpty(cond, field);
+    }
+
+    const withTermiteTouched =
+      !isPriceFieldEmpty(cond, 'price_with_termite') || !isPriceFieldEmpty(cond, 'min_price_with_termite');
+    const withoutTermiteTouched =
+      !isPriceFieldEmpty(cond, 'price_without_termite') || !isPriceFieldEmpty(cond, 'min_price_without_termite');
+
+    // Nothing filled yet — highlight all 4 cells so user knows at least one pair is required
+    if (!withTermiteTouched && !withoutTermiteTouched) return true;
+
+    // Within a column, both cells must be present once user starts that column
+    if (field === 'price_with_termite' || field === 'min_price_with_termite') {
+      if (withTermiteTouched && isPriceFieldEmpty(cond, field)) return true;
+    }
+    if (field === 'price_without_termite' || field === 'min_price_without_termite') {
+      if (withoutTermiteTouched && isPriceFieldEmpty(cond, field)) return true;
+    }
+
+    // min > price guard (existing rule)
     if (field === 'min_price_with_termite' || field === 'price_with_termite') {
       if (invalidIndices.includes(idx)) return true;
     }
@@ -151,14 +174,27 @@ const PackageForm: FC<PackageFormProps> = ({
   };
 
   const conditionsIncomplete = useMemo(() => {
-    return conditions.some((c) =>
-      isPriceFieldEmpty(c, 'area_range') ||
-      isPriceFieldEmpty(c, 'unit_id') ||
-      isPriceFieldEmpty(c, 'price_with_termite') ||
-      isPriceFieldEmpty(c, 'min_price_with_termite') ||
-      isPriceFieldEmpty(c, 'price_without_termite') ||
-      isPriceFieldEmpty(c, 'min_price_without_termite')
-    );
+    return conditions.some((c) => {
+      // area + unit are always required
+      if (isPriceFieldEmpty(c, 'area_range') || isPriceFieldEmpty(c, 'unit_id')) return true;
+
+      const withTermitePrice = !isPriceFieldEmpty(c, 'price_with_termite');
+      const withTermiteMin = !isPriceFieldEmpty(c, 'min_price_with_termite');
+      const withoutTermitePrice = !isPriceFieldEmpty(c, 'price_without_termite');
+      const withoutTermiteMin = !isPriceFieldEmpty(c, 'min_price_without_termite');
+
+      const withTermitePairFilled = withTermitePrice && withTermiteMin;
+      const withoutTermitePairFilled = withoutTermitePrice && withoutTermiteMin;
+
+      // Must fill at least one pair fully
+      if (!withTermitePairFilled && !withoutTermitePairFilled) return true;
+
+      // Within a column, can't fill only one side of the pair
+      if (withTermitePrice !== withTermiteMin) return true;
+      if (withoutTermitePrice !== withoutTermiteMin) return true;
+
+      return false;
+    });
   }, [conditions]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -212,7 +248,7 @@ const PackageForm: FC<PackageFormProps> = ({
         </div>
         <div className="p-6 space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <FormField label="รหัสแพ็กเกจ *">
+            <FormField label={readOnly ? 'รหัสแพ็กเกจ' : 'รหัสแพ็กเกจ *'}>
               <Input
                 value={code}
                 onChange={(e) => {
@@ -220,26 +256,33 @@ const PackageForm: FC<PackageFormProps> = ({
                   if (errors.code) setErrors((p) => ({ ...p, code: undefined }));
                 }}
                 placeholder="กรอกรหัสแพ็กเกจ"
-                className={`${mode === 'edit' ? 'bg-slate-50 font-mono' : 'font-mono'} ${inputErrCls(!!errors.code)}`}
-                readOnly={mode === 'edit'}
+                className={`${mode === 'edit' && !readOnly ? 'bg-slate-50' : ''} ${inputErrCls(!!errors.code)}`}
+                readOnly={mode !== 'create' || readOnly}
               />
               {errorText(errors.code)}
             </FormField>
-            <FormField label="หมวดหมู่ *">
-              <DropdownSelect
-                value={categoryId}
-                onChange={(v) => {
-                  setCategoryId(v);
-                  if (errors.categoryId) setErrors((p) => ({ ...p, categoryId: undefined }));
-                }}
-                placeholder="เลือกหมวดหมู่"
-                options={availableCategories.map((cat) => ({ value: cat.id, label: cat.name }))}
-              />
+            <FormField label={readOnly ? 'หมวดหมู่' : 'หมวดหมู่ *'}>
+              {readOnly ? (
+                <Input
+                  value={availableCategories.find((c) => c.id === categoryId)?.name || '-'}
+                  readOnly
+                />
+              ) : (
+                <DropdownSelect
+                  value={categoryId}
+                  onChange={(v) => {
+                    setCategoryId(v);
+                    if (errors.categoryId) setErrors((p) => ({ ...p, categoryId: undefined }));
+                  }}
+                  placeholder="เลือกหมวดหมู่"
+                  options={availableCategories.map((cat) => ({ value: cat.id, label: cat.name }))}
+                />
+              )}
               {errorText(errors.categoryId)}
             </FormField>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <FormField label="ชื่อแพ็กเกจ *">
+            <FormField label={readOnly ? 'ชื่อแพ็กเกจ' : 'ชื่อแพ็กเกจ *'}>
               <Input
                 value={name}
                 onChange={(e) => {
@@ -248,10 +291,11 @@ const PackageForm: FC<PackageFormProps> = ({
                 }}
                 placeholder="เช่น แพ็กเกจกำจัดปลวกรายปี (บ้านเดี่ยว)"
                 className={inputErrCls(!!errors.name)}
+                readOnly={readOnly}
               />
               {errorText(errors.name)}
             </FormField>
-            <FormField label="จำนวนครั้งที่เข้าบริการ *">
+            <FormField label={readOnly ? 'จำนวนครั้งที่เข้าบริการ' : 'จำนวนครั้งที่เข้าบริการ *'}>
               <Input
                 type="number"
                 value={visitLimit || ''}
@@ -262,18 +306,23 @@ const PackageForm: FC<PackageFormProps> = ({
                 placeholder="เช่น 4"
                 min={1}
                 className={inputErrCls(!!errors.visitLimit)}
+                readOnly={readOnly}
               />
               {errorText(errors.visitLimit)}
             </FormField>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <FormField label="อายุสัญญา *">
-              <DropdownSelect
-                value={contractDuration}
-                onChange={(v) => setContractDuration(v as ContractDuration)}
-                placeholder="เลือกอายุสัญญา"
-                options={Object.values(ContractDuration).map((d) => ({ value: d, label: ContractDurationLabel[d] }))}
-              />
+            <FormField label={readOnly ? 'อายุสัญญา' : 'อายุสัญญา *'}>
+              {readOnly ? (
+                <Input value={ContractDurationLabel[contractDuration] || '-'} readOnly />
+              ) : (
+                <DropdownSelect
+                  value={contractDuration}
+                  onChange={(v) => setContractDuration(v as ContractDuration)}
+                  placeholder="เลือกอายุสัญญา"
+                  options={Object.values(ContractDuration).map((d) => ({ value: d, label: ContractDurationLabel[d] }))}
+                />
+              )}
             </FormField>
           </div>
           <FormField label="หมายเหตุ">
@@ -282,6 +331,7 @@ const PackageForm: FC<PackageFormProps> = ({
               onChange={(e) => setRemark(e.target.value)}
               rows={3}
               placeholder="รายละเอียดเพิ่มเติมเกี่ยวกับแพ็กเกจ"
+              readOnly={readOnly}
             />
           </FormField>
         </div>
@@ -296,9 +346,11 @@ const PackageForm: FC<PackageFormProps> = ({
             </div>
             <h3 className="font-semibold text-slate-800 text-lg">เงื่อนไขราคาตามพื้นที่</h3>
           </div>
-          <button type="button" onClick={handleAddCondition} className="flex items-center gap-1.5 px-4 py-2 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium text-sm">
-            <PlusIcon className="w-4 h-4" /> เพิ่มเงื่อนไข
-          </button>
+          {!readOnly && (
+            <button type="button" onClick={handleAddCondition} className="flex items-center gap-1.5 px-4 py-2 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium text-sm">
+              <PlusIcon className="w-4 h-4" /> เพิ่มเงื่อนไข
+            </button>
+          )}
         </div>
         <div className="p-6 space-y-4">
           {conditions.length === 0 ? (
@@ -321,7 +373,7 @@ const PackageForm: FC<PackageFormProps> = ({
                 </colgroup>
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-3 py-3 text-left text-sm font-semibold text-slate-600">#</th>
+                    <th className="px-3 py-3 text-left text-sm font-semibold text-slate-600">ลำดับ</th>
                     <th className="px-3 py-3 text-left text-sm font-semibold text-slate-600">พื้นที่</th>
                     <th className="px-3 py-3 text-left text-sm font-semibold text-slate-600">หน่วย</th>
                     <th className="px-3 py-3 text-right text-sm font-semibold text-blue-600">ราคาเสนอ (มีปลวก)</th>
@@ -340,33 +392,39 @@ const PackageForm: FC<PackageFormProps> = ({
                           <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold text-xs">{idx + 1}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.area_range || ''} onChange={(e) => handleConditionChange(idx, 'area_range', e.target.value)} placeholder="150" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'area_range'))}`} />
+                          <Input type="number" value={cond.area_range || ''} onChange={(e) => handleConditionChange(idx, 'area_range', e.target.value)} placeholder="150" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'area_range'))}`} readOnly={readOnly} />
                         </td>
                         <td className="px-4 py-3">
-                          <DropdownSelect
-                            value={cond.unit_id || ''}
-                            onChange={(v) => handleConditionChange(idx, 'unit_id', v)}
-                            placeholder="เลือก"
-                            options={availableUnits.map((u) => ({ value: u.id, label: u.name }))}
-                            className="h-9 w-full"
-                          />
+                          {readOnly ? (
+                            <Input value={availableUnits.find((u) => u.id === cond.unit_id)?.name || '-'} readOnly className="h-9 w-full" />
+                          ) : (
+                            <DropdownSelect
+                              value={cond.unit_id || ''}
+                              onChange={(v) => handleConditionChange(idx, 'unit_id', v)}
+                              placeholder="เลือก"
+                              options={availableUnits.map((u) => ({ value: u.id, label: u.name }))}
+                              className="h-9 w-full"
+                            />
+                          )}
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_with_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'price_with_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'price_with_termite'))}`} style={{ textAlign: 'right' }} />
+                          <Input type="number" value={cond.price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_with_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'price_with_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'price_with_termite'))}`} style={{ textAlign: 'right' }} readOnly={readOnly} />
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.min_price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_with_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'min_price_with_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'min_price_with_termite'))}`} style={{ textAlign: 'right' }} />
+                          <Input type="number" value={cond.min_price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_with_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'min_price_with_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'min_price_with_termite'))}`} style={{ textAlign: 'right' }} readOnly={readOnly} />
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_without_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'price_without_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'price_without_termite'))}`} style={{ textAlign: 'right' }} />
+                          <Input type="number" value={cond.price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_without_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'price_without_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'price_without_termite'))}`} style={{ textAlign: 'right' }} readOnly={readOnly} />
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.min_price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_without_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'min_price_without_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'min_price_without_termite'))}`} style={{ textAlign: 'right' }} />
+                          <Input type="number" value={cond.min_price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_without_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'min_price_without_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'min_price_without_termite'))}`} style={{ textAlign: 'right' }} readOnly={readOnly} />
                         </td>
                         <td className="px-3 py-3 text-center">
-                          <button type="button" onClick={() => handleRemoveCondition(idx)} className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
-                            <TrashIcon className="w-4 h-4" />
-                          </button>
+                          {!readOnly && (
+                            <button type="button" onClick={() => handleRemoveCondition(idx)} className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                              <TrashIcon className="w-4 h-4" />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -381,7 +439,7 @@ const PackageForm: FC<PackageFormProps> = ({
             <p className="text-xs text-red-500 text-right">{invalidIndices.length} รายการมีข้อผิดพลาด: ราคาต่ำสุดสูงกว่าราคาเสนอ</p>
           )}
           {submitted && conditionsIncomplete && (
-            <p className="text-xs text-red-500 text-right">กรุณากรอกข้อมูลเงื่อนไขราคาให้ครบทุกช่อง</p>
+            <p className="text-xs text-red-500 text-right">กรุณากรอกราคาเสนอและราคาต่ำสุดให้ครบ อย่างน้อย 1 ฝั่ง (มีปลวก หรือ ไม่มีปลวก)</p>
           )}
 
         </div>

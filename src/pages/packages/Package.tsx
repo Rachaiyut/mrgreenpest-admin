@@ -518,6 +518,8 @@ const Packages: React.FC = () => {
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
         pkg={selectedPackage}
+        categories={categories}
+        units={units}
       />
     </div>
   );
