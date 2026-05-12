@@ -52,7 +52,14 @@ const resultColors: Record<FollowUpResult, string> = {
   OTHER: 'text-purple-700',
 };
 
-const typeColors: Record<FollowUpType, string> = {
+const typeBadge: Record<FollowUpType, string> = {
+  QUOTATION: 'bg-blue-100 text-blue-700',
+  CONTRACT: 'bg-emerald-100 text-emerald-700',
+  CONTRACT_RENEWAL: 'bg-amber-100 text-amber-700',
+  PAYMENT: 'bg-violet-100 text-violet-700',
+};
+
+const typeTextColor: Record<FollowUpType, string> = {
   QUOTATION: 'text-blue-700',
   CONTRACT: 'text-emerald-700',
   CONTRACT_RENEWAL: 'text-amber-700',
@@ -88,11 +95,13 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
   // History state
   const [followUps, setFollowUps] = useState<ContractFollowUp[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [filter, setFilter] = useState({
     follow_up_type: '' as FollowUpType | '',
-    document_ref_code: '',
-    follow_up_date: '',
-    result: '',
+    search: '',
+    next_follow_up_date: '',
   });
 
   const today = new Date().toISOString().substring(0, 10);
@@ -139,8 +148,17 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
     if (!customer) return;
     setLoadingHistory(true);
     try {
-      const res = await ContractFollowUpApi.getByCustomerId(customer.id);
+      const params: Record<string, unknown> = {
+        customer_id: customer.id,
+        page: currentPage,
+        limit: pageSize,
+      };
+      if (filter.follow_up_type) params.follow_up_type = filter.follow_up_type;
+      if (filter.search.trim()) params.search = filter.search.trim();
+      if (filter.next_follow_up_date) params.next_follow_up_date = filter.next_follow_up_date;
+      const res = await ContractFollowUpApi.getAll(params);
       setFollowUps(res?.data || []);
+      setTotalItems(res?.meta?.total ?? 0);
     } catch (error) {
       console.error('Error fetching follow-ups:', error);
     } finally {
@@ -157,18 +175,36 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
       setContracts([]);
       setInvoices([]);
       setFollowUps([]);
-      setFilter({ follow_up_type: '', document_ref_code: '', follow_up_date: '', result: '' });
+      setFilter({ follow_up_type: '', search: '', next_follow_up_date: '' });
+      setCurrentPage(1);
+      setTotalItems(0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, customer, initialView]);
 
-  // Fetch history when switching to history view
+  // Fetch history whenever view is 'history' or filter/pagination changes
   useEffect(() => {
     if (view === 'history' && customer) {
       fetchHistory();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view]);
+  }, [view, customer, currentPage, pageSize, filter.follow_up_type, filter.next_follow_up_date]);
+
+  // Debounce the free-text search — only refetch 350ms after user stops typing
+  useEffect(() => {
+    if (view !== 'history' || !customer) return;
+    const t = setTimeout(() => {
+      setCurrentPage(1);
+      fetchHistory();
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter.search]);
+
+  // Reset to page 1 when non-text filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter.follow_up_type, filter.next_follow_up_date]);
 
   const handleFollowUpTypeChange = (v: string) => {
     const t = v as FollowUpType;
@@ -254,19 +290,7 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
     }
   };
 
-  const filteredFollowUps = useMemo(() => {
-    return followUps.filter((f) => {
-      if (filter.follow_up_type && f.follow_up_type !== filter.follow_up_type) return false;
-      if (
-        filter.document_ref_code &&
-        !(f.document_ref_code || '').toLowerCase().includes(filter.document_ref_code.toLowerCase())
-      )
-        return false;
-      if (filter.follow_up_date && f.follow_up_date?.substring(0, 10) !== filter.follow_up_date) return false;
-      if (filter.result && !(f.result || '').toLowerCase().includes(filter.result.toLowerCase())) return false;
-      return true;
-    });
-  }, [followUps, filter]);
+  // Filtering and pagination are now server-side — followUps already comes back filtered.
 
   if (!isOpen || !customer) return null;
 
@@ -283,10 +307,18 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      size="7xl"
+      size={view === 'history' ? '7xl' : '4xl'}
       footer={
         view === 'form' ? (
-          <div className="flex w-full justify-end">
+          <div className="flex w-full justify-end items-center gap-2">
+            <Button
+              type="button"
+              onClick={() => setView('history')}
+              variant="outline"
+              className="px-5"
+            >
+              ดูประวัติการติดตาม
+            </Button>
             <Button type="submit" form="follow-up-form" variant="primary" disabled={saving} className="px-5">
               {saving ? 'กำลังบันทึก...' : 'บันทึกการติดตาม'}
             </Button>
@@ -299,11 +331,20 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
               variant="outline"
               className="py-2 px-4"
             >
-              ← กลับไปที่รายการ
+              กลับไปที่รายการ
             </Button>
           </div>
         ) : (
-          <span />
+          <div className="flex w-full justify-end">
+            <Button
+              type="button"
+              onClick={() => setView('form')}
+              variant="primary"
+              className="px-5"
+            >
+              บันทึกการติดตาม
+            </Button>
+          </div>
         )
       }
     >
@@ -317,24 +358,47 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
           handleFollowUpTypeChange={handleFollowUpTypeChange}
           handleDocumentChange={handleDocumentChange}
           handleSubmit={handleSubmit}
-          onShowHistory={() => setView('history')}
         />
       )}
 
       {view === 'history' && (
         <HistorySection
           followUps={followUps}
-          filteredFollowUps={filteredFollowUps}
+          totalItems={totalItems}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
           filter={filter}
           setFilter={setFilter}
           loading={loadingHistory}
           onSelectDetail={(f) => { setSelectedDetail(f); setView('detail'); }}
-          onBackToForm={() => setView('form')}
         />
       )}
 
       {view === 'detail' && selectedDetail && (
-        <DetailSection followUp={selectedDetail} />
+        <FormSection
+          customer={customer}
+          formData={{
+            follow_up_type: (selectedDetail.follow_up_type as FollowUpType) || '',
+            document_ref_type: (selectedDetail.document_ref_type as FollowUpDocumentRefType) || '',
+            document_ref_id: selectedDetail.document_ref_id || '',
+            document_ref_code: selectedDetail.document_ref_code || '',
+            contract_id: selectedDetail.contract_id || '',
+            follow_up_date: (selectedDetail.follow_up_date || '').substring(0, 10),
+            contact_method: selectedDetail.contact_method || '',
+            result: selectedDetail.result || '',
+            notes: selectedDetail.notes || '',
+            next_follow_up_date: (selectedDetail.next_follow_up_date || '').substring(0, 10),
+          }}
+          setFormData={() => { /* readOnly */ }}
+          documentOptions={[]}
+          loadingDocs={false}
+          handleFollowUpTypeChange={() => {}}
+          handleDocumentChange={() => {}}
+          handleSubmit={(e) => e.preventDefault()}
+          readOnly
+        />
       )}
     </Modal>
   );
@@ -372,44 +436,32 @@ const FormSection: React.FC<{
   handleFollowUpTypeChange: (v: string) => void;
   handleDocumentChange: (id: string) => void;
   handleSubmit: (e: React.FormEvent) => void;
-  onShowHistory: () => void;
-}> = ({ formData, setFormData, documentOptions, loadingDocs, handleFollowUpTypeChange, handleDocumentChange, handleSubmit, onShowHistory }) => {
+  readOnly?: boolean;
+}> = ({ formData, setFormData, documentOptions, loadingDocs, handleFollowUpTypeChange, handleDocumentChange, handleSubmit, readOnly = false }) => {
+  // In read-only mode, provide a single-option list for the document picker
+  // so the selected code is visible (we don't fetch the full list in view mode).
+  const docOptionsForView = readOnly && formData.document_ref_id
+    ? [{ value: formData.document_ref_id, label: formData.document_ref_code || formData.document_ref_id }]
+    : documentOptions.map((o) => ({ value: o.id, label: o.code }));
+
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-slate-800">บันทึกการติดตามใหม่</h3>
-            <p className="text-xs text-slate-500 mt-0.5">เพิ่มการติดตามลูกค้า (ใบเสนอราคา / สัญญา / ชำระเงิน)</p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={onShowHistory}
-          className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 hover:border-slate-400 transition-colors"
-        >
-          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-          ดูประวัติการติดตาม
-        </button>
-      </div>
-      <form id="follow-up-form" onSubmit={handleSubmit} className="p-5 space-y-4">
+      <form
+        id="follow-up-form"
+        onSubmit={readOnly ? (e) => e.preventDefault() : handleSubmit}
+        className="p-5 space-y-4"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <FormField label={<>ประเภทการติดตาม <span className="text-red-500">*</span></>} htmlFor="fu-type">
+          <FormField label={<>ประเภทการติดตาม{!readOnly && <span className="text-red-500"> *</span>}</>} htmlFor="fu-type">
             <DropdownSelect
               value={formData.follow_up_type}
               onChange={handleFollowUpTypeChange}
               placeholder="เลือกประเภท"
               options={Object.values(FollowUpType).map((t) => ({ value: t, label: FollowUpTypeLabels[t] }))}
+              disabled={readOnly}
             />
           </FormField>
-          <FormField label={<>เลขที่เอกสารอ้างอิง <span className="text-red-500">*</span></>} htmlFor="fu-doc">
+          <FormField label={<>เลขที่เอกสารอ้างอิง{!readOnly && <span className="text-red-500"> *</span>}</>} htmlFor="fu-doc">
             <DropdownSelect
               value={formData.document_ref_id}
               onChange={handleDocumentChange}
@@ -418,15 +470,15 @@ const FormSection: React.FC<{
                   ? 'เลือกประเภทก่อน'
                   : loadingDocs
                     ? 'กำลังโหลด...'
-                    : documentOptions.length === 0
+                    : docOptionsForView.length === 0
                       ? `ลูกค้านี้ไม่มี${FollowUpDocumentRefTypeLabels[formData.document_ref_type as FollowUpDocumentRefType]}`
                       : `เลือก${FollowUpDocumentRefTypeLabels[formData.document_ref_type as FollowUpDocumentRefType]}`
               }
-              options={documentOptions.map((o) => ({ value: o.id, label: o.code }))}
-              disabled={!formData.document_ref_type || loadingDocs}
+              options={docOptionsForView}
+              disabled={readOnly || !formData.document_ref_type || loadingDocs}
             />
           </FormField>
-          <FormField label={<>วันที่ติดตาม <span className="text-red-500">*</span></>} htmlFor="fu-date">
+          <FormField label={<>วันที่ติดตาม{!readOnly && <span className="text-red-500"> *</span>}</>} htmlFor="fu-date">
             <BuddhistDatePicker
               id="fu-date"
               selected={formData.follow_up_date ? new Date(formData.follow_up_date) : null}
@@ -439,8 +491,12 @@ const FormSection: React.FC<{
               locale="th"
               wrapperClassName="w-full"
               className={dateInputClass}
+              disabled={readOnly}
             />
           </FormField>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <FormField label="วันนัดติดตามครั้งถัดไป" htmlFor="fu-next-date">
             <BuddhistDatePicker
               id="fu-next-date"
@@ -454,25 +510,25 @@ const FormSection: React.FC<{
               locale="th"
               wrapperClassName="w-full"
               className={dateInputClass}
+              disabled={readOnly}
             />
           </FormField>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="ช่องทางการติดตาม" htmlFor="fu-method">
             <Input
               id="fu-method"
               value={formData.contact_method}
               onChange={(e) => setFormData({ ...formData, contact_method: e.target.value })}
-              placeholder="เช่น โทรศัพท์, LINE, อีเมล, เข้าพบ"
+              placeholder="เช่น โทรศัพท์"
+              disabled={readOnly}
             />
           </FormField>
-          <FormField label={<>ผลการติดตาม <span className="text-red-500">*</span></>} htmlFor="fu-result">
+          <FormField label={<>ผลการติดตาม{!readOnly && <span className="text-red-500"> *</span>}</>} htmlFor="fu-result">
             <Input
               id="fu-result"
               value={formData.result}
               onChange={(e) => setFormData({ ...formData, result: e.target.value })}
               placeholder="เช่น สนใจ, ติดต่อกลับภายหลัง"
+              disabled={readOnly}
             />
           </FormField>
         </div>
@@ -484,6 +540,7 @@ const FormSection: React.FC<{
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             placeholder="รายละเอียดการติดตาม..."
+            disabled={readOnly}
           />
         </FormField>
       </form>
@@ -492,125 +549,106 @@ const FormSection: React.FC<{
 };
 
 /* ===== History Section ===== */
+type HistoryFilter = {
+  follow_up_type: FollowUpType | '';
+  search: string;
+  next_follow_up_date: string;
+};
+
 const HistorySection: React.FC<{
   followUps: ContractFollowUp[];
-  filteredFollowUps: ContractFollowUp[];
-  filter: { follow_up_type: FollowUpType | ''; document_ref_code: string; follow_up_date: string; result: string };
-  setFilter: React.Dispatch<React.SetStateAction<{ follow_up_type: FollowUpType | ''; document_ref_code: string; follow_up_date: string; result: string }>>;
+  totalItems: number;
+  currentPage: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  filter: HistoryFilter;
+  setFilter: React.Dispatch<React.SetStateAction<HistoryFilter>>;
   loading: boolean;
   onSelectDetail: (f: ContractFollowUp) => void;
-  onBackToForm: () => void;
-}> = ({ followUps, filteredFollowUps, filter, setFilter, loading, onSelectDetail, onBackToForm }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-
-  // Reset to first page whenever filter changes the result set
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filter]);
-
-  const paginatedFollowUps = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredFollowUps.slice(start, start + pageSize);
-  }, [filteredFollowUps, currentPage, pageSize]);
+}> = ({ followUps, totalItems, currentPage, pageSize, onPageChange, onPageSizeChange, filter, setFilter, loading, onSelectDetail }) => {
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-slate-100 text-slate-600">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+    <div className="space-y-4">
+      {/* Filter card */}
+      <section className="rounded-xl border border-slate-200 bg-white shadow-sm px-10 py-8">
+        <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+          <div className="relative w-full sm:w-80 flex-shrink-0">
+            <Input
+              type="search"
+              placeholder="ค้นหาเลขที่เอกสาร / ผลการติดตาม"
+              value={filter.search}
+              onChange={(e) => setFilter({ ...filter, search: e.target.value })}
+              className="w-full pl-10"
+            />
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-slate-800">ประวัติการติดตาม</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {filteredFollowUps.length === followUps.length
-                ? `ทั้งหมด ${followUps.length} รายการ`
-                : `แสดง ${filteredFollowUps.length} จาก ${followUps.length} รายการ`}
-            </p>
+          <div className="w-full sm:w-44 flex-shrink-0">
+            <BuddhistDatePicker
+              selected={filter.next_follow_up_date ? new Date(filter.next_follow_up_date) : null}
+              onChange={(date: Date | null) => setFilter({
+                ...filter,
+                next_follow_up_date: date ? toISODate(date) : '',
+              })}
+              placeholderText="วว/ดด/ปป"
+              dateFormat="dd/MM/yyyy"
+              locale="th"
+              isClearable
+              wrapperClassName="w-full"
+              className={`${dateInputClass} h-10`}
+            />
+          </div>
+          <div className="w-full sm:w-48 flex-shrink-0">
+            <DropdownSelect
+              value={filter.follow_up_type}
+              onChange={(v) => setFilter({ ...filter, follow_up_type: v as FollowUpType })}
+              placeholder="ทุกประเภท"
+              className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
+              options={[
+                { value: '', label: 'ทุกประเภท' },
+                ...Object.values(FollowUpType).map((t) => ({ value: t, label: FollowUpTypeLabels[t] })),
+              ]}
+            />
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onBackToForm}
-          className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
-        >
-          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
-          </svg>
-          บันทึกการติดตาม
-        </button>
-      </div>
+      </section>
 
-      <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <DropdownSelect
-            value={filter.follow_up_type}
-            onChange={(v) => setFilter({ ...filter, follow_up_type: v as FollowUpType })}
-            placeholder="ทุกประเภท"
-            options={[
-              { value: '', label: 'ทุกประเภท' },
-              ...Object.values(FollowUpType).map((t) => ({ value: t, label: FollowUpTypeLabels[t] })),
-            ]}
-          />
-          <Input
-            placeholder="ค้นหาเลขที่เอกสาร"
-            value={filter.document_ref_code}
-            onChange={(e) => setFilter({ ...filter, document_ref_code: e.target.value })}
-          />
-          <BuddhistDatePicker
-            selected={filter.follow_up_date ? new Date(filter.follow_up_date) : null}
-            onChange={(date: Date | null) => setFilter({
-              ...filter,
-              follow_up_date: date ? toISODate(date) : '',
-            })}
-            placeholderText="วว/ดด/ปป"
-            dateFormat="dd/MM/yyyy"
-            locale="th"
-            isClearable
-            wrapperClassName="w-full"
-            className={dateInputClass}
-          />
-          <Input
-            placeholder="ค้นหาผลการติดตาม"
-            value={filter.result}
-            onChange={(e) => setFilter({ ...filter, result: e.target.value })}
-          />
-        </div>
-      </div>
-
+      {/* Table card */}
+      <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
       {loading ? (
         <div className="flex flex-col items-center justify-center py-12 text-slate-500">
           <LoadingIcon className="w-8 h-8 animate-spin mb-3 text-primary" />
           <p className="text-sm">กำลังโหลดประวัติ...</p>
         </div>
-      ) : filteredFollowUps.length === 0 ? (
+      ) : followUps.length === 0 ? (
         <div className="text-center py-12 text-slate-400">
           <p className="text-sm">
-            {followUps.length === 0 ? 'ยังไม่มีประวัติการติดตาม' : 'ไม่พบรายการตามเงื่อนไขที่ค้นหา'}
+            {totalItems === 0 && !filter.search && !filter.follow_up_type && !filter.next_follow_up_date
+              ? 'ยังไม่มีประวัติการติดตาม'
+              : 'ไม่พบรายการตามเงื่อนไขที่ค้นหา'}
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full divide-y divide-slate-200 border-b border-slate-200">
+        <div className="overflow-x-hidden">
+          <table className="w-full table-auto divide-y divide-slate-200 border-b border-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
-                <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่เอกสาร</th>
-                <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่ติดตาม</th>
-                <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ช่องทาง</th>
-                <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผลการติดตาม</th>
-                <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ครั้งที่</th>
-                <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">นัดถัดไป</th>
-                <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ประเภท</th>
-                <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้ติดตาม</th>
-                <th scope="col" className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap">จัดการ</th>
+                <th scope="col" className="px-3 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
+                <th scope="col" className="px-3 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่เอกสาร</th>
+                <th scope="col" className="px-3 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่ติดตาม</th>
+                <th scope="col" className="px-3 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ช่องทาง</th>
+                <th scope="col" className="px-3 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผลการติดตาม</th>
+                <th scope="col" className="px-3 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ครั้งที่</th>
+                <th scope="col" className="px-3 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">นัดถัดไป</th>
+                <th scope="col" className="px-3 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-slate-100/70">ประเภท</th>
+                <th scope="col" className="px-3 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้ติดตาม</th>
+                <th scope="col" className="px-3 py-2.5 text-center text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap">จัดการ</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
-              {paginatedFollowUps.map((f, idx) => {
+              {followUps.map((f, idx) => {
                 const index = (currentPage - 1) * pageSize + idx;
                 const type = f.follow_up_type as FollowUpType;
                 const knownResult = f.result as FollowUpResult;
@@ -620,34 +658,34 @@ const HistorySection: React.FC<{
                     key={f.id}
                     className="hover:bg-slate-50 [&>td]:align-top"
                   >
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center tabular-nums">{index + 1}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-slate-800 font-mono">{f.document_ref_code || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-slate-800">{formatThaiDate(f.follow_up_date)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm text-slate-700 text-center tabular-nums">{index + 1}</td>
+                    <td className={`px-3 py-3 whitespace-nowrap text-sm font-semibold ${typeTextColor[type] || 'text-slate-800'}`}>{f.document_ref_code || '—'}</td>
+                    <td className="px-3 py-3 whitespace-nowrap text-sm text-slate-700">{formatThaiDate(f.follow_up_date)}</td>
+                    <td className="px-3 py-3 whitespace-nowrap text-sm text-slate-700">
                       {f.contact_method ? (ContactMethodLabels[knownMethod as ContactMethod] || f.contact_method) : '—'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm">
                       <span className={`font-medium ${resultColors[knownResult] || 'text-slate-700'}`}>
                         {FollowUpResultLabels[knownResult] || f.result}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center text-sm text-slate-700 tabular-nums">
+                    <td className="px-3 py-3 text-center text-sm text-slate-700 tabular-nums">
                       {f.follow_up_number ?? '—'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm">
                       {f.next_follow_up_date && (
                         <span className="text-amber-600 font-medium">{formatThaiDate(f.next_follow_up_date)}</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      <span className={`font-medium ${typeColors[type] || 'text-slate-700'}`}>
+                    <td className="px-3 py-3 whitespace-nowrap text-sm">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${typeBadge[type] || 'bg-slate-100 text-slate-700'}`}>
                         {FollowUpTypeLabels[type] || f.follow_up_type}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm text-slate-700">
                       {f.creator ? `${f.creator.first_name} ${f.creator.last_name || ''}`.trim() : '—'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                    <td className="px-3 py-3 whitespace-nowrap text-center">
                       <ActionMenu onViewDetail={() => onSelectDetail(f)} />
                     </td>
                   </tr>
@@ -658,109 +696,27 @@ const HistorySection: React.FC<{
         </div>
       )}
 
-      {!loading && filteredFollowUps.length > 0 && (
+      {!loading && totalItems > 0 && (
         <Pagination
           currentPage={currentPage}
-          totalItems={filteredFollowUps.length}
+          totalItems={totalItems}
           itemsPerPage={pageSize}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={(size) => { setPageSize(size); setCurrentPage(1); }}
+          onPageChange={onPageChange}
+          onItemsPerPageChange={onPageSizeChange}
         />
       )}
-    </section>
+      </section>
+    </div>
   );
 };
 
-/* ===== Detail Section ===== */
-const DetailSection: React.FC<{ followUp: ContractFollowUp }> = ({ followUp }) => {
-  const type = followUp.follow_up_type as FollowUpType;
-  const knownResult = followUp.result as FollowUpResult;
-  const knownMethod = followUp.contact_method as ContactMethod | undefined;
-
-  return (
-    <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        </div>
-        <div>
-          <h3 className="text-sm font-semibold text-slate-800">รายละเอียดการติดตาม</h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {FollowUpTypeLabels[type] || followUp.follow_up_type}
-            {followUp.document_ref_code ? ` · ${followUp.document_ref_code}` : ''}
-            {followUp.follow_up_number ? ` · ครั้งที่ ${followUp.follow_up_number}` : ''}
-          </p>
-        </div>
-      </div>
-
-      <div className="p-5 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField label="ประเภทการติดตาม" htmlFor="d-type">
-            <div id="d-type" className="block w-full rounded-md border border-slate-200 bg-slate-50/50 py-2 px-3 text-sm">
-              <span className={`font-medium ${typeColors[type] || 'text-slate-700'}`}>
-                {FollowUpTypeLabels[type] || followUp.follow_up_type}
-              </span>
-            </div>
-          </FormField>
-          <FormField label="เลขที่เอกสารอ้างอิง" htmlFor="d-doc">
-            <Input id="d-doc" value={followUp.document_ref_code || '—'} readOnly className="bg-slate-50/50" />
-          </FormField>
-          <FormField label="วันที่ติดตาม" htmlFor="d-date">
-            <Input id="d-date" value={formatThaiDate(followUp.follow_up_date)} readOnly className="bg-slate-50/50" />
-          </FormField>
-          <FormField label="ครั้งที่ติดตาม" htmlFor="d-num">
-            <Input id="d-num" value={followUp.follow_up_number ? `ครั้งที่ ${followUp.follow_up_number}` : '—'} readOnly className="bg-slate-50/50" />
-          </FormField>
-          <FormField label="วันนัดติดตามครั้งถัดไป" htmlFor="d-next">
-            <Input
-              id="d-next"
-              value={followUp.next_follow_up_date ? formatThaiDate(followUp.next_follow_up_date) : '—'}
-              readOnly
-              className="bg-slate-50/50"
-            />
-          </FormField>
-          <FormField label="ผู้ติดตาม" htmlFor="d-creator">
-            <Input
-              id="d-creator"
-              value={followUp.creator ? `${followUp.creator.first_name} ${followUp.creator.last_name || ''}`.trim() : '—'}
-              readOnly
-              className="bg-slate-50/50"
-            />
-          </FormField>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="ช่องทางการติดตาม" htmlFor="d-method">
-            <Input
-              id="d-method"
-              value={followUp.contact_method ? ContactMethodLabels[knownMethod as ContactMethod] || followUp.contact_method : '—'}
-              readOnly
-              className="bg-slate-50/50"
-            />
-          </FormField>
-          <FormField label="ผลการติดตาม" htmlFor="d-result">
-            <div id="d-result" className="block w-full rounded-md border border-slate-200 bg-slate-50/50 py-2 px-3 text-sm">
-              <span className={`font-medium ${resultColors[knownResult] || 'text-slate-700'}`}>
-                {FollowUpResultLabels[knownResult] || followUp.result}
-              </span>
-            </div>
-          </FormField>
-        </div>
-
-        <FormField label="หมายเหตุ / เหตุผล" htmlFor="d-notes">
-          <Textarea id="d-notes" rows={3} value={followUp.notes || '—'} readOnly className="bg-slate-50/50" />
-        </FormField>
-      </div>
-    </section>
-  );
-};
 
 /* ===== Per-row action dropdown ===== */
 const ActionMenu: React.FC<{ onViewDetail: () => void }> = ({ onViewDetail }) => {
   const [open, setOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -773,11 +729,22 @@ const ActionMenu: React.FC<{ onViewDetail: () => void }> = ({ onViewDetail }) =>
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  const handleToggle = () => {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      // Estimated dropdown height ~50px (1 menu item); if no space below, open up
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setOpenUp(spaceBelow < 80);
+    }
+    setOpen((v) => !v);
+  };
+
   return (
     <div ref={wrapperRef} className="relative inline-block">
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleToggle}
         className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
         title="จัดการ"
       >
@@ -789,7 +756,7 @@ const ActionMenu: React.FC<{ onViewDetail: () => void }> = ({ onViewDetail }) =>
       {open && (
         <div
           style={{ fontFamily: '"Noto Sans Thai", sans-serif' }}
-          className="absolute right-0 z-20 mt-1 w-44 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5"
+          className={`absolute right-0 z-20 w-44 rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5 ${openUp ? 'bottom-full mb-1' : 'top-full mt-1'}`}
         >
           <button
             type="button"
