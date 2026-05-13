@@ -225,6 +225,12 @@ const AccountTransactions: FC = () => {
     fetchTransactions();
   }, [fetchTransactions]);
 
+  // ทุกครั้งที่สลับกลับมา tab "รายการรับ-จ่าย" → re-fetch
+  useEffect(() => {
+    if (activeTab === 'transactions') fetchTransactions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   const accountMap = useMemo(
     () => new Map(accounts.map((a) => [a.id, a])),
     [accounts],
@@ -254,7 +260,20 @@ const AccountTransactions: FC = () => {
             <p className="mt-1 text-slate-600">
               {activeTab === 'requests'
                 ? 'สร้างและติดตามใบขอเบิกเงิน'
-                : 'ประวัติรายการของบัญชีที่ผูกกับบทบาทของคุณ'}
+                : (() => {
+                    const acc = mappedAccountId ? accountMap.get(mappedAccountId) : null;
+                    if (acc) {
+                      return (
+                        <>
+                          ประวัติรายการของบัญชี{' '}
+                          <span className="font-semibold text-primary">
+                            {acc.account_number} ({acc.account_name})
+                          </span>
+                        </>
+                      );
+                    }
+                    return 'ประวัติรายการของบัญชีที่ผูกกับบทบาทของคุณ';
+                  })()}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -265,7 +284,7 @@ const AccountTransactions: FC = () => {
                 className="!bg-amber-500 hover:!bg-amber-600 !border-amber-500 !text-white"
               >
                 <PlusIcon className="h-5 w-5" />
-                สร้างใบเบิกขอเงิน
+                สร้างใบขอเบิกเงิน
               </Button>
             )}
             {!hasNoMapping && (

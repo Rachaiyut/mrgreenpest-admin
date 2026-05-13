@@ -187,6 +187,15 @@ const AccountPage: FC = () => {
     return () => clearTimeout(t);
   }, [fetchList]);
 
+  // ทุกครั้งที่สลับกลับมา tab "บัญชี" → fetch ใหม่ + อัปเดต badge ใบขอเบิก
+  useEffect(() => {
+    if (activeTab === 'accounts') fetchList();
+    CashWithdrawalRequestApi.getAll({ status: 'PENDING', limit: 1, page: 1 })
+      .then((res) => setPendingCount(res?.meta?.total ?? 0))
+      .catch(() => setPendingCount(0));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   const totalBalance = useMemo(
     () => accounts.reduce((sum, a) => sum + Number(a.current_balance || 0), 0),
     [accounts],
