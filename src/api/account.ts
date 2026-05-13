@@ -87,6 +87,13 @@ class AccountService extends AuthService {
     );
     return res.data.data;
   }
+
+  async deleteTransaction(trxId: string): Promise<{ deleted: boolean }> {
+    const res = await this.http.delete<IBaseResponse<{ deleted: boolean }>>(
+      `${this.path}/transactions/${trxId}`,
+    );
+    return res.data.data;
+  }
 }
 
 export const AccountApi = new AccountService();

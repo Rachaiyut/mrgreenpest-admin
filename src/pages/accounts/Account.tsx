@@ -9,13 +9,8 @@ import { Pagination } from '../../components/common/Pagination';
 import { AccountApi } from '../../api/account';
 import { RoleAccountApi } from '../../api/role-account';
 import { Account as AccountType } from '../../types/entity/account.interface';
-import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { usePermissions } from '../../hooks/usePermissions';
 
-const isSuperadminRoleName = (name?: string): boolean => {
-  if (!name) return false;
-  if (name === 'SUPERADMIN') return true;
-  return name.includes('สูงสุด') || name.includes('หัวหน้าผู้ดูแล');
-};
 import {
   PlusIcon,
   PencilIcon,
@@ -30,6 +25,8 @@ import {
 import { AccountModal } from '../../components/features/accounts/AccountModal';
 import { AccountTransactionModal } from '../../components/features/accounts/AccountTransactionModal';
 import { AccountTransactionHistoryModal } from '../../components/features/accounts/AccountTransactionHistoryModal';
+import { CashWithdrawalRequestList } from '../../components/features/cash-withdrawal-request/CashWithdrawalRequestList';
+import { CashWithdrawalRequestApi } from '../../api/cash-withdrawal-request';
 
 const fmtMoney = (v: number) =>
   `${Number(v || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`;
@@ -49,8 +46,9 @@ const ACCOUNT_TYPE_COLOR: Record<string, string> = {
 };
 
 const AccountPage: FC = () => {
-  const currentUser = useCurrentUser();
-  const isSuperadmin = isSuperadminRoleName(currentUser?.roleName);
+  const { hasPermission } = usePermissions();
+  // ใครก็ตามที่มี ACCESS_ACCOUNT จะเห็นทุกบัญชี (เป็น permission กลางของหน้านี้)
+  const canSeeAllAccounts = hasPermission('ACCESS_ACCOUNT');
 
   const [accounts, setAccounts] = useState<AccountType[]>([]);
   const [total, setTotal] = useState(0);
@@ -65,7 +63,7 @@ const AccountPage: FC = () => {
   const [mappingLoaded, setMappingLoaded] = useState(false);
 
   useEffect(() => {
-    if (isSuperadmin) {
+    if (canSeeAllAccounts) {
       setMappingLoaded(true);
       return;
     }
@@ -73,7 +71,49 @@ const AccountPage: FC = () => {
       .then((m) => setMappedAccountId(m?.account_id || null))
       .catch((err) => console.error('Failed to load role-account mapping:', err))
       .finally(() => setMappingLoaded(true));
-  }, [isSuperadmin]);
+  }, [canSeeAllAccounts]);
+
+  // Tab state — บัญชี (default) | ใบขอเบิกเงิน
+  const [activeTab, setActiveTab] = useState<'accounts' | 'requests'>('accounts');
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    CashWithdrawalRequestApi.getAll({ status: 'PENDING', limit: 1, page: 1 })
+      .then((res) => setPendingCount(res?.meta?.total ?? 0))
+      .catch(() => setPendingCount(0));
+  }, [activeTab]);
+
+  const renderTabBar = () => (
+    <div className="inline-flex items-center bg-slate-100 p-1 rounded-lg gap-1">
+      <button
+        type="button"
+        onClick={() => setActiveTab('accounts')}
+        className={`px-3 sm:px-4 h-10 text-xs sm:text-sm font-semibold rounded-md transition-all whitespace-nowrap flex items-center ${
+          activeTab === 'accounts'
+            ? 'bg-white text-primary shadow-sm'
+            : 'text-slate-600 hover:text-slate-900'
+        }`}
+      >
+        บัญชี
+      </button>
+      <button
+        type="button"
+        onClick={() => setActiveTab('requests')}
+        className={`px-3 sm:px-4 h-10 text-xs sm:text-sm font-semibold rounded-md transition-all whitespace-nowrap flex items-center ${
+          activeTab === 'requests'
+            ? 'bg-white text-amber-600 shadow-sm'
+            : 'text-slate-600 hover:text-slate-900'
+        }`}
+      >
+        ใบขอเบิกเงิน
+        {pendingCount > 0 && (
+          <span className="ml-1.5 bg-amber-100 text-amber-700 py-0.5 px-1.5 rounded-full text-[10px] sm:text-xs">
+            {pendingCount}
+          </span>
+        )}
+      </button>
+    </div>
+  );
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
@@ -114,8 +154,8 @@ const AccountPage: FC = () => {
   const fetchList = useCallback(async () => {
     if (!mappingLoaded) return;
 
-    // non-SUPERADMIN ไม่มี mapping → ไม่มีบัญชีให้เห็น
-    if (!isSuperadmin && !mappedAccountId) {
+    // ผู้ใช้ทั่วไป (ไม่ใช่ SUPERADMIN/ผู้อนุมัติ) + ไม่มี mapping → ไม่เห็นบัญชี
+    if (!canSeeAllAccounts && !mappedAccountId) {
       setAccounts([]);
       setTotal(0);
       setIsLoading(false);
@@ -131,16 +171,16 @@ const AccountPage: FC = () => {
         ...(activeFilter === 'active' ? { is_active: true } : activeFilter === 'inactive' ? { is_active: false } : {}),
       });
       const raw = res.data || [];
-      // non-SUPERADMIN: filter ใน client เฉพาะบัญชีที่ผูกกับ role
-      const filtered = isSuperadmin ? raw : raw.filter((a) => a.id === mappedAccountId);
+      // SUPERADMIN / ผู้อนุมัติ: เห็นทุกบัญชี; ผู้ใช้ทั่วไป: เฉพาะบัญชีที่ผูกกับ role
+      const filtered = canSeeAllAccounts ? raw : raw.filter((a) => a.id === mappedAccountId);
       setAccounts(filtered);
-      setTotal(isSuperadmin ? (res.meta?.total ?? raw.length) : filtered.length);
+      setTotal(canSeeAllAccounts ? (res.meta?.total ?? raw.length) : filtered.length);
     } catch (err) {
       console.error('Failed to fetch accounts', err);
     } finally {
       setIsLoading(false);
     }
-  }, [page, limit, search, activeFilter, isSuperadmin, mappedAccountId, mappingLoaded]);
+  }, [page, limit, search, activeFilter, canSeeAllAccounts, mappedAccountId, mappingLoaded]);
 
   useEffect(() => {
     const t = setTimeout(fetchList, 250);
@@ -203,24 +243,29 @@ const AccountPage: FC = () => {
   };
 
   const getActionItems = (a: AccountType) => {
-    const items: Array<{ label: string; icon: typeof PencilIcon; color: string; hoverBg: string; onClick: () => void }> = [
-      {
+    const items: Array<{ label: string; icon: typeof PencilIcon; color: string; hoverBg: string; onClick: () => void }> = [];
+    // ดูประวัติรายการ — กั้นด้วย READ_ACCOUNT (สิทธิ์ดูบัญชีธนาคาร)
+    if (hasPermission('READ_ACCOUNT')) {
+      items.push({
         label: 'ดูประวัติรายการ',
         icon: EyeIcon,
         color: 'text-slate-700',
         hoverBg: 'hover:bg-slate-50',
         onClick: () => openHistory(a),
-      },
-      {
+      });
+    }
+    // บันทึกรายการ — กั้นด้วย CREATE_ACCOUNT_TRANSACTION
+    if (hasPermission('CREATE_ACCOUNT_TRANSACTION')) {
+      items.push({
         label: 'บันทึกรายการ',
         icon: CurrencyDollarIcon,
         color: 'text-amber-600',
         hoverBg: 'hover:bg-amber-50',
         onClick: () => openTransaction(a),
-      },
-    ];
-    // เฉพาะ SUPERADMIN ที่แก้ไข/toggle ใช้งานได้
-    if (isSuperadmin) {
+      });
+    }
+    // กั้นด้วย permission: UPDATE_ACCOUNT สำหรับแก้ไข, CANCEL_ACCOUNT สำหรับ toggle ใช้งาน
+    if (hasPermission('UPDATE_ACCOUNT')) {
       items.push({
         label: 'แก้ไข',
         icon: PencilIcon,
@@ -228,6 +273,8 @@ const AccountPage: FC = () => {
         hoverBg: 'hover:bg-blue-50',
         onClick: () => openEdit(a),
       });
+    }
+    if (hasPermission('UPDATE_ACCOUNT') || hasPermission('CANCEL_ACCOUNT')) {
       items.push(
         a.is_active
           ? {
@@ -271,16 +318,27 @@ const AccountPage: FC = () => {
       <div className="p-4 sm:p-6 lg:p-8 flex flex-col flex-1">
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">บัญชี</h1>
-            <p className="mt-1 text-slate-600">จัดการบัญชีเงินสดและธนาคารภายใน</p>
+            <h1 className="text-3xl font-bold text-slate-800">
+              {activeTab === 'requests' ? 'ใบขอเบิกเงิน' : 'บัญชี'}
+            </h1>
+            <p className="mt-1 text-slate-600">
+              {activeTab === 'requests'
+                ? 'สร้างและติดตามใบขอเบิกเงิน'
+                : 'จัดการบัญชีเงินสดและธนาคารภายใน'}
+            </p>
           </div>
-          {isSuperadmin && (
+          {activeTab === 'accounts' && hasPermission('CREATE_ACCOUNT') && (
             <Button onClick={openCreate}>
               <PlusIcon className="h-5 w-5" />
               เพิ่มบัญชี
             </Button>
           )}
         </div>
+
+        {activeTab === 'requests' ? (
+          <CashWithdrawalRequestList toolbarExtra={renderTabBar()} />
+        ) : (
+          <>
 
         {/* Summary card */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
@@ -352,6 +410,7 @@ const AccountPage: FC = () => {
                 { value: 'inactive', label: 'ไม่ใช้งาน' },
               ]}
             />
+            <div className="sm:ml-auto">{renderTabBar()}</div>
           </div>
         </Card>
 
@@ -463,6 +522,8 @@ const AccountPage: FC = () => {
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
 
       {openDropdownId &&

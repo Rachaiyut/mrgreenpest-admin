@@ -70,6 +70,7 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
     items: [
       { label: 'จัดการบัญชีธนาคาร', module: 'ACCOUNT', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
       { label: 'รายรับรายจ่าย', module: 'ACCOUNT_TRANSACTION', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'ใบขอเบิกเงิน', module: 'CASH_WITHDRAWAL_REQUEST', skipActions: ['DELETE'] },
     ],
   },
   {

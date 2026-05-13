@@ -1,22 +1,40 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FC, MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { Card } from '../../components/common/Card';
-import { Input } from '../../components/common/FormControls';
+import { Input, Button } from '../../components/common/FormControls';
 import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { Pagination } from '../../components/common/Pagination';
 import BuddhistDatePicker from '../../components/common/BuddhistDatePicker';
+import { AccountTransactionModal } from '../../components/features/accounts/AccountTransactionModal';
+import { CashTab, CashTabBar } from '../../components/features/accounts/CashTabBar';
+import { CreateCashWithdrawalRequestModal } from '../../components/features/cash-withdrawal-request/CreateCashWithdrawalRequestModal';
+import { CashWithdrawalRequestList } from '../../components/features/cash-withdrawal-request/CashWithdrawalRequestList';
 import { AccountApi } from '../../api/account';
 import { RoleAccountApi } from '../../api/role-account';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+
+const isSuperadminRoleName = (name?: string): boolean => {
+  if (!name) return false;
+  if (name === 'SUPERADMIN') return true;
+  return name.includes('สูงสุด') || name.includes('หัวหน้าผู้ดูแล');
+};
 import {
   Account,
   AccountTransaction,
   AccountTransactionType,
 } from '../../types/entity/account.interface';
+import Swal from '../../utils/swal';
+import { usePermissions } from '../../hooks/usePermissions';
 import {
   LoadingIcon,
   CurrencyDollarIcon,
   ArrowTrendingUpIcon,
   WalletIcon,
+  PlusIcon,
+  ManageIcon,
+  EyeIcon,
+  TrashIcon,
 } from '../../assets/icons/Icons';
 import { formatThaiDateTime } from '../../utils/date';
 
@@ -38,7 +56,7 @@ const toISO = (d: Date | null) => (d ? d.toISOString().substring(0, 10) : '');
 const AccountTransactions: FC = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<AccountTransaction[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
 
   const [type, setType] = useState<string>('');
@@ -55,6 +73,89 @@ const AccountTransactions: FC = () => {
   // role-account mapping ของผู้ใช้ปัจจุบัน (ไม่ใช่ SUPERADMIN)
   const [mappedAccountId, setMappedAccountId] = useState<string | null>(null);
   const [mappingLoaded, setMappingLoaded] = useState(false);
+
+  const currentUser = useCurrentUser();
+  const isSuperadmin = isSuperadminRoleName(currentUser?.roleName);
+
+  // Modal สำหรับบันทึกรายการเดินบัญชี (create)
+  const [createTrxOpen, setCreateTrxOpen] = useState(false);
+  // Modal สำหรับขอเบิกเงิน (เข้า approval flow → CFO อนุมัติ)
+  const [requestOpen, setRequestOpen] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<CashTab>('transactions');
+
+  // Dropdown menu state per row
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Detail modal state
+  const [detailTrx, setDetailTrx] = useState<AccountTransaction | null>(null);
+
+  const handleDropdownToggle = (event: ReactMouseEvent<HTMLButtonElement>, id: string) => {
+    event.stopPropagation();
+    if (openDropdownId === id) {
+      setOpenDropdownId(null);
+      return;
+    }
+    const rect = event.currentTarget.getBoundingClientRect();
+    setOpenDropdownId(id);
+    setDropdownPosition({ top: rect.bottom + window.scrollY, left: rect.right + window.scrollX });
+  };
+
+  useEffect(() => {
+    if (!openDropdownId) return;
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        if (!(e.target as HTMLElement).closest('button[data-trx-id]')) {
+          setOpenDropdownId(null);
+        }
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [openDropdownId]);
+
+  const openTransactionDetail = (t: AccountTransaction) => {
+    setOpenDropdownId(null);
+    setDetailTrx(t);
+  };
+
+  const { hasPermission } = usePermissions();
+  const canDelete = hasPermission('CANCEL_ACCOUNT_TRANSACTION');
+
+  const isFromCashWithdrawalRequest = (t: AccountTransaction) =>
+    !!t.reference_code && t.reference_code.toUpperCase().startsWith('CW');
+
+  const handleDeleteTransaction = async (t: AccountTransaction) => {
+    setOpenDropdownId(null);
+    if (isFromCashWithdrawalRequest(t)) {
+      Swal.fire(
+        'ไม่สามารถลบได้',
+        'รายการนี้มาจากใบขอเบิก กรุณาดำเนินการที่ใบขอเบิก',
+        'warning',
+      );
+      return;
+    }
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันลบรายการ',
+      text: 'ลบแล้วจะคืน (revert) ยอดเงินในบัญชีกลับ ดำเนินการต่อหรือไม่?',
+      showCancelButton: true,
+      confirmButtonText: 'ลบรายการ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#ef4444',
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await AccountApi.deleteTransaction(t.id);
+      Swal.fire({ icon: 'success', title: 'ลบรายการแล้ว', timer: 1200, showConfirmButton: false });
+      fetchTransactions();
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถลบได้', 'error');
+    }
+  };
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -97,6 +198,7 @@ const AccountTransactions: FC = () => {
     if (hasNoMapping) {
       setTransactions([]);
       setTotal(0);
+      setLoading(false);
       return;
     }
     setLoading(true);
@@ -146,13 +248,46 @@ const AccountTransactions: FC = () => {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">รายรับรายจ่าย</h1>
+            <h1 className="text-3xl font-bold text-slate-800">
+              {activeTab === 'requests' ? 'ใบขอเบิกเงิน' : 'รายรับรายจ่าย'}
+            </h1>
             <p className="mt-1 text-slate-600">
-              ประวัติรายการของบัญชีที่ผูกกับบทบาทของคุณ
+              {activeTab === 'requests'
+                ? 'สร้างและติดตามใบขอเบิกเงิน'
+                : 'ประวัติรายการของบัญชีที่ผูกกับบทบาทของคุณ'}
             </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {isSuperadmin && (
+              <Button
+                onClick={() => setRequestOpen(true)}
+                variant="primary"
+                className="!bg-amber-500 hover:!bg-amber-600 !border-amber-500 !text-white"
+              >
+                <PlusIcon className="h-5 w-5" />
+                ขอเบิกเงิน
+              </Button>
+            )}
+            {!hasNoMapping && (
+              <Button
+                onClick={() => setCreateTrxOpen(true)}
+                variant="primary"
+              >
+                <PlusIcon className="h-5 w-5" />
+                บันทึกรายรับรายจ่าย
+              </Button>
+            )}
           </div>
         </div>
 
+        {activeTab === 'requests' ? (
+          <CashWithdrawalRequestList
+            toolbarExtra={
+              <CashTabBar active={activeTab} onChange={setActiveTab} />
+            }
+          />
+        ) : (
+          <>
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <Card className="!p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
@@ -263,6 +398,11 @@ const AccountTransactions: FC = () => {
                 className="block w-full rounded-md border border-slate-300 py-2 pr-3 text-sm shadow-sm focus:ring-2 focus:ring-primary focus:border-primary bg-white h-10"
               />
             </div>
+            <CashTabBar
+              active={activeTab}
+              onChange={setActiveTab}
+              className="sm:ml-auto"
+            />
           </div>
         </Card>
 
@@ -290,32 +430,21 @@ const AccountTransactions: FC = () => {
                 <tr>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
                   <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่</th>
-                  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">บัญชี</th>
                   <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ประเภท</th>
                   <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนเงิน</th>
                   <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คงเหลือ</th>
                   <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขอ้างอิง</th>
                   <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">รายละเอียด</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {transactions.map((t, idx) => {
                     const meta = TYPE_META[t.type] || TYPE_META.ADJUSTMENT;
-                    const account = t.account_id ? accountMap.get(t.account_id) : undefined;
                     return (
                       <tr key={t.id} className="hover:bg-slate-50">
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center tabular-nums">{(page - 1) * limit + idx + 1}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{formatThaiDateTime(t.created_at || t.transaction_date)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          {account ? (
-                            <div className="flex flex-col">
-                              <span className="font-medium text-slate-800">{account.account_number}</span>
-                              <span className="text-xs text-slate-500">{account.bank_name}</span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold ${meta.badge}`}>
                             {meta.label}
@@ -328,6 +457,16 @@ const AccountTransactions: FC = () => {
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-mono text-slate-600">{t.reference_code || '—'}</td>
                         <td className="px-4 py-3 text-sm text-slate-600 max-w-[260px]">
                           <span className="line-clamp-2" title={t.description || ''}>{t.description || '—'}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <Button
+                            variant="icon"
+                            onClick={(e) => handleDropdownToggle(e as ReactMouseEvent<HTMLButtonElement>, t.id)}
+                            data-trx-id={t.id}
+                            className="!p-1.5"
+                          >
+                            <ManageIcon className="w-5 h-5 text-slate-500" />
+                          </Button>
                         </td>
                       </tr>
                     );
@@ -346,7 +485,76 @@ const AccountTransactions: FC = () => {
             />
           )}
         </div>
+          </>
+        )}
       </div>
+
+      <AccountTransactionModal
+        isOpen={createTrxOpen}
+        account={mappedAccountId ? (accountMap.get(mappedAccountId) || null) : null}
+        mode="create"
+        onClose={() => setCreateTrxOpen(false)}
+        onSubmitted={fetchTransactions}
+      />
+      <CreateCashWithdrawalRequestModal
+        isOpen={requestOpen}
+        onClose={() => setRequestOpen(false)}
+        onSubmitted={fetchTransactions}
+      />
+      <AccountTransactionModal
+        isOpen={!!detailTrx}
+        account={detailTrx?.account_id ? (accountMap.get(detailTrx.account_id) || null) : null}
+        transaction={detailTrx}
+        mode="view"
+        onClose={() => setDetailTrx(null)}
+      />
+
+      {openDropdownId &&
+        dropdownPosition &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            style={{
+              position: 'absolute',
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              transform: 'translateX(-100%)',
+            }}
+            className="origin-top-right mt-2 w-44 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-30"
+            role="menu"
+          >
+            <div className="py-1">
+              {(() => {
+                const t = transactions.find((x) => x.id === openDropdownId);
+                if (!t) return null;
+                const fromCw = isFromCashWithdrawalRequest(t);
+                return (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); openTransactionDetail(t); }}
+                      className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      <EyeIcon className="w-4 h-4" />
+                      ดูรายละเอียด
+                    </button>
+                    {canDelete && !fromCw && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); handleDeleteTransaction(t); }}
+                        className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                        ลบรายการ
+                      </button>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };

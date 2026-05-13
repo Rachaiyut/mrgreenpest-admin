@@ -4,13 +4,19 @@ import Swal from '@/src/utils/swal';
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
 import { AccountApi } from '../../../api/account';
-import { Account, AccountTransactionType } from '../../../types/entity/account.interface';
+import { Account, AccountTransaction, AccountTransactionType } from '../../../types/entity/account.interface';
+
+export type AccountTransactionModalMode = 'create' | 'view';
 
 interface Props {
   isOpen: boolean;
   account: Account | null;
   onClose: () => void;
-  onSubmitted: () => Promise<void> | void;
+  onSubmitted?: () => Promise<void> | void;
+  /** create (default) = ฟอร์มสร้าง, view = อ่านอย่างเดียวจาก transaction */
+  mode?: AccountTransactionModalMode;
+  /** transaction ที่จะแสดงใน view mode (จำเป็นเมื่อ mode='view') */
+  transaction?: AccountTransaction | null;
 }
 
 const todayISO = () => new Date().toISOString().substring(0, 10);
@@ -85,7 +91,16 @@ const TYPE_CLASSES: Record<
   },
 };
 
-export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, onSubmitted }) => {
+export const AccountTransactionModal: FC<Props> = ({
+  isOpen,
+  account,
+  onClose,
+  onSubmitted,
+  mode = 'create',
+  transaction,
+}) => {
+  const isView = mode === 'view';
+
   const [type, setType] = useState<AccountTransactionType>('DEPOSIT');
   const [amount, setAmount] = useState<number>(0);
   const [date, setDate] = useState(todayISO());
@@ -95,23 +110,39 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
 
   useEffect(() => {
     if (!isOpen) return;
-    setType('DEPOSIT');
-    setAmount(0);
-    setDate(todayISO());
-    setRefCode('');
-    setDesc('');
-  }, [isOpen]);
+    if (isView && transaction) {
+      setType(transaction.type);
+      setAmount(Number(transaction.amount || 0));
+      setDate((transaction.transaction_date || todayISO()).substring(0, 10));
+      setRefCode(transaction.reference_code || '');
+      setDesc(transaction.description || '');
+    } else {
+      setType('DEPOSIT');
+      setAmount(0);
+      setDate(todayISO());
+      setRefCode('');
+      setDesc('');
+    }
+  }, [isOpen, isView, transaction]);
 
   if (!account) return null;
 
   const before = Number(account.current_balance || 0);
   const amt = Number(amount || 0);
-  const previewBalance =
-    type === 'DEPOSIT' ? before + amt :
-    type === 'WITHDRAW' ? before - amt :
-    type === 'ADJUSTMENT' ? before + amt :
-    before;
-  const delta = previewBalance - before;
+  // view mode: คำนวณ "ยอดก่อน" จาก balance_after − delta จริงของ trx
+  const previewBalance = isView && transaction
+    ? Number(transaction.balance_after || 0)
+    : (
+      type === 'DEPOSIT' ? before + amt :
+      type === 'WITHDRAW' ? before - amt :
+      type === 'ADJUSTMENT' ? before + amt :
+      before
+    );
+  const beforeForDisplay = isView && transaction
+    ? Number(transaction.balance_after || 0) -
+        (transaction.type === 'WITHDRAW' ? -Number(transaction.amount) : Number(transaction.amount))
+    : before;
+  const delta = previewBalance - beforeForDisplay;
   const deltaPositive = delta > 0;
   const deltaNegative = delta < 0;
 
@@ -131,7 +162,7 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
         description: desc.trim() || undefined,
       });
       Swal.fire({ icon: 'success', title: 'บันทึกรายการแล้ว', timer: 1200, showConfirmButton: false });
-      await onSubmitted();
+      await onSubmitted?.();
     } catch (err) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถบันทึกได้', 'error');
@@ -144,17 +175,27 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`บันทึกรายการเดินบัญชี · ${account.account_number}`}
+      title={isView
+        ? `รายละเอียดรายการ · ${account.account_number}`
+        : `บันทึกรายการเดินบัญชี · ${account.account_number}`}
       size="2xl"
       footer={
-        <div className="flex gap-2 justify-end w-full">
-          <Button type="button" onClick={onClose} variant="ghost" className="bg-white text-slate-700 border border-slate-300 hover:bg-slate-50">
-            ยกเลิก
-          </Button>
-          <Button type="submit" form="account-trx-form" variant="primary" disabled={isSaving}>
-            {isSaving ? 'กำลังบันทึก...' : 'บันทึกรายการ'}
-          </Button>
-        </div>
+        isView ? (
+          <div className="flex gap-2 justify-end w-full">
+            <Button type="button" onClick={onClose} variant="primary">
+              ปิด
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-2 justify-end w-full">
+            <Button type="button" onClick={onClose} variant="ghost" className="bg-white text-slate-700 border border-slate-300 hover:bg-slate-50">
+              ยกเลิก
+            </Button>
+            <Button type="submit" form="account-trx-form" variant="primary" disabled={isSaving}>
+              {isSaving ? 'กำลังบันทึก...' : 'บันทึกรายการ'}
+            </Button>
+          </div>
+        )
       }
     >
       <form id="account-trx-form" onSubmit={handleSubmit} className="space-y-5">
@@ -194,8 +235,9 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
                 <button
                   key={t}
                   type="button"
-                  onClick={() => setType(t)}
-                  className={`relative rounded-xl border-2 transition-all px-3 py-3 text-left ${active ? cls.active : cls.idle}`}
+                  onClick={() => !isView && setType(t)}
+                  disabled={isView && !active}
+                  className={`relative rounded-xl border-2 transition-all px-3 py-3 text-left ${active ? cls.active : cls.idle} ${isView ? 'cursor-default' : ''} ${isView && !active ? 'opacity-40' : ''}`}
                 >
                   <div className={`inline-flex items-center justify-center h-8 w-8 rounded-lg mb-2 transition-colors ${active ? cls.iconActive : cls.iconIdle}`}>
                     <Icon className="h-4 w-4" />
@@ -223,7 +265,8 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
-              required
+              required={!isView}
+              readOnly={isView}
               className="flex-1 min-w-0 text-3xl font-bold text-slate-800 bg-transparent border-0 outline-none focus:ring-0 p-0 tabular-nums placeholder:text-slate-300"
             />
             <span className="text-sm font-medium text-slate-400">{account.currency || 'THB'}</span>
@@ -233,16 +276,16 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
         {/* Secondary fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1.5">วันที่รายการ <span className="text-red-500">*</span></label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">วันที่รายการ {!isView && <span className="text-red-500">*</span>}</label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required={!isView} readOnly={isView} />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1.5">เลขอ้างอิง / เช็ค</label>
-            <Input value={refCode} onChange={(e) => setRefCode(e.target.value)} placeholder="เช่น CHQ-0012345" />
+            <Input value={refCode} onChange={(e) => setRefCode(e.target.value)} placeholder="เช่น CHQ-0012345" readOnly={isView} />
           </div>
           <div className="md:col-span-2">
             <label className="block text-xs font-medium text-slate-600 mb-1.5">รายละเอียด</label>
-            <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="เช่น โอนจากบัญชีกลาง" />
+            <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="เช่น โอนจากบัญชีกลาง" readOnly={isView} />
           </div>
         </div>
 
