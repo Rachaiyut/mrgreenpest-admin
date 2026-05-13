@@ -12,7 +12,12 @@ import {
   AccountTransaction,
   AccountTransactionType,
 } from '../../types/entity/account.interface';
-import { LoadingIcon, CurrencyDollarIcon } from '../../assets/icons/Icons';
+import {
+  LoadingIcon,
+  CurrencyDollarIcon,
+  ArrowTrendingUpIcon,
+  WalletIcon,
+} from '../../assets/icons/Icons';
 import { formatThaiDateTime } from '../../utils/date';
 
 const fmtMoney = (v: number) =>
@@ -149,20 +154,59 @@ const AccountTransactions: FC = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <Card className="!p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
-            <p className="text-sm text-emerald-700 font-medium">รายรับ (หน้านี้)</p>
-            <p className="text-2xl font-bold text-emerald-800 mt-1">+{fmtMoney(stats.income)}</p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500 rounded-lg">
+                <ArrowTrendingUpIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-emerald-600 font-medium whitespace-nowrap">รายรับ (หน้านี้)</p>
+                <p className="text-2xl font-bold text-emerald-800">+{fmtMoney(stats.income)}</p>
+              </div>
+            </div>
           </Card>
           <Card className="!p-4 bg-gradient-to-br from-red-50 to-red-100 border-red-200">
-            <p className="text-sm text-red-700 font-medium">รายจ่าย (หน้านี้)</p>
-            <p className="text-2xl font-bold text-red-800 mt-1">-{fmtMoney(stats.expense)}</p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-500 rounded-lg">
+                <ArrowTrendingUpIcon className="h-5 w-5 text-white rotate-180" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-red-600 font-medium whitespace-nowrap">รายจ่าย (หน้านี้)</p>
+                <p className="text-2xl font-bold text-red-800">-{fmtMoney(stats.expense)}</p>
+              </div>
+            </div>
           </Card>
-          <Card className="!p-4 bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <p className="text-sm text-slate-600 font-medium">ผลต่าง (หน้านี้)</p>
-            <p className={`text-2xl font-bold mt-1 ${stats.net >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-              {stats.net >= 0 ? '+' : ''}{fmtMoney(stats.net)}
-            </p>
+          <Card
+            className={`!p-4 bg-gradient-to-br ${
+              stats.net >= 0
+                ? 'from-blue-50 to-blue-100 border-blue-200'
+                : 'from-amber-50 to-amber-100 border-amber-200'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={`p-2 rounded-lg ${stats.net >= 0 ? 'bg-blue-500' : 'bg-amber-500'}`}
+              >
+                <WalletIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p
+                  className={`text-xs sm:text-sm font-medium whitespace-nowrap ${
+                    stats.net >= 0 ? 'text-blue-600' : 'text-amber-600'
+                  }`}
+                >
+                  ผลต่าง (หน้านี้)
+                </p>
+                <p
+                  className={`text-2xl font-bold ${
+                    stats.net >= 0 ? 'text-blue-800' : 'text-amber-800'
+                  }`}
+                >
+                  {stats.net >= 0 ? '+' : ''}{fmtMoney(stats.net)}
+                </p>
+              </div>
+            </div>
           </Card>
         </div>
 

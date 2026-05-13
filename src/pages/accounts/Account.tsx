@@ -283,20 +283,41 @@ const AccountPage: FC = () => {
         </div>
 
         {/* Summary card */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-4">
-          <Card className="p-3 sm:p-4 border-l-4 border-emerald-400">
-            <p className="text-xs sm:text-sm text-slate-500">จำนวนบัญชีทั้งหมด</p>
-            <p className="text-lg sm:text-2xl font-bold text-slate-800 mt-1">{total.toLocaleString('th-TH')}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
+          <Card className="!p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500 rounded-lg">
+                <BuildingOfficeIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-emerald-600 font-medium whitespace-nowrap">จำนวนบัญชีทั้งหมด</p>
+                <p className="text-2xl font-bold text-emerald-800">{total.toLocaleString('th-TH')}</p>
+              </div>
+            </div>
           </Card>
-          <Card className="p-3 sm:p-4 border-l-4 border-blue-400">
-            <p className="text-xs sm:text-sm text-slate-500">ยอดรวมในหน้านี้</p>
-            <p className="text-lg sm:text-2xl font-bold text-slate-800 mt-1">{fmtMoney(totalBalance)}</p>
+          <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500 rounded-lg">
+                <CurrencyDollarIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-blue-600 font-medium whitespace-nowrap">ยอดรวมในหน้านี้</p>
+                <p className="text-2xl font-bold text-blue-800">{fmtMoney(totalBalance)}</p>
+              </div>
+            </div>
           </Card>
-          <Card className="p-3 sm:p-4 border-l-4 border-amber-400">
-            <p className="text-xs sm:text-sm text-slate-500">บัญชีใช้งาน</p>
-            <p className="text-lg sm:text-2xl font-bold text-slate-800 mt-1">
-              {accounts.filter((a) => a.is_active).length} / {accounts.length}
-            </p>
+          <Card className="!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-500 rounded-lg">
+                <CheckCircleIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-amber-600 font-medium whitespace-nowrap">บัญชีใช้งาน</p>
+                <p className="text-2xl font-bold text-amber-800">
+                  {accounts.filter((a) => a.is_active).length} / {accounts.length}
+                </p>
+              </div>
+            </div>
           </Card>
         </div>
 
