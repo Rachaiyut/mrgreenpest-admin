@@ -265,7 +265,7 @@ const AccountTransactions: FC = () => {
                 className="!bg-amber-500 hover:!bg-amber-600 !border-amber-500 !text-white"
               >
                 <PlusIcon className="h-5 w-5" />
-                ขอเบิกเงิน
+                สร้างใบเบิกขอเงิน
               </Button>
             )}
             {!hasNoMapping && (

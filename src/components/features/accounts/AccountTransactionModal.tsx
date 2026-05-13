@@ -102,7 +102,7 @@ export const AccountTransactionModal: FC<Props> = ({
   const isView = mode === 'view';
 
   const [type, setType] = useState<AccountTransactionType>('DEPOSIT');
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<number | ''>('');
   const [date, setDate] = useState(todayISO());
   const [refCode, setRefCode] = useState('');
   const [desc, setDesc] = useState('');
@@ -118,7 +118,7 @@ export const AccountTransactionModal: FC<Props> = ({
       setDesc(transaction.description || '');
     } else {
       setType('DEPOSIT');
-      setAmount(0);
+      setAmount('');
       setDate(todayISO());
       setRefCode('');
       setDesc('');
@@ -264,7 +264,12 @@ export const AccountTransactionModal: FC<Props> = ({
               type="number"
               step="0.01"
               value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
+              onChange={(e) => {
+                const v = e.target.value;
+                setAmount(v === '' ? '' : Number(v));
+              }}
+              onFocus={(e) => e.target.select()}
+              placeholder="0.00"
               required={!isView}
               readOnly={isView}
               className="flex-1 min-w-0 text-3xl font-bold text-slate-800 bg-transparent border-0 outline-none focus:ring-0 p-0 tabular-nums placeholder:text-slate-300"

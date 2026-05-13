@@ -25,6 +25,14 @@ class RoleAccountService extends AuthService {
     return res.data?.data || null;
   }
 
+  /** คืน Account objects ที่ผูกกับ role ของ user ที่ login (resolved) */
+  async getMyBoundAccounts(): Promise<import('@/src/types/entity/account.interface').Account[]> {
+    const res = await this.http.get<IBaseResponse<import('@/src/types/entity/account.interface').Account[]>>(
+      `${this.path}/my-accounts`,
+    );
+    return res.data?.data || [];
+  }
+
   async getByRoleId(roleId: string): Promise<RoleAccount | null> {
     const res = await this.http.get<IBaseResponse<RoleAccount | null>>(
       `${this.path}/${roleId}`,

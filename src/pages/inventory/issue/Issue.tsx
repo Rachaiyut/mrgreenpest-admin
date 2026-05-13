@@ -51,8 +51,8 @@ import {
   UserApi,
   WarehouseApi,
   IssueNoteApi,
-  AccountApi,
 } from '../../../api';
+import { RoleAccountApi } from '../../../api/role-account';
 
 // ===== Utils =====
 import { formatThaiDate } from '../../../utils/date';
@@ -405,21 +405,16 @@ const Issue: FC = () => {
         0,
       );
 
-      // ใบเบิกมีค่าใช้จ่าย → ต้องเลือกบัญชีก่อน
+      // ใบเบิกมีค่าใช้จ่าย → ต้องเลือกบัญชีก่อน (ใช้เฉพาะบัญชีที่ผูกกับ role ของ user)
       if (hasExpense) {
         let accountId: string | null = null;
         try {
-          const accountsRes = await AccountApi.getAll({ limit: 10, page: 1 });
-          const accounts = (accountsRes?.data || []).filter((a) => a.is_active);
+          const accounts = await RoleAccountApi.getMyBoundAccounts();
           if (accounts.length === 0) {
-            const totalAll = accountsRes?.data?.length || 0;
             await Swal.fire({
               icon: 'warning',
               title: 'ไม่มีบัญชีให้เลือก',
-              text:
-                totalAll === 0
-                  ? 'กรุณาสร้างบัญชีอย่างน้อย 1 บัญชีก่อนอนุมัติใบเบิกที่มีค่าใช้จ่าย'
-                  : 'บัญชีทั้งหมดถูกปิดการใช้งาน — กรุณาเปิดใช้งานหรือสร้างบัญชีใหม่',
+              text: 'บทบาทของคุณยังไม่ได้ผูกบัญชี กรุณาติดต่อ SUPERADMIN ตั้งค่าบัญชีของบทบาทก่อน',
             });
             return;
           }
