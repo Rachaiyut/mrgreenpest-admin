@@ -3,6 +3,7 @@ import Swal from '@/src/utils/swal';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
 import { User } from '@/src/types/entity/app.interface';
+import { RoleAccountApi } from '@/src/api/role-account';
 import { UserForm, UserFormMode, uploadUserAvatar } from './UserForm';
 
 interface UserModalProps {
@@ -38,10 +39,12 @@ export const UserModal: React.FC<UserModalProps> = ({
     payload,
     file,
     newPassword,
+    accountForRole,
   }: {
     payload: Record<string, unknown>;
     file: File | null;
     newPassword?: string;
+    accountForRole?: { role_id: string; account_id: string | null };
   }) => {
     if (mode === 'view') return;
     setIsSubmitting(true);
@@ -59,7 +62,6 @@ export const UserModal: React.FC<UserModalProps> = ({
             storage_id: uploaded.id,
           });
         }
-        onClose();
       } else if (mode === 'edit' && user && onUpdateUser) {
         let storageId: string | null = null;
         if (file) {
@@ -74,8 +76,27 @@ export const UserModal: React.FC<UserModalProps> = ({
         if (storageId) updatePayload.storage_id = storageId;
 
         await onUpdateUser(updatePayload);
-        onClose();
       }
+
+      // SUPERADMIN — sync role-account mapping (1 role = 1 account)
+      if (accountForRole?.role_id) {
+        try {
+          if (accountForRole.account_id) {
+            await RoleAccountApi.upsert(accountForRole.role_id, accountForRole.account_id);
+          } else {
+            await RoleAccountApi.remove(accountForRole.role_id);
+          }
+        } catch (mappingErr) {
+          console.error('Failed to sync role-account mapping', mappingErr);
+          Swal.fire({
+            icon: 'warning',
+            title: 'บันทึกผู้ใช้สำเร็จ แต่ผูกบัญชีไม่สำเร็จ',
+            text: 'กรุณาลองตั้งค่าบัญชีของบทบาทอีกครั้ง',
+          });
+        }
+      }
+
+      if (mode === 'create' || mode === 'edit') onClose();
     } catch (err) {
       console.error('User modal submit failed', err);
       Swal.fire({

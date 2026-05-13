@@ -7,7 +7,15 @@ import { Input, Button } from '../../components/common/FormControls';
 import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { Pagination } from '../../components/common/Pagination';
 import { AccountApi } from '../../api/account';
+import { RoleAccountApi } from '../../api/role-account';
 import { Account as AccountType } from '../../types/entity/account.interface';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+
+const isSuperadminRoleName = (name?: string): boolean => {
+  if (!name) return false;
+  if (name === 'SUPERADMIN') return true;
+  return name.includes('สูงสุด') || name.includes('หัวหน้าผู้ดูแล');
+};
 import {
   PlusIcon,
   PencilIcon,
@@ -16,6 +24,7 @@ import {
   CurrencyDollarIcon,
   ManageIcon,
   XCircleIcon,
+  CheckCircleIcon,
   EyeIcon,
 } from '../../assets/icons/Icons';
 import { AccountModal } from '../../components/features/accounts/AccountModal';
@@ -40,6 +49,9 @@ const ACCOUNT_TYPE_COLOR: Record<string, string> = {
 };
 
 const AccountPage: FC = () => {
+  const currentUser = useCurrentUser();
+  const isSuperadmin = isSuperadminRoleName(currentUser?.roleName);
+
   const [accounts, setAccounts] = useState<AccountType[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,6 +59,21 @@ const AccountPage: FC = () => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+
+  // role-account mapping (สำหรับ non-SUPERADMIN จะถูกล็อกบัญชี)
+  const [mappedAccountId, setMappedAccountId] = useState<string | null>(null);
+  const [mappingLoaded, setMappingLoaded] = useState(false);
+
+  useEffect(() => {
+    if (isSuperadmin) {
+      setMappingLoaded(true);
+      return;
+    }
+    RoleAccountApi.getForMe()
+      .then((m) => setMappedAccountId(m?.account_id || null))
+      .catch((err) => console.error('Failed to load role-account mapping:', err))
+      .finally(() => setMappingLoaded(true));
+  }, [isSuperadmin]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
@@ -85,6 +112,16 @@ const AccountPage: FC = () => {
   }, [openDropdownId]);
 
   const fetchList = useCallback(async () => {
+    if (!mappingLoaded) return;
+
+    // non-SUPERADMIN ไม่มี mapping → ไม่มีบัญชีให้เห็น
+    if (!isSuperadmin && !mappedAccountId) {
+      setAccounts([]);
+      setTotal(0);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await AccountApi.getAll({
@@ -93,14 +130,17 @@ const AccountPage: FC = () => {
         ...(search.trim() ? { search: search.trim() } : {}),
         ...(activeFilter === 'active' ? { is_active: true } : activeFilter === 'inactive' ? { is_active: false } : {}),
       });
-      setAccounts(res.data || []);
-      setTotal(res.meta?.total ?? (res.data?.length ?? 0));
+      const raw = res.data || [];
+      // non-SUPERADMIN: filter ใน client เฉพาะบัญชีที่ผูกกับ role
+      const filtered = isSuperadmin ? raw : raw.filter((a) => a.id === mappedAccountId);
+      setAccounts(filtered);
+      setTotal(isSuperadmin ? (res.meta?.total ?? raw.length) : filtered.length);
     } catch (err) {
       console.error('Failed to fetch accounts', err);
     } finally {
       setIsLoading(false);
     }
-  }, [page, limit, search, activeFilter]);
+  }, [page, limit, search, activeFilter, isSuperadmin, mappedAccountId, mappingLoaded]);
 
   useEffect(() => {
     const t = setTimeout(fetchList, 250);
@@ -134,25 +174,31 @@ const AccountPage: FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleCloseAccount = async (a: AccountType) => {
+  const handleToggleActive = async (a: AccountType) => {
     setOpenDropdownId(null);
+    const turningOff = a.is_active;
     const result = await Swal.fire({
-      icon: 'warning',
-      title: 'ยืนยันการปิดบัญชี',
-      html: `ปิดบัญชี <strong>${a.account_name}</strong> (${a.account_number}) ใช่หรือไม่?<br/><span class="text-xs text-slate-500">บัญชีจะถูกเปลี่ยนสถานะเป็น "ไม่ใช้งาน"</span>`,
+      icon: turningOff ? 'warning' : 'question',
+      title: turningOff ? 'ยืนยันปิดใช้งานบัญชี' : 'ยืนยันเปิดใช้งานบัญชี',
+      html: `${turningOff ? 'ปิดใช้งาน' : 'เปิดใช้งาน'} <strong>${a.account_name}</strong> ใช่หรือไม่?`,
       showCancelButton: true,
-      confirmButtonText: 'ปิดบัญชี',
+      confirmButtonText: turningOff ? 'ปิดใช้งาน' : 'เปิดใช้งาน',
       cancelButtonText: 'ยกเลิก',
-      confirmButtonColor: '#ef4444',
+      confirmButtonColor: turningOff ? '#ef4444' : '#10b981',
     });
     if (!result.isConfirmed) return;
     try {
-      await AccountApi.close(a.id);
-      Swal.fire({ icon: 'success', title: 'ปิดบัญชีแล้ว', timer: 1200, showConfirmButton: false });
+      await AccountApi.setActive(a.id, !turningOff);
+      Swal.fire({
+        icon: 'success',
+        title: turningOff ? 'ปิดใช้งานแล้ว' : 'เปิดใช้งานแล้ว',
+        timer: 1200,
+        showConfirmButton: false,
+      });
       await fetchList();
     } catch (err) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถปิดบัญชีได้', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถเปลี่ยนสถานะบัญชีได้', 'error');
     }
   };
 
@@ -172,22 +218,33 @@ const AccountPage: FC = () => {
         hoverBg: 'hover:bg-amber-50',
         onClick: () => openTransaction(a),
       },
-      {
+    ];
+    // เฉพาะ SUPERADMIN ที่แก้ไข/toggle ใช้งานได้
+    if (isSuperadmin) {
+      items.push({
         label: 'แก้ไข',
         icon: PencilIcon,
         color: 'text-blue-600',
         hoverBg: 'hover:bg-blue-50',
         onClick: () => openEdit(a),
-      },
-    ];
-    if (a.is_active) {
-      items.push({
-        label: 'ปิดบัญชี',
-        icon: XCircleIcon,
-        color: 'text-red-600',
-        hoverBg: 'hover:bg-red-50',
-        onClick: () => handleCloseAccount(a),
       });
+      items.push(
+        a.is_active
+          ? {
+              label: 'ปิดใช้งาน',
+              icon: XCircleIcon,
+              color: 'text-red-600',
+              hoverBg: 'hover:bg-red-50',
+              onClick: () => handleToggleActive(a),
+            }
+          : {
+              label: 'เปิดใช้งาน',
+              icon: CheckCircleIcon,
+              color: 'text-emerald-600',
+              hoverBg: 'hover:bg-emerald-50',
+              onClick: () => handleToggleActive(a),
+            },
+      );
     }
     return items;
   };
@@ -217,10 +274,12 @@ const AccountPage: FC = () => {
             <h1 className="text-3xl font-bold text-slate-800">บัญชี</h1>
             <p className="mt-1 text-slate-600">จัดการบัญชีเงินสดและธนาคารภายใน</p>
           </div>
-          <Button onClick={openCreate}>
-            <PlusIcon className="h-5 w-5" />
-            เพิ่มบัญชี
-          </Button>
+          {isSuperadmin && (
+            <Button onClick={openCreate}>
+              <PlusIcon className="h-5 w-5" />
+              เพิ่มบัญชี
+            </Button>
+          )}
         </div>
 
         {/* Summary card */}
@@ -319,7 +378,7 @@ const AccountPage: FC = () => {
                         {(page - 1) * limit + i + 1}
                       </td>
                       <td
-                        className="px-4 py-3 text-left text-sm font-mono text-primary hover:underline cursor-pointer"
+                        className="px-4 py-3 text-sm font-bold text-primary hover:underline cursor-pointer text-left"
                         onClick={() => openHistory(a)}
                       >
                         {a.account_number}
@@ -343,10 +402,10 @@ const AccountPage: FC = () => {
                       <td className="px-4 py-3 text-center text-sm">
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            a.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                            a.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
                           }`}
                         >
-                          {a.is_active ? 'ใช้งาน' : 'ปิดบัญชี'}
+                          {a.is_active ? 'ใช้งาน' : 'ปิดใช้งาน'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center text-sm">

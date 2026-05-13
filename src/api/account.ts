@@ -59,6 +59,14 @@ class AccountService extends AuthService {
     return res.data.data;
   }
 
+  async setActive(id: string, isActive: boolean): Promise<Account> {
+    const res = await this.http.patch<IBaseResponse<Account>>(
+      `${this.path}/${id}/active`,
+      { is_active: isActive },
+    );
+    return res.data.data;
+  }
+
   async getTransactions(
     query?: AccountTransactionFilterQuery,
   ): Promise<IBaseResponseArray<AccountTransaction>> {

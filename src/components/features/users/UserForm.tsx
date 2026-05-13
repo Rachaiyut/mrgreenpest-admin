@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import Swal from '@/src/utils/swal';
 import { User } from '@/src/types/entity/app.interface';
+import { Account } from '@/src/types/entity/account.interface';
 import { FormField, Input } from '../../common/FormControls';
 import { DropdownSelect } from '../../common';
 import { PhotoIcon, EyeIcon, EyeSlashIcon } from '../../../assets/icons/Icons';
 import { getRoleNameTh } from '@/src/utils/role';
 import { StorageApi } from '@/src/api/storage';
+import { AccountApi } from '@/src/api/account';
+import { RoleAccountApi } from '@/src/api/role-account';
 import {
   validateCitizenId,
   validateEmail,
@@ -22,6 +25,8 @@ export interface UserFormSubmitArgs {
   file: File | null;
   /** รหัสผ่านใหม่ (เฉพาะ edit + ถ้ากรอก) */
   newPassword?: string;
+  /** บัญชีที่ผูกกับ role (เฉพาะกรณี SUPERADMIN ตั้งค่า) — empty = ลบ mapping */
+  accountForRole?: { role_id: string; account_id: string | null };
 }
 
 interface UserFormProps {
@@ -46,6 +51,13 @@ const initialFormData = {
 
 type FormDataShape = typeof initialFormData;
 
+// Match เฉพาะ SUPERADMIN — ระวัง "หัวหน้าช่าง" (LEAD_TECH) ไม่ให้ผ่าน
+const isSuperadminRoleName = (name?: string): boolean => {
+  if (!name) return false;
+  if (name === 'SUPERADMIN') return true;
+  return name.includes('สูงสุด') || name.includes('หัวหน้าผู้ดูแล');
+};
+
 export const UserForm: React.FC<UserFormProps> = ({
   formId,
   mode,
@@ -68,6 +80,13 @@ export const UserForm: React.FC<UserFormProps> = ({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // เช็คจาก role ที่เลือกใน dropdown — section จะโผล่เฉพาะเมื่อเลือก SUPERADMIN
+  const selectedRoleName = roles.find((r) => r.id === formData.role_id)?.name;
+  const canEditRoleAccount = isSuperadminRoleName(selectedRoleName);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountId, setAccountId] = useState<string>('');
+  const [originalAccountId, setOriginalAccountId] = useState<string>('');
 
   // Hydrate from user (edit / view) or reset (create)
   useEffect(() => {
@@ -99,6 +118,43 @@ export const UserForm: React.FC<UserFormProps> = ({
     setShowPassword(false);
     setShowConfirmPassword(false);
   }, [user, mode]);
+
+  // โหลด accounts ครั้งเดียวเมื่อ SUPERADMIN เปิดฟอร์ม
+  useEffect(() => {
+    if (!canEditRoleAccount) return;
+    AccountApi.getAll({ limit: 200, is_active: true })
+      .then((res) => setAccounts(res?.data || []))
+      .catch((err) => console.error('Failed to load accounts:', err));
+  }, [canEditRoleAccount]);
+
+  // โหลด role-account mapping เมื่อ role เปลี่ยน
+  useEffect(() => {
+    if (!canEditRoleAccount) {
+      setAccountId('');
+      setOriginalAccountId('');
+      return;
+    }
+    const rid = formData.role_id;
+    if (!rid) {
+      setAccountId('');
+      setOriginalAccountId('');
+      return;
+    }
+    let cancelled = false;
+    RoleAccountApi.getByRoleId(rid)
+      .then((mapping) => {
+        if (cancelled) return;
+        const aId = mapping?.account_id || '';
+        setAccountId(aId);
+        setOriginalAccountId(aId);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setAccountId('');
+        setOriginalAccountId('');
+      });
+    return () => { cancelled = true; };
+  }, [canEditRoleAccount, formData.role_id]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isView) return;
@@ -173,11 +229,17 @@ export const UserForm: React.FC<UserFormProps> = ({
       payload.status = 'active';
     }
 
+    const accountForRole =
+      canEditRoleAccount && formData.role_id && accountId !== originalAccountId
+        ? { role_id: formData.role_id, account_id: accountId || null }
+        : undefined;
+
     try {
       await onSubmit({
         payload,
         file: selectedFile,
         newPassword: isEdit && newPassword.trim() ? newPassword : undefined,
+        accountForRole,
       });
     } catch (err) {
       console.error('Failed to submit user form', err);
@@ -524,6 +586,32 @@ export const UserForm: React.FC<UserFormProps> = ({
                 </div>
               )}
             </div>
+
+            {canEditRoleAccount && (
+              <div className="space-y-4 pt-2">
+                <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-100 pb-2 mb-4">
+                  บัญชีบันทึกรายรับรายจ่าย
+                </h3>
+                <FormField
+                  label="บัญชี"
+                  htmlFor={`${formId}-account_id`}
+                >
+                  <DropdownSelect
+                    value={accountId}
+                    onChange={(v) => setAccountId(v)}
+                    placeholder="ไม่ผูกบัญชี (เห็นทุกบัญชี)"
+                    options={[
+                      { value: '', label: 'ไม่ผูกบัญชี (เห็นทุกบัญชี)' },
+                      ...accounts.map((a) => ({
+                        value: a.id,
+                        label: `${a.account_number} (${a.account_name})`,
+                      })),
+                    ]}
+                    disabled={isFieldDisabled || !formData.role_id}
+                  />
+                </FormField>
+              </div>
+            )}
 
             {isView && typeof user?.creditLimit === 'number' && (
               <div className="space-y-4 pt-2">

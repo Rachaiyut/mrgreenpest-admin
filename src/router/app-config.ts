@@ -104,6 +104,9 @@ const ServiceSchedulePage = React.lazy(() => import('../pages/service-schedules/
 const ServiceDetailPage = React.lazy(() => import('../pages/service-schedules/ServiceDetail'));
 const ChemicalCatalogPage = React.lazy(() => import('../pages/chemical-catalogs/ChemicalCatalog'));
 const Account = React.lazy(() => import('../pages/accounts/Account'));
+const AccountTransactions = React.lazy(
+  () => import('../pages/accounts/AccountTransactions')
+);
 
 // Report Pages
 const ArAgingPage = React.lazy(() => import('../pages/reports/ArAgingPage'));
@@ -274,6 +277,13 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         icon: DocumentTextIcon,
         access: 'ACCESS_ACCOUNT',
         component: Account,
+      },
+      {
+        name: 'รายรับรายจ่าย',
+        path: 'account-transactions',
+        icon: CurrencyDollarIcon,
+        access: 'ACCESS_ACCOUNT_TRANSACTION',
+        component: AccountTransactions,
       },
     ],
   },
