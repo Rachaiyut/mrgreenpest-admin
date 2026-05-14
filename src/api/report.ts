@@ -46,6 +46,18 @@ class ReportApiService extends AuthService {
     return body?.data || res.data;
   }
 
+  async getTaxInvoiceIncome(filter?: ReportFilter) {
+    const res = await this.http.get(`${this.path}/tax-invoice-income`, { params: filter });
+    const body = res.data as unknown as { data?: unknown };
+    return body?.data || res.data;
+  }
+
+  async getDailyCash(filter?: ReportFilter & { account_id?: string }) {
+    const res = await this.http.get(`${this.path}/daily-cash`, { params: filter });
+    const body = res.data as unknown as { data?: unknown };
+    return body?.data || res.data;
+  }
+
   async downloadExcel(reportType: string, filter?: ReportFilter) {
     const res = await this.http.get(`${this.path}/${reportType}/excel`, {
       params: filter,

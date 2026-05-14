@@ -120,6 +120,13 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
     ],
   },
   {
+    groupName: 'รายงาน',
+    items: [
+      { label: 'รายงานการขาย', module: 'REPORT_SALES', skipActions: ['CREATE', 'UPDATE', 'CANCEL', 'DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'รายงานวิเคราะห์', module: 'REPORT_ANALYSIS', skipActions: ['CREATE', 'UPDATE', 'CANCEL', 'DELETE', 'APPROVE', 'NOTIFY'] },
+    ],
+  },
+  {
     groupName: 'ตั้งค่าบทบาทและผู้ใช้งาน',
     items: [
       { label: 'จัดการบทบาท', module: 'ROLE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },

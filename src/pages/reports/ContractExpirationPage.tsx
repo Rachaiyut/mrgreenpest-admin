@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
 import { ReportApi } from '../../api/report';
 
@@ -92,36 +93,18 @@ const ContractExpirationPage: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col">
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 animate-fade-in flex flex-col flex-1">
-      {/* Header Section */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div className="flex items-center gap-4">
-          <div className="p-3.5 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg shadow-amber-500/20">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-7 h-7 text-white"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-              />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">
-              รายงานสัญญาใกล้หมดอายุ
-            </h1>
-            <p className="text-slate-500 text-sm mt-0.5">
-              แสดงสัญญาที่กำลังจะหมดอายุเพื่อวางแผนต่อสัญญา
-            </p>
-          </div>
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
+            รายงานสัญญาใกล้หมดอายุ
+          </h1>
+          <p className="mt-1 text-slate-600">
+            แสดงสัญญาที่กำลังจะหมดอายุเพื่อวางแผนต่อสัญญา
+          </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 print:hidden">
           <button
             onClick={handleExportExcel}
             className="px-4 py-2.5 border border-slate-300 rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-all duration-200 shadow-sm font-medium text-sm"
@@ -130,7 +113,7 @@ const ContractExpirationPage: React.FC = () => {
           </button>
           <button
             onClick={handlePrint}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-md shadow-amber-500/25 font-medium text-sm flex items-center gap-2"
+            className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md shadow-green-500/25 font-medium text-sm flex items-center gap-2"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -151,37 +134,32 @@ const ContractExpirationPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter Section */}
-      <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200/80">
-        <div className="flex flex-col lg:flex-row gap-4 lg:items-end">
-          <div className="flex-1 min-w-0">
-            <label className="block text-sm font-medium text-slate-600 mb-1.5">
-              ค้นหา
-            </label>
+      {/* Toolbar */}
+      <Card className="!p-4 flex-shrink-0 print:hidden">
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
+          <div className="relative w-full sm:flex-1 sm:min-w-[280px]">
             <input
-              type="text"
-              placeholder="ค้นหาเลขที่สัญญา, ชื่อลูกค้า, รหัสลูกค้า..."
-              className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all text-sm bg-slate-50/50"
+              type="search"
+              placeholder="ค้นหาเลขที่สัญญา, ชื่อลูกค้า, รหัสลูกค้า"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
             />
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
-          <div className="w-full lg:w-48">
-            <label className="block text-sm font-medium text-slate-600 mb-1.5">
-              แสดงสัญญาที่หมดภายใน
-            </label>
-            <select
-              value={days}
-              onChange={(e) => setDays(Number(e.target.value))}
-              className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all text-sm bg-slate-50/50"
-            >
-              <option value={30}>30 วัน</option>
-              <option value={60}>60 วัน</option>
-              <option value={90}>90 วัน</option>
-            </select>
-          </div>
+          <select
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
+            className="w-full sm:w-48 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+          >
+            <option value={30}>หมดภายใน 30 วัน</option>
+            <option value={60}>หมดภายใน 60 วัน</option>
+            <option value={90}>หมดภายใน 90 วัน</option>
+          </select>
         </div>
-      </div>
+      </Card>
 
       {/* Summary Cards */}
       {loading ? (
@@ -270,7 +248,7 @@ const ContractExpirationPage: React.FC = () => {
       )}
 
       {/* Data Table */}
-      <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-[400px] rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
         <div className="flex-shrink-0 px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white flex items-center justify-between">
           <div className="flex items-center gap-2">
             <svg
@@ -342,7 +320,7 @@ const ContractExpirationPage: React.FC = () => {
                     ))}
                   </tr>
                 ))
-              ) : paginatedItems.length > 0 ? (
+              ) : (
                 paginatedItems.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 text-sm font-medium text-amber-700">
@@ -381,35 +359,20 @@ const ContractExpirationPage: React.FC = () => {
                     </td>
                   </tr>
                 ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={10}
-                    className="px-6 py-12 text-center text-slate-500"
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        className="w-10 h-10 text-slate-300"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Zm3.75 11.625a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
-                        />
-                      </svg>
-                      <p className="text-sm">ไม่พบข้อมูลสัญญาที่ใกล้หมดอายุ</p>
-                    </div>
-                  </td>
-                </tr>
               )}
             </tbody>
           </table>
         </div>
+        {!loading && items.length === 0 && (
+          <div className="flex-1 flex items-center justify-center py-16">
+            <div className="flex flex-col items-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-14 h-14 text-slate-300">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z" />
+              </svg>
+              <p className="text-sm text-slate-500">ไม่พบข้อมูลสัญญาที่ใกล้หมดอายุ</p>
+            </div>
+          </div>
+        )}
         {!loading && items.length > 0 && (
           <div className="mt-auto border-t border-slate-200">
             <Pagination
