@@ -42,6 +42,38 @@ interface ContractsPageProps {
   onDeleteContract?: (id: string) => void;
 }
 
+/**
+ * คำนวณอายุสัญญาจาก start/end:
+ *   - ≥ 12 เดือน → ปี (มีเศษเดือนต่อท้ายแบบ "1.2 ปี" = 1 ปี 2 เดือน)
+ *   - 1–11 เดือน → "X เดือน"
+ *   - < 1 เดือน → "X วัน"
+ */
+const formatContractDuration = (
+  start?: string | Date | null,
+  end?: string | Date | null,
+): string => {
+  if (!start || !end) return '-';
+  const s = new Date(start);
+  const e = new Date(end);
+  if (isNaN(s.getTime()) || isNaN(e.getTime()) || e < s) return '-';
+
+  const months =
+    (e.getFullYear() - s.getFullYear()) * 12 +
+    (e.getMonth() - s.getMonth()) +
+    (e.getDate() >= s.getDate() ? 0 : -1);
+
+  if (months >= 12) {
+    const years = Math.floor(months / 12);
+    const rem = months % 12;
+    return rem === 0 ? `${years} ปี` : `${years}.${rem} ปี`;
+  }
+  if (months >= 1) {
+    return `${months} เดือน`;
+  }
+  const days = Math.max(0, Math.round((e.getTime() - s.getTime()) / 86400000));
+  return `${days} วัน`;
+};
+
 const ContractsPage: React.FC<ContractsPageProps> = ({
   onUpdateContract,
   onDeleteContract,
@@ -471,7 +503,6 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">เลขที่สัญญา</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อลูกค้า</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ประเภทบริการ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">อายุสัญญา</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันเริ่มต้น</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันสิ้นสุด</th>
@@ -510,11 +541,8 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                         <td className="px-4 py-3 text-sm text-slate-700">
                           <span className="font-semibold text-slate-800">{customerName || '-'}</span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
-                          {'-'}
-                        </td>
                         <td className="px-6 py-4 text-sm text-slate-600 text-center">
-                          {'-'}
+                          {formatContractDuration(c.start_date, c.end_date)}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
                           {formatThaiDate(c.start_date)}

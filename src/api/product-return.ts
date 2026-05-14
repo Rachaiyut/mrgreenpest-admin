@@ -45,8 +45,12 @@ class ProductReturnService extends AuthService {
     return res.data;
   }
 
-  async delete(id: string): Promise<void> {
-    await this.http.delete(`${this.path}/${id}`);
+  async cancel(id: string, reason: string): Promise<ProductReturn> {
+    const res = await this.http.patch<ProductReturn>(
+      `${this.path}/${id}/cancel`,
+      { reason },
+    );
+    return res.data;
   }
 }
 

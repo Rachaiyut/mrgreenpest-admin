@@ -22,7 +22,6 @@ import {
 } from '@/src/types/entity/app.interface';
 import { ProductReturnStatus } from '@/src/types/enums/inventory';
 import { ReturnDetailsModal } from '../../../components/features/inventory/return/ReturnDetailsModal';
-import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { EditReturnModal } from '../../../components/features/inventory/return/EditReturnModal';
 import { Input } from '../../../components/common/FormControls';
 
@@ -32,13 +31,13 @@ import { ProductReturnApi } from '@/src/api/product-return';
 interface ReturnsProps {
   onCreateReturn: (data: Omit<ReturnType, 'id'>) => void;
   onUpdateReturn: (updatedItem: ReturnType) => void;
-  onDeleteReturn: (id: string) => void;
+  onCancelReturn: (id: string, reason: string) => void;
 }
 
 const Returns: React.FC<ReturnsProps> = ({
   onCreateReturn,
   onUpdateReturn,
-  onDeleteReturn,
+  onCancelReturn,
 }) => {
   const {
     productReturns: returns,
@@ -62,8 +61,6 @@ const Returns: React.FC<ReturnsProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedReturn, setSelectedReturn] = useState<ReturnType | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [returnToDelete, setReturnToDelete] = useState<ReturnType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const warehouseMap = useMemo(
@@ -120,18 +117,37 @@ const Returns: React.FC<ReturnsProps> = ({
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (returnItem: ReturnType) => {
-    setReturnToDelete(returnItem);
-    setIsDeleteModalOpen(true);
+  const handleDelete = async (returnItem: ReturnType) => {
     setOpenDropdownId(null);
-  };
-
-  const handleConfirmDelete = () => {
-    if (returnToDelete) {
-      onDeleteReturn(returnToDelete.id);
+    const code = (returnItem as { code?: string }).code || returnItem.id;
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันการยกเลิก',
+      html: `
+        <div style="text-align:left;">
+          <p style="margin:0 0 4px;">คุณแน่ใจหรือไม่ว่าต้องการยกเลิกใบคืนสินค้า <strong>${code}</strong>?</p>
+          <p style="margin:0 0 12px; font-size:13px; color:#64748b;">เอกสารจะถูกเปลี่ยนสถานะเป็น "ยกเลิก" แต่ยังคงอยู่ในระบบสำหรับ audit</p>
+          <label style="font-size:14px; font-weight:600; color:#334155; display:block; margin-bottom:4px;">หมายเหตุการยกเลิก <span style="color:#dc2626;">*</span></label>
+          <textarea id="cancelReason" rows="3" style="width:100%; box-sizing:border-box; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; font-family:inherit; resize:vertical;" placeholder="ระบุเหตุผลในการยกเลิก..."></textarea>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันการยกเลิก',
+      cancelButtonText: 'ปิด',
+      confirmButtonColor: '#dc2626',
+      reverseButtons: true,
+      preConfirm: () => {
+        const reason = (document.getElementById('cancelReason') as HTMLTextAreaElement)?.value?.trim() || '';
+        if (!reason) {
+          Swal.showValidationMessage('กรุณาระบุหมายเหตุการยกเลิก');
+          return false;
+        }
+        return reason;
+      },
+    });
+    if (result.isConfirmed && result.value) {
+      onCancelReturn(returnItem.id, result.value as string);
     }
-    setIsDeleteModalOpen(false);
-    setReturnToDelete(null);
   };
 
   const handleDropdownToggle = (
@@ -535,21 +551,6 @@ const Returns: React.FC<ReturnsProps> = ({
         returnItem={selectedReturn}
         warehouses={warehouses}
         products={products}
-      />
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="ยืนยันการลบ"
-        message={
-          <p>
-            คุณแน่ใจหรือไม่ว่าต้องการลบใบคืนสินค้า{' '}
-            <strong>{returnToDelete?.id}</strong>?
-            การกระทำนี้ไม่สามารถย้อนกลับได้
-          </p>
-        }
-        confirmButtonText="ยืนยันการลบ"
-        confirmButtonClass="bg-danger hover:bg-danger/90"
       />
     </div>
   );

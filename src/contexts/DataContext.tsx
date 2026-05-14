@@ -164,7 +164,7 @@ export interface DataContextType {
     productReturns: {
       create: (data: any) => Promise<void>;
       update: (data: any) => Promise<void>;
-      delete: (id: string) => Promise<void>;
+      cancel: (id: string, reason: string) => Promise<void>;
     };
     returnToSuppliers: {
       create: (data: any) => Promise<void>;
@@ -601,8 +601,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
           await ProductReturnApi.update(data.id, data);
           fetchData(['productReturns']);
         },
-        delete: async (id: string) => {
-          await ProductReturnApi.delete(id);
+        cancel: async (id: string, reason: string) => {
+          await ProductReturnApi.cancel(id, reason);
           fetchData(['productReturns']);
         },
       },

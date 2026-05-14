@@ -111,10 +111,9 @@ const AccountTransactions = React.lazy(
 // Report Pages
 const ArAgingPage = React.lazy(() => import('../pages/reports/ArAgingPage'));
 const ContractExpirationPage = React.lazy(() => import('../pages/reports/ContractExpirationPage'));
-const TechnicianPerformancePage = React.lazy(() => import('../pages/reports/TechnicianPerformancePage'));
-const InventoryUsagePage = React.lazy(() => import('../pages/reports/InventoryUsagePage'));
-const SalesPipelinePage = React.lazy(() => import('../pages/reports/SalesPipelinePage'));
 const ProfitLossPage = React.lazy(() => import('../pages/reports/ProfitLossPage'));
+const TaxInvoiceIncomePage = React.lazy(() => import('../pages/reports/TaxInvoiceIncomePage'));
+const DailyCashPage = React.lazy(() => import('../pages/reports/DailyCashPage'));
 
 // Unified Configuration - All routes and navigation in one place
 const UNIFIED_CONFIG: UnifiedConfig[] = [
@@ -371,7 +370,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         getProps: (data) => ({
           onCreateReturn: data.handlers.productReturns.create,
           onUpdateReturn: data.handlers.productReturns.update,
-          onDeleteReturn: data.handlers.productReturns.delete,
+          onCancelReturn: data.handlers.productReturns.cancel,
         }),
       },
     ],
@@ -455,44 +454,9 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     component: Reports,
     subItems: [
       {
-        name: 'รายงานรายได้ (รายเดือน)',
-        path: 'reports/total-income',
-        access: 'ACCESS_REPORT_SALES',
-      },
-      {
-        name: 'รายได้ออกใบกำกับ(รายเดือน)',
-        path: 'reports/tax-invoice-income',
-        access: 'ACCESS_REPORT_SALES',
-      },
-      {
-        name: 'ค่าใช้จ่ายทางอ้อม',
-        path: 'reports/indirect-expenses',
-        access: 'ACCESS_REPORT_PURCHASE',
-      },
-      {
-        name: 'บัญชีเงินสดรายวัน',
-        path: 'reports/daily-cash',
-        access: 'ACCESS_REPORT_FINANCIAL',
-      },
-      {
-        name: 'ค่าใช้จ่ายทางตรง',
-        path: 'reports/direct-expenses',
-        access: 'ACCESS_REPORT_PURCHASE',
-      },
-      {
-        name: 'ยอดขาย(รายเดือน)',
-        path: 'reports/monthly-sales',
-        access: 'ACCESS_REPORT_SALES',
-      },
-      {
-        name: 'สรุปยอดขาย(รายเดือน)',
-        path: 'reports/sales-summary',
-        access: 'ACCESS_REPORT_SALES',
-      },
-      {
         name: 'ลูกหนี้ค้างชำระ',
         path: 'reports/ar-aging',
-        access: 'ACCESS_REPORT_FINANCIAL',
+        access: 'ACCESS_REPORT_SALES',
         component: ArAgingPage,
       },
       {
@@ -502,28 +466,22 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         component: ContractExpirationPage,
       },
       {
-        name: 'ผลงานช่าง',
-        path: 'reports/technician-performance',
+        name: 'รายได้ออกใบกำกับ(รายเดือน)',
+        path: 'reports/tax-invoice-income',
         access: 'ACCESS_REPORT_SALES',
-        component: TechnicianPerformancePage,
-      },
-      {
-        name: 'การใช้สินค้า/เคมีภัณฑ์',
-        path: 'reports/inventory-usage',
-        access: 'ACCESS_REPORT_PURCHASE',
-        component: InventoryUsagePage,
-      },
-      {
-        name: 'Sales Pipeline',
-        path: 'reports/sales-pipeline',
-        access: 'ACCESS_REPORT_SALES',
-        component: SalesPipelinePage,
+        component: TaxInvoiceIncomePage,
       },
       {
         name: 'กำไร-ขาดทุน',
         path: 'reports/profit-loss',
-        access: 'ACCESS_REPORT_FINANCIAL',
+        access: 'ACCESS_REPORT_ANALYSIS',
         component: ProfitLossPage,
+      },
+      {
+        name: 'บัญชีเงินสดรายวัน',
+        path: 'reports/daily-cash',
+        access: 'ACCESS_REPORT_ANALYSIS',
+        component: DailyCashPage,
       },
     ],
   },
