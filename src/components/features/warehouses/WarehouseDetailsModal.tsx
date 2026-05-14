@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
+import { Pagination } from '../../common/Pagination';
 import { Button, FormField, Input } from '../../common/FormControls';
 import { Warehouse, Product } from '@/src/types/entity/app.interface';
 import { WarehouseType } from '@/src/types';
@@ -39,16 +40,36 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
   const [activeTab, setActiveTab] = useState<'stock' | 'transactions'>('stock');
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [loadingTx, setLoadingTx] = useState(false);
+  const [txPage, setTxPage] = useState(1);
+  const [txItemsPerPage, setTxItemsPerPage] = useState(10);
+  const [txTotal, setTxTotal] = useState(0);
+
+  useEffect(() => {
+    // Reset to page 1 every time modal opens or tab switches
+    if (isOpen && activeTab === 'transactions') {
+      setTxPage(1);
+    }
+  }, [isOpen, warehouse, activeTab]);
 
   useEffect(() => {
     if (isOpen && warehouse && activeTab === 'transactions') {
       setLoadingTx(true);
-      InventoryTransactionApi.getAll({ warehouse_id: warehouse.id, limit: 50 })
-        .then((res) => setTransactions(res.data || []))
-        .catch(() => setTransactions([]))
+      InventoryTransactionApi.getAll({
+        warehouse_id: warehouse.id,
+        page: txPage,
+        limit: txItemsPerPage,
+      })
+        .then((res) => {
+          setTransactions(res.data || []);
+          setTxTotal((res as { meta?: { total?: number } }).meta?.total || 0);
+        })
+        .catch(() => {
+          setTransactions([]);
+          setTxTotal(0);
+        })
         .finally(() => setLoadingTx(false));
     }
-  }, [isOpen, warehouse, activeTab]);
+  }, [isOpen, warehouse, activeTab, txPage, txItemsPerPage]);
 
   if (!isOpen || !warehouse) return null;
 
@@ -309,7 +330,7 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
           {/* Transactions Tab */}
           {activeTab === 'transactions' && (
             <div className="overflow-hidden border border-slate-200 rounded-lg shadow-sm">
-              <div className="max-h-[420px] overflow-auto">
+              <div className="overflow-auto">
                 {loadingTx ? (
                   <div className="text-center py-10 text-slate-500">กำลังโหลด...</div>
                 ) : (
@@ -394,6 +415,20 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
                   </table>
                 )}
               </div>
+              {!loadingTx && txTotal > 0 && (
+                <div className="border-t border-slate-200 px-3 py-2 bg-slate-50">
+                  <Pagination
+                    currentPage={txPage}
+                    totalItems={txTotal}
+                    itemsPerPage={txItemsPerPage}
+                    onPageChange={setTxPage}
+                    onItemsPerPageChange={(size) => {
+                      setTxItemsPerPage(size);
+                      setTxPage(1);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
