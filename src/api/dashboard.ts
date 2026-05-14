@@ -1,47 +1,165 @@
 import { AuthService } from './auth';
 
-interface DashboardJobItem {
+export interface DashboardJobItem {
   id: string;
-  code: string;
-  customer_name: string;
+  status: string;
   appointment_date: string;
   start_date: string;
-  status: string;
-  primary_tech_name?: string;
-  vehicle_name?: string;
+  actual_start_time?: string | null;
+  start_time?: string | null;
+  remark?: string | null;
+  customer_id?: string;
+  service_system?: string | null;
+  customer_first_name?: string | null;
+  customer_last_name?: string | null;
+  customer_phone?: string | null;
+  address?: string | null;
 }
 
-interface DashboardInvoiceItem {
+export interface DashboardInvoiceItem {
   id: string;
   code: string;
   customer_name: string;
-  due_date: string;
-  total_amount: number;
+  status: string;
+  total: number | string;
+  paid_amount: number | string | null;
+  due_at: string;
   days_overdue: number;
 }
 
-interface DashboardStockItem {
+export interface DashboardStockItem {
   id: string;
-  product_name: string;
-  warehouse_name: string;
-  current_qty: number;
+  code: string;
+  name: string;
   min_stock: number;
+  unit_name?: string | null;
+  total_stock: number | string;
 }
 
-interface DashboardContractItem {
+export interface DashboardContractItem {
   id: string;
   code: string;
   customer_name: string;
   end_date: string;
+  total_amount: number | string;
+  status: string;
   days_remaining: number;
 }
 
-interface DashboardActivityItem {
-  id: string;
+export interface DashboardActivityItem {
   type: string;
-  description: string;
+  ref_code: string;
+  status: string;
   created_at: string;
-  user_name?: string;
+}
+
+export interface DashboardPendingAction {
+  key: string;
+  label: string;
+  count: number;
+  color: string;
+  path: string;
+}
+
+export interface DashboardComparison {
+  current: number;
+  previous: number;
+  change: number;
+  percent: number;
+}
+
+export interface DashboardPaymentMethodItem {
+  method: string;
+  count: number;
+  amount: number;
+}
+
+export interface DashboardTodayPayments {
+  total_count: number;
+  total_amount: number;
+  items: DashboardPaymentMethodItem[];
+}
+
+export interface DashboardLongTermAgingBucket {
+  count: number;
+  amount: number;
+}
+
+export interface DashboardLongTermAging {
+  bucket_91_180: DashboardLongTermAgingBucket;
+  bucket_181_365: DashboardLongTermAgingBucket;
+  bucket_365_plus: DashboardLongTermAgingBucket;
+}
+
+export interface DashboardCancelledJob {
+  id: string;
+  status: string;
+  appointment_date: string;
+  updated_at: string;
+  remark?: string | null;
+  service_system?: string | null;
+  customer_first_name?: string | null;
+  customer_last_name?: string | null;
+  customer_phone?: string | null;
+  address?: string | null;
+}
+
+export interface DashboardMonthlyPoint {
+  month: string;
+  income: number;
+  expense: number;
+  net: number;
+  cumulative_income: number;
+  cumulative_expense: number;
+}
+
+export interface DashboardMonthlyIncomeExpense {
+  thisMonth: { income: number; expense: number; net: number };
+  incomeDelta: DashboardComparison;
+  expenseDelta: DashboardComparison;
+  series: DashboardMonthlyPoint[];
+}
+
+export type VehicleState = 'IDLE' | 'WAITING' | 'WORKING' | 'DONE';
+
+export interface DashboardVehicleJob {
+  id: string;
+  status: string;
+  actual_start_time: string | null;
+  service_system: string | null;
+  customer_first_name: string | null;
+  customer_last_name: string | null;
+}
+
+export interface DashboardVehicleToday {
+  id: string;
+  registration: string;
+  brand: string;
+  model: string;
+  color: string;
+  vehicleStatus: string;
+  state: VehicleState;
+  counts: {
+    total: number;
+    pending: number;
+    in_progress: number;
+    complete: number;
+    cancelled: number;
+  };
+  jobs: DashboardVehicleJob[];
+}
+
+export interface DashboardAcquisitionPoint {
+  month: string;
+  new_count: number;
+  renewal_count: number;
+  cumulative_new: number;
+  cumulative_renewal: number;
+}
+
+export interface DashboardCustomerAcquisition {
+  thisMonth: { new_count: number; renewal_count: number; total: number };
+  series: DashboardAcquisitionPoint[];
 }
 
 export interface DashboardData {
@@ -66,6 +184,7 @@ export interface DashboardData {
   overdueInvoices: {
     items: DashboardInvoiceItem[];
     aging: { current: number; '1-30': number; '31-60': number; '61-90': number; '90+': number };
+    longTermAging: DashboardLongTermAging;
   };
   lowStockItems: DashboardStockItem[];
   expiringContracts: DashboardContractItem[];
@@ -74,15 +193,20 @@ export interface DashboardData {
   recentActivities: DashboardActivityItem[];
   pendingActions: {
     total: number;
-    items: { key: string; label: string; count: number; color: string; path: string }[];
+    items: DashboardPendingAction[];
   };
   comparison: {
-    revenue: { current: number; previous: number; change: number; percent: number };
-    jobs: { current: number; previous: number; change: number; percent: number };
-    completed_jobs: { current: number; previous: number; change: number; percent: number };
-    new_customers: { current: number; previous: number; change: number; percent: number };
-    new_contracts: { current: number; previous: number; change: number; percent: number };
+    revenue: DashboardComparison;
+    jobs: DashboardComparison;
+    completed_jobs: DashboardComparison;
+    new_customers: DashboardComparison;
+    new_contracts: DashboardComparison;
   };
+  todayPayments: DashboardTodayPayments;
+  cancelledJobsToday: DashboardCancelledJob[];
+  monthlyIncomeExpense: DashboardMonthlyIncomeExpense;
+  vehiclesToday: DashboardVehicleToday[];
+  customerAcquisition: DashboardCustomerAcquisition;
 }
 
 class DashboardApiService extends AuthService {
