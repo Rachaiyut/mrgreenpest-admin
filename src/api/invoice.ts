@@ -48,11 +48,17 @@ class InvoiceService extends AuthService {
 
   // ===== Approval flow (new) =====
 
-  /** Step 1: Admin reviews on-site collection + selects bank account. */
-  async adminApprove(id: string, accountId: string): Promise<Invoice> {
+  /** Step 1: Admin reviews on-site collection + selects bank account.
+   *  Optionally include tax_invoice payload to request tax invoice for an
+   *  individual customer (admin enters name/address/tax_id manually). */
+  async adminApprove(
+    id: string,
+    accountId: string,
+    taxInvoice?: { name: string; address: string; tax_id: string },
+  ): Promise<Invoice> {
     const res = await this.http.post<Invoice>(
       `${this.path}/${id}/admin-approve`,
-      { account_id: accountId },
+      { account_id: accountId, tax_invoice: taxInvoice },
     );
     return res.data;
   }

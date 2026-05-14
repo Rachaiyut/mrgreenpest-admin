@@ -289,19 +289,14 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       return;
     }
 
-    const inputOptions: Record<string, string> = {};
-    for (const acc of activeAccounts) {
-      inputOptions[acc.id] = `${acc.bank_name} ${acc.account_number} (${acc.account_name})`;
-    }
-
     const amount = Number(invoice.total || 0).toLocaleString('th-TH', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
+    const customer = customers?.find((x) => x.id === invoice.customer_id);
     const customerName = (() => {
-      const c = customers?.find((x) => x.id === invoice.customer_id);
-      if (!c) return '-';
-      return pickName(joinName(c.first_name, c.last_name), (c as any).nickname, (c as any).code) || '-';
+      if (!customer) return '-';
+      return pickName(joinName(customer.first_name, customer.last_name), (customer as any).nickname, (customer as any).code) || '-';
     })();
     const issueDate = invoice.issued_at
       ? new Date(invoice.issued_at).toLocaleDateString('th-TH')
@@ -309,6 +304,8 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     const dueDate = invoice.due_at
       ? new Date(invoice.due_at).toLocaleDateString('th-TH')
       : '-';
+
+    const isIndividual = customer?.type === 'INDIVIDUAL';
 
     const detailsHtml = renderApprovalDetails([
       { label: 'เลขที่ใบแจ้งหนี้', value: invoice.code || null },
@@ -318,30 +315,96 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       { label: 'ยอดรวม', value: `${amount} บาท`, accent: 'money' },
     ]);
 
+    const accountOptionsHtml = activeAccounts
+      .map((acc) => `<option value="${acc.id}">${acc.bank_name} ${acc.account_number} (${acc.account_name})</option>`)
+      .join('');
+
+    const taxInvoiceSectionHtml = isIndividual
+      ? `
+        <div style="border-top:1px solid #e5e7eb; margin-top:14px; padding-top:12px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none;">
+            <input id="chkTI" type="checkbox" style="width:18px; height:18px; accent-color:#10b981;" />
+            <span style="font-size:15px; font-weight:600; color:#334155;">ออกใบกำกับภาษีด้วย</span>
+          </label>
+          <div id="tiFields" style="display:none; margin-top:10px; padding:14px; background:#f8fafc; border-radius:8px;">
+            <div style="font-size:14px; color:#64748b; margin-bottom:10px;">กรอกข้อมูลที่จะแสดงในใบกำกับภาษี</div>
+            <div style="margin-bottom:10px;">
+              <label style="font-size:15px; font-weight:600; color:#334155; display:block; margin-bottom:5px;">ชื่อ / บริษัท</label>
+              <input id="tiName" type="text" style="width:100%; box-sizing:border-box; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:15px; background:#fff;" placeholder="ชื่อ-นามสกุล หรือ บริษัท ..." />
+            </div>
+            <div style="margin-bottom:10px;">
+              <label style="font-size:15px; font-weight:600; color:#334155; display:block; margin-bottom:5px;">ที่อยู่</label>
+              <textarea id="tiAddress" style="width:100%; box-sizing:border-box; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:15px; background:#fff; min-height:80px; resize:vertical; font-family:inherit;" placeholder="ที่อยู่ตามใบกำกับภาษี"></textarea>
+            </div>
+            <div>
+              <label style="font-size:15px; font-weight:600; color:#334155; display:block; margin-bottom:5px;">เลขประจำตัวผู้เสียภาษี</label>
+              <input id="tiTaxId" type="text" style="width:100%; box-sizing:border-box; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:15px; background:#fff;" placeholder="0-0000-00000-00-0" />
+            </div>
+          </div>
+        </div>
+      `
+      : '';
+
     const r = await Swal.fire({
       icon: 'question',
       title: 'ตรวจสอบรายรับ',
-      width: 560,
+      width: 600,
       html: `
-        ${detailsHtml}
-        <div style="font-size:13px; color:#64748b; text-align:center; margin-top:14px; line-height:1.6;">
-          เลือกบัญชีที่ลูกค้าโอนเงินเข้าหรือรับเงินสด
+        <div style="box-sizing:border-box; width:100%; text-align:left;">
+          ${detailsHtml}
+          <div style="font-size:14px; color:#64748b; margin-top:14px; line-height:1.6;">
+            เลือกบัญชีที่ลูกค้าโอนเงินเข้าหรือรับเงินสด
+          </div>
+          <select id="accountSelect" style="width:100%; box-sizing:border-box; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:15px; background:#fff; margin-top:6px;">
+            <option value="">เลือกบัญชี</option>
+            ${accountOptionsHtml}
+          </select>
+          ${taxInvoiceSectionHtml}
         </div>
       `,
-      input: 'select',
-      inputOptions,
-      inputPlaceholder: '-- เลือกบัญชี --',
       showCancelButton: true,
       confirmButtonText: 'ส่งฝ่ายบัญชี',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: '#10b981',
-      inputValidator: (v) => (!v ? 'กรุณาเลือกบัญชีรับเข้า' : null),
+      didOpen: () => {
+        const chk = document.getElementById('chkTI') as HTMLInputElement | null;
+        const fields = document.getElementById('tiFields') as HTMLDivElement | null;
+        if (chk && fields) {
+          chk.addEventListener('change', () => {
+            fields.style.display = chk.checked ? 'block' : 'none';
+          });
+        }
+      },
+      preConfirm: () => {
+        const accSel = document.getElementById('accountSelect') as HTMLSelectElement | null;
+        const accountId = accSel?.value || '';
+        if (!accountId) {
+          Swal.showValidationMessage('กรุณาเลือกบัญชีรับเข้า');
+          return false;
+        }
+        const chk = document.getElementById('chkTI') as HTMLInputElement | null;
+        if (chk?.checked) {
+          const name = (document.getElementById('tiName') as HTMLInputElement)?.value?.trim() || '';
+          const address = (document.getElementById('tiAddress') as HTMLTextAreaElement)?.value?.trim() || '';
+          const taxId = (document.getElementById('tiTaxId') as HTMLInputElement)?.value?.trim() || '';
+          if (!name || !address || !taxId) {
+            Swal.showValidationMessage('กรอกข้อมูลใบกำกับภาษีให้ครบ (ชื่อ / ที่อยู่ / เลขประจำตัวผู้เสียภาษี)');
+            return false;
+          }
+          return { accountId, taxInvoice: { name, address, tax_id: taxId } };
+        }
+        return { accountId, taxInvoice: undefined };
+      },
     });
 
     if (!r.isConfirmed || !r.value) return;
+    const { accountId, taxInvoice } = r.value as {
+      accountId: string;
+      taxInvoice?: { name: string; address: string; tax_id: string };
+    };
 
     try {
-      await InvoiceApi.adminApprove(invoice.id, r.value as string);
+      await InvoiceApi.adminApprove(invoice.id, accountId, taxInvoice);
       await fetchData(['invoices']);
       Swal.fire({
         icon: 'success',
