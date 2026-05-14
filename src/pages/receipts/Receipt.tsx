@@ -415,8 +415,11 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ลำดับ
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  เลขที่ใบกำกับภาษี / ใบเสร็จรับเงิน
+                <th className="px-4 py-3 text-left text-sm font-semibold text-emerald-700 uppercase tracking-wider whitespace-nowrap bg-emerald-50/40">
+                  เลขที่ใบเสร็จรับเงิน
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-sky-700 uppercase tracking-wider whitespace-nowrap bg-sky-50/40">
+                  เลขที่ใบกำกับภาษี
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   อ้างอิงใบแจ้งหนี้
@@ -437,7 +440,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                   วิธีชำระเงิน
                 </th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  จำนวนเงิน
+                  ยอดรวม
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   จัดการ
@@ -447,7 +450,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             <tbody className="bg-white divide-y divide-slate-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={10} className="p-0 border-b-0 h-0">
+                  <td colSpan={11} className="p-0 border-b-0 h-0">
                     <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
                       <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                       <p className="text-base font-medium">กำลังโหลดข้อมูลใบเสร็จรับเงิน...</p>
@@ -456,7 +459,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                 </tr>
               ) : paginatedReceipts.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-0 border-b-0 text-center h-0">
+                  <td colSpan={11} className="p-0 border-b-0 text-center h-0">
                     <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                       <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
                       <p className="text-lg font-medium">ไม่พบข้อมูลใบเสร็จรับเงิน</p>
@@ -476,13 +479,20 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                         {(receiptPage - 1) * receiptItemsPerPage + index + 1}
                       </td>
                       <td
-                        className="px-4 py-3 text-sm font-bold text-primary hover:underline cursor-pointer"
+                        className="px-4 py-3 text-sm hover:underline cursor-pointer bg-emerald-50/30"
                         onClick={() => {
                           setSelectedReceipt(r);
                           setIsReceiptModalOpen(true);
                         }}
                       >
-                        {r.code || r.id}
+                        <span className="font-bold text-emerald-700">{r.code || r.id}</span>
+                      </td>
+                      <td className="px-4 py-3 text-sm bg-sky-50/30">
+                        {r.has_tax_invoice && r.tax_invoice_code ? (
+                          <span className="font-bold text-sky-700">{r.tax_invoice_code}</span>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-slate-700">
                         {invoices?.find((i) => i.id === r.invoice_id)?.code || '-'}
@@ -493,8 +503,18 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatPhoneNumber(customer?.primary_phone || '-')}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
-                        {customer?.type === 'CORPORATE' ? 'นิติบุคคล' : customer?.type === 'INDIVIDUAL' ? 'บุคคลธรรมดา' : '-'}
+                      <td className="px-4 py-3 text-sm">
+                        {customer?.type === 'CORPORATE' ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-700 border border-sky-200">
+                            นิติบุคคล
+                          </span>
+                        ) : customer?.type === 'INDIVIDUAL' ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                            บุคคลธรรมดา
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatThaiDate(r.received_at || r.paid_at)}
@@ -506,8 +526,8 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                           {getPaymentMethodLabel(r.payment_method)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700 text-right">
-                        {r.amount.toLocaleString('th-TH', {
+                      <td className="px-4 py-3 text-sm text-slate-800 text-right font-bold">
+                        {Number(r.amount).toLocaleString('th-TH', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}{' '}บาท

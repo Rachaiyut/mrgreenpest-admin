@@ -60,10 +60,15 @@ export interface Invoice {
 export interface Receipt {
   id: string;
   code?: string;
+  tax_invoice_code?: string;
   invoice_id?: string;
   customer_id: string;
   customer_name: string;
+  customer_tax_id?: string;
   amount: number;
+  sub_total?: number;
+  vat_amount?: number;
+  has_tax_invoice?: boolean;
   payment_method: string;
   payment_reference?: string;
   status?: string;

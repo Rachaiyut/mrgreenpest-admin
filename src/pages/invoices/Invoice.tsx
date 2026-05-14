@@ -614,6 +614,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                   เบอร์โทรศัพท์
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                  ประเภทลูกค้า
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ครบกำหนดชำระ
                 </th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
@@ -630,7 +633,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             <tbody className="bg-white divide-y divide-slate-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={10} className="p-0 border-b-0 h-0">
+                  <td colSpan={11} className="p-0 border-b-0 h-0">
                     <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
                       <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                       <p className="text-base font-medium">กำลังโหลดข้อมูลใบแจ้งหนี้...</p>
@@ -639,7 +642,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                 </tr>
               ) : paginatedInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-0 border-b-0 h-0">
+                  <td colSpan={11} className="p-0 border-b-0 h-0">
                     <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                       <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
                       <p className="text-lg font-medium">ไม่พบข้อมูลใบแจ้งหนี้</p>
@@ -684,6 +687,19 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatPhoneNumber(customer?.primary_phone)}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {customer?.type === 'CORPORATE' ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-700 border border-sky-200">
+                            นิติบุคคล
+                          </span>
+                        ) : customer?.type === 'INDIVIDUAL' ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                            บุคคลธรรมดา
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatThaiDate(i.due_at)}
