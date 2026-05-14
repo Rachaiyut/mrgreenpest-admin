@@ -40,6 +40,7 @@ const JOB_STATUS_LABELS: Record<string, string> = {
   COMPLETE: 'เสร็จสิ้น',
   WAITING_CLEAR: 'รอเคลียค่าใช้จ่ายและสารเคมี',
   CANCELLED: 'ยกเลิก',
+  REJECTED: 'ถูกปฏิเสธ',
 };
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -62,6 +63,12 @@ const fmtDate = (d: string) => {
   } catch {
     return d;
   }
+};
+const fmtCustomerName = (first?: string | null, last?: string | null) => {
+  const f = (first || '').trim();
+  const l = (last || '').trim();
+  if (!l || l === '-') return f || '-';
+  return `${f} ${l}`;
 };
 
 interface DashboardProps {
@@ -170,10 +177,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
           <QuickAction onClick={() => navigate('/customers')} label="ลูกค้า" iconPath="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </div>
 
-        {/* Vehicle real-time status strip (task 8) */}
-        {vehiclesToday.length > 0 && <VehicleStatusStrip vehicles={vehiclesToday} />}
-
-        {/* Daily Closure Alert */}
+        {/* PRIORITY 1: Daily Closure Alert (urgent action) */}
         {openClosures.length > 0 && (
           <div
             onClick={() => navigate('/daily-closures')}
@@ -195,6 +199,9 @@ const Dashboard: React.FC<DashboardProps> = () => {
             <span className="text-2xl font-black text-amber-700">{openClosures.length}</span>
           </div>
         )}
+
+        {/* PRIORITY 2: Vehicle real-time status strip (where are crews now) */}
+        {vehiclesToday.length > 0 && <VehicleStatusStrip vehicles={vehiclesToday} />}
 
         {/* KPI Cards — Finova horizontal layout */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -233,47 +240,85 @@ const Dashboard: React.FC<DashboardProps> = () => {
           />
         </div>
 
-        {/* Today Snapshot: รายรับวันนี้แยกวิธีชำระ + งานยกเลิกวันนี้ */}
+        {/* PRIORITY 3: Today Snapshot — รายรับวันนี้ + งานยกเลิกวันนี้ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <TodayPaymentsCard payments={todayPayments} />
           <CancelledJobsCard jobs={cancelledJobsToday} onNavigate={navigate} />
         </div>
 
-        {/* Row: รายรับ/รายจ่ายเดือนนี้ + combo chart 12 เดือน (task 1) */}
-        <MonthlyIncomeExpenseSection data={monthlyIncomeExpense} />
-
-        {/* Row: ลูกค้าใหม่ vs ลูกค้าต่อสัญญา + donut + combo chart (task 2) */}
-        <CustomerAcquisitionSection data={customerAcquisition} />
-
-        {/* Row: Revenue Overview chart + Revenue composition donut */}
+        {/* PRIORITY 4: งานวันนี้ + สถานะงาน (operational right now) */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
           <Card className="xl:col-span-2">
-            <CardHeader title="ภาพรวมรายได้" subtitle="รายเดือน (6 เดือนล่าสุด)" right={<ChartLegend />} />
-            {revenueByMonth.length > 0 ? (
-              <RevenueChart data={revenueByMonth} comparison={comparison} />
+            <CardHeader
+              title="งานวันนี้"
+              right={
+                <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full">
+                  {todayJobs.length} งาน
+                </span>
+              }
+            />
+            {todayJobs.length > 0 ? (
+              <div className="overflow-x-auto -mx-2">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100">
+                      <th className="font-medium px-2 py-2">ลำดับ</th>
+                      <th className="font-medium px-2 py-2">ลูกค้า</th>
+                      <th className="font-medium px-2 py-2 hidden md:table-cell">บริการ / ที่อยู่</th>
+                      <th className="font-medium px-2 py-2">เวลา</th>
+                      <th className="font-medium px-2 py-2">สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {todayJobs.slice(0, 8).map((job: DashboardJobItem, idx: number) => {
+                      const time = job.actual_start_time
+                        ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : '-';
+                      return (
+                        <tr
+                          key={job.id}
+                          className="border-b border-slate-50 last:border-0 hover:bg-emerald-50/40 transition-colors"
+                        >
+                          <td className="px-2 py-3 text-slate-400 tabular-nums">{idx + 1}</td>
+                          <td className="px-2 py-3">
+                            <span className="font-medium text-slate-700 truncate">
+                              {fmtCustomerName(job.customer_first_name, job.customer_last_name)}
+                            </span>
+                          </td>
+                          <td className="px-2 py-3 text-slate-500 truncate max-w-[280px] hidden md:table-cell">
+                            {job.service_system || ''}
+                            {job.address ? ` • ${job.address}` : ''}
+                          </td>
+                          <td className="px-2 py-3 tabular-nums text-slate-700">{time}</td>
+                          <td className="px-2 py-3">
+                            <StatusBadge status={job.status} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              <div className="h-64 flex items-center justify-center text-slate-400 text-sm">ไม่มีข้อมูลรายได้</div>
+              <div className="h-32 flex items-center justify-center text-slate-400 text-sm">ไม่มีงานวันนี้</div>
             )}
           </Card>
 
           <Card>
-            <CardHeader
-              title="สัดส่วนยอดค้างชำระ"
-              subtitle="แยกตามอายุหนี้"
-              right={
-                <button
-                  onClick={() => navigate('/invoices')}
-                  className="text-xs font-semibold text-primary hover:underline"
-                >
-                  ดูทั้งหมด
-                </button>
-              }
-            />
-            <AgingDonut aging={overdueInvoices.aging} />
+            <CardHeader title="สถานะงาน" subtitle={RANGE_LABELS[range]} />
+            <JobStatusBars items={jobsByStatus} />
           </Card>
         </div>
 
-        {/* Row: Pending Actions + Comparison + Sales Pipeline */}
+        {/* PRIORITY 5: Per-Vehicle field status (drill-down) */}
+        {vehiclesToday.some((v) => v.counts.total > 0) && (
+          <VehiclesTodaySection vehicles={vehiclesToday.filter((v) => v.counts.total > 0)} />
+        )}
+
+        {/* PRIORITY 6: รอดำเนินการ + เปรียบเทียบ + Sales Pipeline (action items) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <Card>
             <CardHeader
@@ -380,87 +425,44 @@ const Dashboard: React.FC<DashboardProps> = () => {
           </Card>
         </div>
 
-        {/* Row: สถานะงานภาคสนามวันนี้ รายคัน (task 7) */}
-        {vehiclesToday.some((v) => v.counts.total > 0) && (
-          <VehiclesTodaySection vehicles={vehiclesToday.filter((v) => v.counts.total > 0)} />
-        )}
+        {/* PRIORITY 7: รายรับ/รายจ่ายเดือนนี้ + combo chart 12 เดือน (financial trend) */}
+        <MonthlyIncomeExpenseSection data={monthlyIncomeExpense} />
 
-        {/* Row: Today Jobs (table) + Job Status breakdown */}
+        {/* PRIORITY 8: ลูกค้าใหม่ vs ลูกค้าต่อสัญญา + donut + combo chart (growth) */}
+        <CustomerAcquisitionSection data={customerAcquisition} />
+
+        {/* PRIORITY 9: Revenue Overview chart + Aging donut */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
           <Card className="xl:col-span-2">
-            <CardHeader
-              title="งานวันนี้"
-              right={
-                <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full">
-                  {todayJobs.length} งาน
-                </span>
-              }
-            />
-            {todayJobs.length > 0 ? (
-              <div className="overflow-x-auto -mx-2">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100">
-                      <th className="font-medium px-2 py-2">#</th>
-                      <th className="font-medium px-2 py-2">ลูกค้า</th>
-                      <th className="font-medium px-2 py-2 hidden md:table-cell">บริการ / ที่อยู่</th>
-                      <th className="font-medium px-2 py-2">เวลา</th>
-                      <th className="font-medium px-2 py-2">สถานะ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {todayJobs.slice(0, 8).map((job: DashboardJobItem, idx: number) => {
-                      const time = job.actual_start_time
-                        ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
-                        : '-';
-                      return (
-                        <tr
-                          key={job.id}
-                          className="border-b border-slate-50 last:border-0 hover:bg-emerald-50/40 transition-colors"
-                        >
-                          <td className="px-2 py-3 text-slate-400 tabular-nums">{idx + 1}</td>
-                          <td className="px-2 py-3">
-                            <div className="flex items-center gap-2.5">
-                              <span className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
-                                {(job.customer_first_name || 'C').slice(0, 1)}
-                              </span>
-                              <span className="font-medium text-slate-700 truncate">
-                                {job.customer_first_name} {job.customer_last_name}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-2 py-3 text-slate-500 truncate max-w-[280px] hidden md:table-cell">
-                            {job.service_system || ''}
-                            {job.address ? ` • ${job.address}` : ''}
-                          </td>
-                          <td className="px-2 py-3 tabular-nums text-slate-700">{time}</td>
-                          <td className="px-2 py-3">
-                            <StatusBadge status={job.status} />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+            <CardHeader title="ภาพรวมรายได้" subtitle="รายเดือน (6 เดือนล่าสุด)" right={<ChartLegend />} />
+            {revenueByMonth.length > 0 ? (
+              <RevenueChart data={revenueByMonth} comparison={comparison} />
             ) : (
-              <div className="h-32 flex items-center justify-center text-slate-400 text-sm">ไม่มีงานวันนี้</div>
+              <div className="h-64 flex items-center justify-center text-slate-400 text-sm">ไม่มีข้อมูลรายได้</div>
             )}
           </Card>
 
           <Card>
-            <CardHeader title="สถานะงาน" subtitle={RANGE_LABELS[range]} />
-            <JobStatusBars items={jobsByStatus} />
+            <CardHeader
+              title="สัดส่วนยอดค้างชำระ"
+              subtitle="แยกตามอายุหนี้"
+              right={
+                <button
+                  onClick={() => navigate('/invoices')}
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  ดูทั้งหมด
+                </button>
+              }
+            />
+            <AgingDonut aging={overdueInvoices.aging} />
           </Card>
         </div>
 
-        {/* Row: ยอดค้างชำระสะสมแบ่งกลุ่ม (3 เดือน / 6 เดือน / เกิน 1 ปี) */}
+        {/* PRIORITY 10: ยอดค้างชำระสะสมแบ่งกลุ่ม 3/6/12+ เดือน (receivable risk) */}
         <LongTermAgingSection aging={overdueInvoices.longTermAging} onNavigate={navigate} />
 
-        {/* Row: Overdue invoices + Expiring contracts + Low stock + Withdrawal */}
+        {/* PRIORITY 11: Overdue invoices + Expiring contracts + Low stock + Withdrawal (detail alerts) */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
           <Card>
             <CardHeader title="ใบแจ้งหนี้ค้างชำระ" />
@@ -566,7 +568,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
           </Card>
         </div>
 
-        {/* Row: Upcoming Jobs + Recent Activities */}
+        {/* PRIORITY 12: Upcoming Jobs + Recent Activities (history & forecast) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <Card>
             <CardHeader title="งานที่จะมาถึง" subtitle="ภายใน 7 วัน" />
@@ -574,16 +576,11 @@ const Dashboard: React.FC<DashboardProps> = () => {
               <div className="space-y-2 max-h-72 overflow-y-auto">
                 {upcomingJobs.map((job: DashboardJobItem) => (
                   <div key={job.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
-                        {(job.customer_first_name || 'C').slice(0, 1)}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-800 truncate">
-                          {job.customer_first_name} {job.customer_last_name}
-                        </p>
-                        <p className="text-xs text-slate-400 truncate">{job.id?.slice(0, 8)}</p>
-                      </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-800 truncate">
+                        {fmtCustomerName(job.customer_first_name, job.customer_last_name)}
+                      </p>
+                      <p className="text-xs text-slate-400 truncate">{job.id?.slice(0, 8)}</p>
                     </div>
                     <div className="text-right ml-3 shrink-0">
                       <p className="text-xs font-semibold text-emerald-700">{fmtDate(job.appointment_date)}</p>
@@ -813,6 +810,7 @@ const JobStatusBars: React.FC<{ items: { status: string; count: number }[] }> = 
     COMPLETE: 'bg-emerald-500',
     WAITING_CLEAR: 'bg-violet-400',
     CANCELLED: 'bg-rose-400',
+    REJECTED: 'bg-red-600',
   };
   if (items.length === 0) {
     return <p className="text-sm text-slate-400 py-6 text-center">ไม่มีข้อมูล</p>;
@@ -936,19 +934,14 @@ const CancelledJobsCard: React.FC<{ jobs: DashboardCancelledJob[]; onNavigate: (
               onClick={() => onNavigate(`/jobs?id=${job.id}`)}
               className="w-full flex items-center justify-between p-3 bg-rose-50 hover:bg-rose-100 rounded-2xl transition-colors text-left"
             >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="w-8 h-8 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs shrink-0">
-                  {(job.customer_first_name || 'C').slice(0, 1)}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">
-                    {job.customer_first_name} {job.customer_last_name}
-                  </p>
-                  <p className="text-xs text-slate-500 truncate">
-                    {job.service_system || ''}
-                    {job.remark ? ` • ${job.remark}` : ''}
-                  </p>
-                </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-800 truncate">
+                  {fmtCustomerName(job.customer_first_name, job.customer_last_name)}
+                </p>
+                <p className="text-xs text-slate-500 truncate">
+                  {job.service_system || ''}
+                  {job.remark ? ` • ${job.remark}` : ''}
+                </p>
               </div>
               <span className="text-xs font-medium text-rose-600 tabular-nums shrink-0 ml-2">{time}</span>
             </button>
@@ -1207,7 +1200,7 @@ const VehiclesTodaySection: React.FC<{ vehicles: DashboardVehicleToday[] }> = ({
                   return (
                     <div key={j.id} className="flex items-center justify-between text-[11px] text-slate-600 px-1.5">
                       <span className="truncate flex-1">
-                        {j.customer_first_name} {j.customer_last_name}
+                        {fmtCustomerName(j.customer_first_name, j.customer_last_name)}
                       </span>
                       <span className="text-slate-400 tabular-nums ml-2 shrink-0">{t}</span>
                     </div>
