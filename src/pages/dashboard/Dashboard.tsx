@@ -722,7 +722,7 @@ const QuickAction: React.FC<{ onClick: () => void; label: string; iconPath: stri
 }) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-emerald-100 text-slate-700 rounded-full text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-200 transition-colors"
+    className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-emerald-100 text-slate-700 rounded-md text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-200 transition-colors"
   >
     <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={iconPath} />
@@ -732,12 +732,12 @@ const QuickAction: React.FC<{ onClick: () => void; label: string; iconPath: stri
 );
 
 const RangeDropdown: React.FC<{ value: Range; onChange: (r: Range) => void }> = ({ value, onChange }) => (
-  <div className="flex bg-white rounded-full border border-emerald-100 p-1 shadow-sm">
+  <div className="flex bg-white rounded-md border border-emerald-100 p-1 shadow-sm">
     {(Object.keys(RANGE_LABELS) as Range[]).map((r) => (
       <button
         key={r}
         onClick={() => onChange(r)}
-        className={`px-3 py-1.5 text-xs rounded-full transition-all font-semibold ${
+        className={`px-3 py-1.5 text-xs rounded-md transition-all font-semibold ${
           value === r ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
         }`}
       >
