@@ -786,6 +786,14 @@ const Job: React.FC<JobProps> = ({
   const [closureJobStats, setClosureJobStats] = useState({ total: 0, completed: 0, incomplete: 0 });
   const [closureHasIssueSummary, setClosureHasIssueSummary] = useState(false);
   const [isIssueSummaryModalOpen, setIsIssueSummaryModalOpen] = useState(false);
+
+  // Aggregate "done today" flags for header buttons.
+  // True only when ALL of the lead_tech's vehicles for `filterDate` satisfy the rule.
+  // - isClosureDoneToday: every vehicle has DailyClosure.status === 'CLOSED'
+  // - isIssueSummaryDoneToday: every vehicle has at least one StockIssueSummary
+  const [isClosureDoneToday, setIsClosureDoneToday] = useState(false);
+  const [isIssueSummaryDoneToday, setIsIssueSummaryDoneToday] = useState(false);
+  const [dailyChecksTick, setDailyChecksTick] = useState(0);
   const [closureHasPendingIssue, setClosureHasPendingIssue] = useState(false);
   const [closureIssueSummaries, setClosureIssueSummaries] = useState<{
     id: string;
@@ -1188,6 +1196,82 @@ const Job: React.FC<JobProps> = ({
     }
   };
 
+  // Probe both daily processes for the lead_tech's vehicles on `filterDate`.
+  // Each header button independently shows a "done" state when its task is
+  // fully completed across every vehicle this tech has jobs for today.
+  useEffect(() => {
+    if (!isFieldRole(authUser?.roleType) || !currentUser?.id) {
+      setIsClosureDoneToday(false);
+      setIsIssueSummaryDoneToday(false);
+      return;
+    }
+
+    let cancelled = false;
+    const run = async () => {
+      const dateStr = filterDate || dayjs().format('YYYY-MM-DD');
+      const vehiclesWithJobs = (Array.isArray(warehouses) ? warehouses : [])
+        .filter((w) => w.type === WarehouseType.VEHICLE)
+        .filter((w) => {
+          const vJobs = (w as Warehouse & { jobs?: FieldJob[] }).jobs || [];
+          return vJobs.length > 0;
+        });
+
+      if (vehiclesWithJobs.length === 0) {
+        if (!cancelled) {
+          setIsClosureDoneToday(false);
+          setIsIssueSummaryDoneToday(false);
+        }
+        return;
+      }
+
+      let allClosed = true;
+      let allHaveIssue = true;
+
+      await Promise.all(
+        vehiclesWithJobs.map(async (vehicle) => {
+          const vehicleId = (vehicle as Warehouse & { id: string }).id;
+          let closure: DailyJobClosure | null = null;
+          try {
+            const res = await DailyClosureApi.getToday(vehicleId, dateStr);
+            closure = res.data ?? null;
+          } catch {
+            closure = null;
+          }
+
+          if (closure?.status !== 'CLOSED') allClosed = false;
+
+          // Issue-summary "done" = either a summary exists, OR the user has
+          // confirmed "ไม่มีการเบิกวันนี้" (has_no_stock_issue=true) on the closure.
+          if (closure?.has_no_stock_issue) {
+            // already confirmed no issue summary — counts as done
+            return;
+          }
+          try {
+            const res = await StockIssueSummaryApi.getAll({
+              warehouse_id: vehicleId,
+              start_date: `${dateStr}T00:00:00`,
+              end_date: `${dateStr}T23:59:59`,
+              limit: 1,
+            });
+            if (!(res.data || []).length) allHaveIssue = false;
+          } catch {
+            allHaveIssue = false;
+          }
+        })
+      );
+
+      if (!cancelled) {
+        setIsClosureDoneToday(allClosed);
+        setIsIssueSummaryDoneToday(allHaveIssue);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [warehouses, currentUser?.id, authUser?.roleType, filterDate, dailyChecksTick]);
+
   // ===== Daily Closure Handlers =====
   const [closureTargetVehicleId, setClosureTargetVehicleId] = useState('');
   const [isVehicleSelectModalOpen, setIsVehicleSelectModalOpen] = useState(false);
@@ -1344,6 +1428,7 @@ const Job: React.FC<JobProps> = ({
       });
 
       setIsDailyClosureModalOpen(false);
+      setDailyChecksTick((t) => t + 1);
       fetchData();
     } catch (error) {
       console.error('Error closing daily closure:', error);
@@ -1361,6 +1446,7 @@ const Job: React.FC<JobProps> = ({
         timer: 1500,
       });
       setIsIssueSummaryModalOpen(false);
+      setDailyChecksTick((t) => t + 1);
     } catch (error: unknown) {
       const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
       Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถสร้างใบเบิกได้', 'error');
@@ -1735,15 +1821,27 @@ const Job: React.FC<JobProps> = ({
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {isFieldRole(authUser?.roleType) && (
               <>
-                <Button
-                  onClick={() => setIsIssueSummaryModalOpen(true)}
-                  variant="primary"
-                  className="!text-xs sm:!text-sm !font-medium !bg-amber-500 !text-white hover:!bg-amber-600 !border-amber-500 !shadow-md"
-                >
-                  <DocumentCheckIcon className="w-4 h-4 mr-1 sm:mr-1.5" />
-                  สรุปเบิกสินค้า/ค่าใช้จ่าย
-                </Button>
-                {todayClosure?.status === 'CLOSED' ? (
+                {isIssueSummaryDoneToday ? (
+                  <Button
+                    variant="primary"
+                    disabled
+                    className="!text-xs sm:!text-sm !font-medium !bg-gray-400 !text-white !border-gray-400 !shadow-md !cursor-not-allowed !opacity-70"
+                  >
+                    <CheckCircleIcon className="w-4 h-4 mr-1 sm:mr-1.5" />
+                    <span className="hidden sm:inline">สรุปเบิกแล้ว</span>
+                    <span className="sm:hidden">เบิกแล้ว</span>
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => setIsIssueSummaryModalOpen(true)}
+                    variant="primary"
+                    className="!text-xs sm:!text-sm !font-medium !bg-amber-500 !text-white hover:!bg-amber-600 !border-amber-500 !shadow-md"
+                  >
+                    <DocumentCheckIcon className="w-4 h-4 mr-1 sm:mr-1.5" />
+                    สรุปเบิกสินค้า/ค่าใช้จ่าย
+                  </Button>
+                )}
+                {(isClosureDoneToday || todayClosure?.status === 'CLOSED') ? (
                   <Button
                     variant="primary"
                     disabled
