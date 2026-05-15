@@ -181,10 +181,10 @@ const Dashboard: React.FC<DashboardProps> = () => {
         {openClosures.length > 0 && (
           <div
             onClick={() => navigate('/daily-closures')}
-            className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-amber-100 transition-colors"
+            className="bg-amber-50 border border-amber-200 rounded-md p-4 flex items-center justify-between cursor-pointer hover:bg-amber-100 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-amber-100 rounded-xl">
+              <div className="p-2.5 bg-amber-100 rounded-md">
                 <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -345,7 +345,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
                     <button
                       key={item.key}
                       onClick={() => navigate(item.path)}
-                      className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-emerald-50 transition-colors group"
+                      className="w-full flex items-center justify-between p-3 rounded-md bg-slate-50 hover:bg-emerald-50 transition-colors group"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dotColor[item.color] || dotColor.blue}`} />
@@ -470,7 +470,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
               {Object.entries(overdueInvoices.aging).map(([label, amount]) => (
                 <div
                   key={label}
-                  className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-xl text-xs"
+                  className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-md text-xs"
                 >
                   <span className="text-slate-500">
                     {label === 'current' ? 'ยังไม่ถึงกำหนด' : `${label} วัน`}
@@ -482,7 +482,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
             {overdueInvoices.items.length > 0 && (
               <div className="space-y-1.5 max-h-32 overflow-y-auto">
                 {overdueInvoices.items.slice(0, 5).map((inv: DashboardInvoiceItem) => (
-                  <div key={inv.id} className="flex items-center justify-between text-xs p-2 bg-rose-50 rounded-xl">
+                  <div key={inv.id} className="flex items-center justify-between text-xs p-2 bg-rose-50 rounded-md">
                     <div className="truncate flex-1">
                       <span className="font-medium text-slate-700">{inv.code}</span>
                       <span className="text-slate-500 ml-1">{inv.customer_name}</span>
@@ -501,7 +501,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
             {expiringContracts.length > 0 ? (
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {expiringContracts.map((c: DashboardContractItem) => (
-                  <div key={c.id} className="p-2.5 bg-amber-50 rounded-xl border border-amber-100">
+                  <div key={c.id} className="p-2.5 bg-amber-50 rounded-md border border-amber-100">
                     <div className="flex justify-between items-start">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-slate-800 truncate">{c.code}</p>
@@ -526,7 +526,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
             {lowStockItems.length > 0 ? (
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {lowStockItems.map((item: DashboardStockItem) => (
-                  <div key={item.id} className="flex items-center justify-between p-2 bg-rose-50 rounded-xl">
+                  <div key={item.id} className="flex items-center justify-between p-2 bg-rose-50 rounded-md">
                     <div className="truncate flex-1">
                       <p className="text-sm font-medium text-slate-800 truncate">{item.name}</p>
                       <p className="text-xs text-slate-500">{item.code}</p>
@@ -550,15 +550,15 @@ const Dashboard: React.FC<DashboardProps> = () => {
           <Card onClick={() => navigate('/inventory/issue-summaries')} hover>
             <CardHeader title="สรุปการเบิก" />
             <div className="space-y-2.5">
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
+              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-md">
                 <span className="text-sm text-slate-600">ใบเบิกทั้งหมด</span>
                 <span className="text-lg font-bold text-blue-700 tabular-nums">{fmtInt(withdrawalStats.total)}</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl">
+              <div className="flex items-center justify-between p-3 bg-amber-50 rounded-md">
                 <span className="text-sm text-slate-600">รออนุมัติ</span>
                 <span className="text-lg font-bold text-amber-700 tabular-nums">{fmtInt(withdrawalStats.pending)}</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl">
+              <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-md">
                 <span className="text-sm text-slate-600">ค่าใช้จ่ายรวม</span>
                 <span className="text-base font-bold text-emerald-700 tabular-nums">
                   ฿{fmtCompact(withdrawalStats.totalExpense)}
@@ -575,7 +575,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
             {upcomingJobs.length > 0 ? (
               <div className="space-y-2 max-h-72 overflow-y-auto">
                 {upcomingJobs.map((job: DashboardJobItem) => (
-                  <div key={job.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
+                  <div key={job.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-md">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-slate-800 truncate">
                         {fmtCustomerName(job.customer_first_name, job.customer_last_name)}
@@ -601,7 +601,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
             {recentActivities.length > 0 ? (
               <div className="space-y-1 max-h-72 overflow-y-auto">
                 {recentActivities.map((act: DashboardActivityItem, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-2 hover:bg-emerald-50/40 rounded-xl">
+                  <div key={i} className="flex items-center justify-between p-2 hover:bg-emerald-50/40 rounded-md">
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       <ActivityDot type={act.type} />
                       <div className="min-w-0">
@@ -640,7 +640,7 @@ interface CardProps {
 const Card: React.FC<CardProps> = ({ children, className = '', onClick, hover }) => (
   <div
     onClick={onClick}
-    className={`bg-white rounded-xl border border-emerald-50 shadow-[0_2px_12px_rgba(16,185,129,0.04)] p-4 sm:p-5 ${
+    className={`bg-white rounded-md border border-emerald-50 shadow-[0_2px_12px_rgba(16,185,129,0.04)] p-4 sm:p-5 ${
       hover || onClick ? 'cursor-pointer hover:border-emerald-200 hover:shadow-[0_4px_16px_rgba(16,185,129,0.08)] transition-all' : ''
     } ${className}`}
   >
@@ -686,7 +686,7 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, change, changeDir, foot
 
   return (
     <div
-      className={`relative bg-white rounded-xl border border-emerald-50 shadow-[0_2px_12px_rgba(16,185,129,0.04)] p-5 overflow-hidden before:content-[''] before:absolute before:top-0 before:left-0 before:w-1 before:h-full ${ringColor[accent]}`}
+      className={`relative bg-white rounded-md border border-emerald-50 shadow-[0_2px_12px_rgba(16,185,129,0.04)] p-5 overflow-hidden before:content-[''] before:absolute before:top-0 before:left-0 before:w-1 before:h-full ${ringColor[accent]}`}
     >
       <div className="flex items-start justify-between mb-3">
         <p className="text-sm font-medium text-slate-500">{title}</p>
@@ -882,7 +882,7 @@ const TodayPaymentsCard: React.FC<{ payments: DashboardTodayPayments }> = ({ pay
             return (
               <div
                 key={item.method}
-                className={`flex items-center justify-between p-3 rounded-xl border ${accentBg[meta.color] || accentBg.slate}`}
+                className={`flex items-center justify-between p-3 rounded-md border ${accentBg[meta.color] || accentBg.slate}`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -932,7 +932,7 @@ const CancelledJobsCard: React.FC<{ jobs: DashboardCancelledJob[]; onNavigate: (
             <button
               key={job.id}
               onClick={() => onNavigate(`/jobs?id=${job.id}`)}
-              className="w-full flex items-center justify-between p-3 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors text-left"
+              className="w-full flex items-center justify-between p-3 bg-rose-50 hover:bg-rose-100 rounded-md transition-colors text-left"
             >
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-slate-800 truncate">
@@ -1017,7 +1017,7 @@ const LongTermAgingSection: React.FC<{
             <button
               key={b.key}
               onClick={() => onNavigate('/invoices?aging=' + b.key)}
-              className={`${b.bg} ${b.text} border rounded-xl p-4 text-left hover:shadow-sm transition-all`}
+              className={`${b.bg} ${b.text} border rounded-md p-4 text-left hover:shadow-sm transition-all`}
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ background: b.color }} />
@@ -1120,7 +1120,7 @@ const VehicleStatusStrip: React.FC<{ vehicles: DashboardVehicleToday[] }> = ({ v
       {vehicles.map((v) => {
         const meta = VEHICLE_STATE_META[v.state];
         return (
-          <div key={v.id} className={`${meta.bg} ${meta.text} border rounded-xl p-3`}>
+          <div key={v.id} className={`${meta.bg} ${meta.text} border rounded-md p-3`}>
             <div className="flex items-center gap-2 mb-1.5">
               <span className={`w-2 h-2 rounded-full ${meta.dot}`} />
               <span className="text-[10px] font-bold uppercase tracking-wide opacity-70">{meta.label}</span>
@@ -1149,7 +1149,7 @@ const VehiclesTodaySection: React.FC<{ vehicles: DashboardVehicleToday[] }> = ({
         const meta = VEHICLE_STATE_META[v.state];
         const pct = v.counts.total > 0 ? Math.round((v.counts.complete / v.counts.total) * 100) : 0;
         return (
-          <div key={v.id} className="border border-slate-100 rounded-xl p-4 bg-slate-50/30">
+          <div key={v.id} className="border border-slate-100 rounded-md p-4 bg-slate-50/30">
             <div className="flex items-center justify-between mb-3">
               <div className="min-w-0">
                 <p className="text-xs text-slate-400 font-semibold uppercase">คันที่ {idx + 1}</p>
@@ -1163,19 +1163,19 @@ const VehiclesTodaySection: React.FC<{ vehicles: DashboardVehicleToday[] }> = ({
             </div>
 
             <div className="grid grid-cols-4 gap-1.5 mb-3 text-center">
-              <div className="bg-amber-50 rounded-xl px-1 py-1.5">
+              <div className="bg-amber-50 rounded-md px-1 py-1.5">
                 <p className="text-[9px] text-amber-700 font-medium">รอ</p>
                 <p className="text-sm font-bold text-amber-700 tabular-nums">{v.counts.pending}</p>
               </div>
-              <div className="bg-blue-50 rounded-xl px-1 py-1.5">
+              <div className="bg-blue-50 rounded-md px-1 py-1.5">
                 <p className="text-[9px] text-blue-700 font-medium">ทำ</p>
                 <p className="text-sm font-bold text-blue-700 tabular-nums">{v.counts.in_progress}</p>
               </div>
-              <div className="bg-emerald-50 rounded-xl px-1 py-1.5">
+              <div className="bg-emerald-50 rounded-md px-1 py-1.5">
                 <p className="text-[9px] text-emerald-700 font-medium">เสร็จ</p>
                 <p className="text-sm font-bold text-emerald-700 tabular-nums">{v.counts.complete}</p>
               </div>
-              <div className="bg-rose-50 rounded-xl px-1 py-1.5">
+              <div className="bg-rose-50 rounded-md px-1 py-1.5">
                 <p className="text-[9px] text-rose-700 font-medium">ยกเลิก</p>
                 <p className="text-sm font-bold text-rose-700 tabular-nums">{v.counts.cancelled}</p>
               </div>
@@ -1285,11 +1285,11 @@ const CustomerAcquisitionSection: React.FC<{ data: DashboardCustomerAcquisition 
         <CardHeader title="ลูกค้าใหม่ vs ต่อสัญญา" subtitle="เดือนนี้" />
         <AcquisitionDonut newCount={newCount} renewCount={renewCount} total={total} />
         <div className="grid grid-cols-2 gap-3 mt-4">
-          <div className="bg-blue-50 rounded-xl p-3 text-center">
+          <div className="bg-blue-50 rounded-md p-3 text-center">
             <p className="text-[10px] text-blue-600 font-semibold uppercase">ลูกค้าใหม่</p>
             <p className="text-2xl font-bold text-blue-700 tabular-nums">{newCount}</p>
           </div>
-          <div className="bg-emerald-50 rounded-xl p-3 text-center">
+          <div className="bg-emerald-50 rounded-md p-3 text-center">
             <p className="text-[10px] text-emerald-600 font-semibold uppercase">ต่อสัญญา</p>
             <p className="text-2xl font-bold text-emerald-700 tabular-nums">{renewCount}</p>
           </div>
