@@ -780,7 +780,15 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                   </div>
                   <div className="p-4 rounded-xl border transition-colors border-slate-200/60 bg-slate-50/50">
                     <FormField label="วันที่นัดหมาย *" htmlFor="appointment_date" className="mb-0">
-                      <DatePicker selected={formData.appointment_date ? new Date(formData.appointment_date) : null} onChange={(date) => handleDateChange('appointment_date', date)} minDate={new Date()} placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yyyy" locale="th" wrapperClassName="w-full" className="h-10 border text-sm rounded-md p-2 w-full transition-colors bg-white" />
+                      <DatePicker
+                        selected={formData.appointment_date ? new Date(formData.appointment_date) : null} 
+                        onChange={(date) => handleDateChange('appointment_date', date)} 
+                        // minDate={new Date()} 
+                        placeholderText="dd/mm/yyyy" 
+                        dateFormat="dd/MM/yyyy" locale="th" 
+                        wrapperClassName="w-full" 
+                        className="h-10 border text-sm rounded-md p-2 w-full transition-colors bg-white" 
+                      />
                     </FormField>
                     {errors.appointment_date && <p className="text-red-500 text-xs mt-1 font-medium">{errors.appointment_date}</p>}
                   </div>

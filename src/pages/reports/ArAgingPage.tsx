@@ -266,34 +266,6 @@ const ArAgingPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Total Summary */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-          <div>
-            <p className="text-xs text-slate-500">รวมทั้งสิ้น</p>
-            <p className="text-sm font-medium text-slate-700">{summary.total_count} รายการ</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-slate-500">ยอดรวม</p>
-            <p className="text-lg font-bold text-slate-800">
-              {loading ? '-' : formatNumber(items.reduce((sum, item) => sum + Number(item.total), 0))}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-green-600">ชำระแล้ว</p>
-            <p className="text-lg font-bold text-green-700">
-              {loading ? '-' : formatNumber(items.reduce((sum, item) => sum + Number(item.paid_amount), 0))}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-rose-600">คงค้าง</p>
-            <p className="text-xl font-bold text-rose-700">
-              {loading ? '-' : formatNumber(summary.total_outstanding)}
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Toolbar */}
       <Card className="!p-4 flex-shrink-0 print:hidden">
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
