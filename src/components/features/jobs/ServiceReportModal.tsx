@@ -1674,7 +1674,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                         },
                       }))
                     }
-                    minDate={new Date()}
+                    // minDate={new Date()}
                     dateFormat="dd/MM/yyyy"
                     locale="th"
                     placeholderText="dd/mm/yyyy"
@@ -1745,7 +1745,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                         },
                       }))
                     }
-                    minDate={new Date()}
+                    // minDate={new Date()}
                     dateFormat="dd/MM/yyyy"
                     locale="th"
                     placeholderText="dd/mm/yyyy"
