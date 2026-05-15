@@ -10,6 +10,8 @@ export enum AsessmentStatus {
 export enum ServiceSystem {
   PREY = 'PREY',
   CHEMICAL = 'CHEMICAL',
+  RAT_BLOCK_GLUE = 'RAT_BLOCK_GLUE',
+  BAIT_SEMI_BIO = 'BAIT_SEMI_BIO',
   OTHER = 'OTHER',
 }
 

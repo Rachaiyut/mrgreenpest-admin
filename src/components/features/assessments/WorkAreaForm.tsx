@@ -98,6 +98,8 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   const serviceLabels: Record<ServiceSystem, string> = {
     [ServiceSystem.PREY]: 'เหยื่อ',
     [ServiceSystem.CHEMICAL]: 'สารเคมีชีวภาพ',
+    [ServiceSystem.RAT_BLOCK_GLUE]: 'ปิดทางเข้าออกหนู และถาดกาว',
+    [ServiceSystem.BAIT_SEMI_BIO]: 'เหยื่อ และสารเคมีกึ่งชีวภาพ',
     [ServiceSystem.OTHER]: 'อื่นๆ',
   };
 
@@ -639,7 +641,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 >
                   <DropdownSelect
                     value={area.service_system || ''}
-                    onChange={(val) => onAreaChange(index, { ...area, service_system: val || undefined })}
+                    onChange={(val) => onAreaChange(index, { ...area, service_system: (val as ServiceSystem) || undefined })}
                     placeholder="เลือกระบบ"
                     options={Object.values(ServiceSystem).map((type) => ({ value: type, label: serviceLabels[type] }))}
                     error={false}
