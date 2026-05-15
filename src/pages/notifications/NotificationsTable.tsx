@@ -1,11 +1,29 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Pagination } from '../../components/common/Pagination';
-import { StatusBadge } from '../../components/common/StatusBadge';
 import { LoadingIcon, CalendarIcon } from '../../assets/icons/Icons';
 import { ContractApi } from '../../api/contract';
 import { ServiceReportApi } from '../../api/service-report';
 import { formatThaiDate } from '../../utils/date';
+import {
+  InvoiceStatus,
+  InvoiceStatusLabel,
+  InvoiceStatusColor,
+} from '../../types/enums/invoice';
+
+// Invoice-context badge — the generic StatusBadge maps PENDING → "รออนุมัติ"
+// (job/contract semantics), but for invoices PENDING means "รอชำระ".
+// Falls back to the raw string for backend literals like "รอออกใบแจ้งหนี้".
+const InvoiceStatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const key = status as InvoiceStatus;
+  const label = InvoiceStatusLabel[key] ?? status;
+  const color = InvoiceStatusColor[key] ?? 'bg-slate-100 text-slate-600';
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${color}`}>
+      {label}
+    </span>
+  );
+};
 
 export interface NotificationRow {
   contractUuid: string | null;
@@ -302,7 +320,7 @@ const NotificationsTable: React.FC<NotificationsTableProps> = ({
                           : '-'}
                       </td>
                       <td className={`px-3 py-3 whitespace-nowrap text-center align-top ${yellowBg}`}>
-                        {row.invoiceStatus !== '-' ? <StatusBadge status={row.invoiceStatus} /> : '-'}
+                        {row.invoiceStatus !== '-' ? <InvoiceStatusBadge status={row.invoiceStatus} /> : '-'}
                       </td>
                       <td className={`px-3 py-3 whitespace-nowrap text-left align-top text-slate-600 ${yellowBg}`}>
                         {row.invoiceDueDate !== '-' ? formatThaiDate(row.invoiceDueDate) : '-'}
