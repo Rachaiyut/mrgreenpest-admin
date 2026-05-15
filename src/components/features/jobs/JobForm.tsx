@@ -1173,10 +1173,10 @@ export const JobForm: React.FC<JobFormProps> = ({
                           id="work-date"
                           selected={workDate ? new Date(workDate) : null}
                           onChange={(date: Date | null) => { if (date) { const yyyy = date.getFullYear(); const mm = String(date.getMonth() + 1).padStart(2, '0'); const dd = String(date.getDate()).padStart(2, '0'); setWorkDate(`${yyyy}-${mm}-${dd}`); setErrors((prev) => ({ ...prev, work_date: '' })); } else { setWorkDate(''); } }}
-                          minDate={mode === 'add' || isUnassigned ? new Date() : undefined}
+                          // minDate={mode === 'add' || isUnassigned ? new Date() : undefined}
                           disabled={dateDisabled}
                           wrapperClassName="w-full"
-                          placeholderText="dd/mm/yyyy"
+                          placeholderText="วว/ดด/ปป"
                           dateFormat="dd/MM/yyyy"
                           locale="th"
                           className={`w-full h-12 pr-10 rounded-md focus:border-primary focus:ring-primary shadow-sm ${dateDisabled ? 'bg-slate-100 text-slate-500 border-slate-300 cursor-not-allowed' : 'bg-white text-slate-700 border-slate-300'}`}
