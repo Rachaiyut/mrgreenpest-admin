@@ -883,16 +883,19 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                 </button>
               )}
 
-            <button
-              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-              onClick={() => handleEditInvoice(selectedInvoice!)}
-            >
-              <PencilIcon className="w-4 h-4 text-slate-400" /> แก้ไข
-            </button>
+            {selectedInvoice?.status === InvoiceStatus.PENDING && (
+              <button
+                className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                onClick={() => handleEditInvoice(selectedInvoice!)}
+              >
+                <PencilIcon className="w-4 h-4 text-slate-400" /> แก้ไข
+              </button>
+            )}
 
             {selectedInvoice &&
               selectedInvoice.status !== InvoiceStatus.PAID &&
               selectedInvoice.status !== InvoiceStatus.CANCELLED &&
+              selectedInvoice.status !== InvoiceStatus.CARRIED_OVER &&
               selectedInvoice.status !== InvoiceStatus.PENDING_ACCOUNTING_REVIEW && (
                 <button
                   className="w-full px-4 py-2.5 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-3 transition-colors"

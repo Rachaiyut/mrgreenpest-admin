@@ -485,6 +485,17 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
       setReportState(initialReport);
 
+      // Pre-fill "บัญชีรับโอน" from the SR's existing payment (or from a
+      // top-level account_id if the backend ever attaches one). Without this
+      // the dropdown blanks out every time the user reopens the SR for edit.
+      const reportForAccount = (job.service_report as { data?: ServiceReport })?.data
+        || (job.service_report as ServiceReport | undefined);
+      const persistedAccountId =
+        reportForAccount?.account_id
+        || reportForAccount?.payment?.account_id
+        || '';
+      setSelectedAccountId(persistedAccountId);
+
       // Load existing blueprint images — resolve signed URLs for entries that have id but no url
       const r = job.service_report as unknown as Record<string, unknown>;
       const reportData = (r?.data || r) as Record<string, unknown>;
@@ -536,7 +547,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       status: nextStatus,
       job_id: job.id,
       customer_id: job.customer_id,
-      payment_amount: reportState.payment_amount ? Number(reportState.payment_amount) : 0, 
+      // Persist "บัญชีรับโอน" through SR → backend forwards to payments.account_id
+      account_id: selectedAccountId || undefined,
+      payment_amount: reportState.payment_amount ? Number(reportState.payment_amount) : 0,
       report_date: new Date().toISOString(),
       customer_name: (job as unknown as Record<string, string>).customerName || (job as unknown as Record<string, string>).customer_name,
 

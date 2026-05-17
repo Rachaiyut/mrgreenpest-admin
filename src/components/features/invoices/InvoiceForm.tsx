@@ -120,7 +120,10 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     contractId: (initialValues as unknown as Record<string, string>)?.contract_id || undefined, // Make sure this matches your DB
     quotationId: initialValues?.quotation_id || '',
     term: initialValues?.term || null as number | null,
-    selectedScheduleId: (initialValues as unknown as Record<string, string>)?.invoice_schedule_id || null as string | null,
+    selectedScheduleId:
+      (initialValues as unknown as Record<string, string>)?.invoice_schedule_id ||
+      (initialValues as unknown as Record<string, string>)?.installment_id ||
+      null as string | null,
   });
 
   const [items, setItems] = useState<InvoiceItem[]>(() => {
@@ -169,7 +172,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           contractId: prev.contractId || full.contract_id || undefined,
           quotationId: prev.quotationId || full.quotation_id || '',
           term: prev.term || full.term || null,
-          selectedScheduleId: prev.selectedScheduleId || full.invoice_schedule_id || null,
+          selectedScheduleId: prev.selectedScheduleId || full.invoice_schedule_id || full.installment_id || null,
           includeVat: full.include_vat ?? prev.includeVat,
         }));
 
@@ -315,6 +318,33 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
   const referenceSource = selectedContract || selectedQuotation;
 
   const availableInstallments = useMemo(() => {
+    // Detail mode: แสดงทุกงวดจาก contract.installments (แผนการวางบิล) ทั้งหมด
+    // ไม่ filter ตาม invoice_schedule status เพราะ status เปลี่ยนแล้วงวดจะหาย
+    if (mode === 'detail' && referenceSource?.installments && referenceSource.installments.length > 0) {
+      const scheduleByTerm = new Map<number, any>();
+      invoiceSchedules.forEach((s: any) => {
+        const t = s.installment_no || s.sequence;
+        if (t) scheduleByTerm.set(Number(t), s);
+      });
+
+      return referenceSource.installments
+        .slice()
+        .sort((a: any, b: any) => (a.term || a.installment_no || 0) - (b.term || b.installment_no || 0))
+        .map((inst: any) => {
+          const term = inst.term || inst.installment_no;
+          const schedule = scheduleByTerm.get(Number(term));
+          return {
+            id: schedule?.id || inst.id,
+            term,
+            description: inst.description || inst.notes || `งวดที่ ${term}`,
+            percentage: inst.percentage || 0,
+            amount: Number(inst.amount || 0),
+            is_pay_all: false,
+            disabled: true,
+          };
+        });
+    }
+
     if (formData.contractId && invoiceSchedules.length > 0) {
       // หา term สูงสุดที่มี invoice ค้างชำระ (INVOICED) เพื่อ disable งวดก่อนหน้า
       const invoicedTerms = invoiceSchedules
@@ -322,11 +352,20 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         .map((inst: any) => inst.installment_no || inst.sequence);
       const maxInvoicedTerm = invoicedTerms.length > 0 ? Math.max(...invoicedTerms) : 0;
 
+      const linkedScheduleId =
+        formData.selectedScheduleId ||
+        (initialValues as unknown as Record<string, string>)?.invoice_schedule_id ||
+        (initialValues as unknown as Record<string, string>)?.installment_id;
+      const linkedTerm = formData.term || initialValues?.term;
+
       return invoiceSchedules.filter((inst: any) => {
         const term = inst.installment_no || inst.sequence;
         const status = String(inst.status).toUpperCase();
 
-        if (initialValues?.id && initialValues.term === term) return true;
+        if (initialValues?.id) {
+          if (linkedScheduleId && String(inst.id) === String(linkedScheduleId)) return true;
+          if (linkedTerm && linkedTerm === term) return true;
+        }
         if (inst.is_pay_all) return true;
 
         return status === 'PENDING' || status === 'PARTIAL' || status === 'INVOICED';
@@ -366,11 +405,20 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       return [];
     }
     
+    const linkedScheduleId =
+      formData.selectedScheduleId ||
+      (initialValues as unknown as Record<string, string>)?.invoice_schedule_id ||
+      (initialValues as unknown as Record<string, string>)?.installment_id;
+    const linkedTerm = formData.term || initialValues?.term;
+
     return referenceSource.installments.filter((inst: any) => {
       const term = inst.term || inst.installment_no;
       const isPaid = inst.status === Status.Paid || (inst.status as string) === 'PAID';
 
-      if (initialValues?.id && initialValues.term === term) return true;
+      if (initialValues?.id) {
+        if (linkedScheduleId && String(inst.id) === String(linkedScheduleId)) return true;
+        if (linkedTerm && linkedTerm === term) return true;
+      }
       // แสดงงวดที่ยังไม่จ่ายครบ — ให้สร้าง invoice ซ้ำได้ (วางบิลหลายครั้ง)
       return !isPaid;
     }).map((inst: any) => ({
@@ -381,7 +429,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       amount: Number(inst.amount),
       is_pay_all: false,
     }));
-  }, [referenceSource, invoices, initialValues, formData.contractId, invoiceSchedules, contracts]);
+  }, [mode, referenceSource, invoices, initialValues, formData.contractId, formData.selectedScheduleId, formData.term, invoiceSchedules, contracts]);
 
   // ชำระเต็มจำนวน: auto-select + auto-set items
   const isFullPayment = useMemo(() => {
@@ -528,7 +576,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
     setIsSaving(true);
     try {
-      const selectedInst = availableInstallments.find((i: any) => i.id === formData.selectedScheduleId);
+      const selectedInst = availableInstallments.find((i: { id: string }) => i.id === formData.selectedScheduleId);
 
       const payload = {
         contract_id: formData.contractId || undefined,
@@ -799,20 +847,24 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-4 py-3 text-left w-16 text-sm font-semibold text-slate-600 uppercase">เลือก</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">งวดที่</th>
+                    <th className="px-4 py-3 text-center w-16 text-sm font-semibold text-slate-600 uppercase">เลือก</th>
+                    <th className="px-4 py-3 text-center w-28 text-sm font-semibold text-slate-600 uppercase">งวดที่</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">รายละเอียด</th>
-                    {availableInstallments.some(i => i.percentage > 0) && (
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">เปอร์เซ็น</th>
+                    {availableInstallments.some((i: { percentage: number }) => i.percentage > 0) && (
+                      <th className="px-4 py-3 text-center w-24 text-sm font-semibold text-slate-600 uppercase">เปอร์เซ็น</th>
                     )}
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">ยอดชำระ (รวม VAT)</th>
+                    <th className="px-4 py-3 text-right w-48 text-sm font-semibold text-slate-600 uppercase">ยอดชำระ (รวม VAT)</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {availableInstallments.map((inst: any) => {
+                    const initialScheduleId =
+                      (initialValues as unknown as Record<string, string>)?.invoice_schedule_id ||
+                      (initialValues as unknown as Record<string, string>)?.installment_id;
                     const isSelected =
                       formData.selectedScheduleId === inst.id ||
-                      (!!initialValues?.id && initialValues?.term === inst.term);
+                      (!!initialScheduleId && String(initialScheduleId) === String(inst.id)) ||
+                      (!!initialValues?.id && !!initialValues?.term && initialValues?.term === inst.term);
                     return (
                     <tr
                       key={inst.id}
@@ -832,15 +884,15 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                       <td className="px-4 py-4 text-sm font-medium text-slate-900 text-center">
                         {inst.is_pay_all ? 'รวบยอด' : `งวดที่ ${inst.term}`}
                       </td>
-                      <td className={`px-4 py-4 text-sm text-center ${inst.is_pay_all ? 'text-amber-700 font-medium' : 'text-slate-600'}`}>
+                      <td className={`px-4 py-4 text-sm text-left ${inst.is_pay_all ? 'text-amber-700 font-medium' : 'text-slate-600'}`}>
                         {inst.description}
                       </td>
-                      {availableInstallments.some(i => i.percentage > 0) && (
+                      {availableInstallments.some((i: { percentage: number }) => i.percentage > 0) && (
                         <td className="px-4 py-4 text-sm text-center text-slate-600">
                           {!inst.is_pay_all && inst.percentage > 0 ? `${inst.percentage}%` : '-'}
                         </td>
                       )}
-                      <td className="px-4 py-4 text-sm text-center font-bold text-slate-900">
+                      <td className="px-4 py-4 text-sm text-right font-bold text-slate-900">
                         {Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                       </td>
                     </tr>

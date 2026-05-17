@@ -71,6 +71,10 @@ export interface ServiceReport {
   payment_condition?: PaymentMethod;
   payment_installment_count?: number;
   payment_amount?: number | string;
+  // บัญชีรับโอน — forwarded to payments.account_id on the backend.
+  account_id?: string;
+  // Loaded from backend include when editing an existing SR.
+  payment?: { id?: string; account_id?: string | null };
   payment_slip_file_id?: string;
   quotation_file_id?: string;
   blueprint_file_id?: string;

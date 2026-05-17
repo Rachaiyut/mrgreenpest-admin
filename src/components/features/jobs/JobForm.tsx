@@ -14,6 +14,7 @@ import { JobMainStatus } from '@/src/types/enums/job';
 import { User, UserRole } from '@/src/types/entity/core.interface';
 import { Job } from '@/src/types/entity/job.interface';
 import { Contract, Invoice } from '@/src/types/entity/financial.interface';
+import { InvoiceStatus, InvoiceStatusLabel, InvoiceStatusColor } from '@/src/types/enums/invoice';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { Assessment, AssessmentWorkArea } from '@/src/types/entity/app.interface';
@@ -486,7 +487,9 @@ export const JobForm: React.FC<JobFormProps> = ({
         })
         .map((job: any) => String(job.invoice_id))
     );
-    return fetchedInvoices.filter((inv) => !usedInvoiceIds.has(String(inv.id)));
+    return fetchedInvoices.filter(
+      (inv) => !usedInvoiceIds.has(String(inv.id)) && inv.status === InvoiceStatus.PENDING,
+    );
   }, [fetchedInvoices, jobs, mode, jobToEdit]);
 
   const filteredInvoices = useMemo(() => {
@@ -1242,15 +1245,23 @@ export const JobForm: React.FC<JobFormProps> = ({
                 .reduce((sum: number, inv: Invoice) => sum + (Number(inv.total) - Number((inv as unknown as Record<string, number>).paid_amount || 0)), 0);
 
               const getStatusConfig = (status: string) => {
-                switch (status) {
-                  case 'PAID': return { label: 'จ่ายแล้ว', color: 'bg-green-100 text-green-700 border-green-200', border: 'border-l-green-500' };
-                  case 'PARTIAL': return { label: 'จ่ายบางส่วน', color: 'bg-yellow-100 text-yellow-700 border-yellow-200', border: 'border-l-yellow-500' };
-                  case 'OVERDUE': return { label: 'เกินกำหนด', color: 'bg-red-100 text-red-700 border-red-200', border: 'border-l-red-500' };
-                  case 'PENDING': case 'SENT': return { label: 'ค้างชำระ', color: 'bg-orange-100 text-orange-700 border-orange-200', border: 'border-l-orange-500' };
-                  case 'CARRIED_OVER': return { label: 'ทบยอดแล้ว', color: 'bg-slate-100 text-slate-600 border-slate-200', border: 'border-l-slate-400' };
-                  case 'CANCELLED': return { label: 'ยกเลิก', color: 'bg-slate-100 text-slate-400 border-slate-200', border: 'border-l-slate-300' };
-                  default: return { label: 'ยังไม่ออกบิล', color: 'bg-blue-50 text-blue-600 border-blue-200', border: 'border-l-blue-400' };
+                const borderMap: Record<string, string> = {
+                  [InvoiceStatus.DRAFT]: 'border-l-slate-400',
+                  [InvoiceStatus.PENDING]: 'border-l-yellow-500',
+                  [InvoiceStatus.SENT]: 'border-l-indigo-500',
+                  [InvoiceStatus.PAID]: 'border-l-green-500',
+                  [InvoiceStatus.PARTIAL]: 'border-l-amber-500',
+                  [InvoiceStatus.OVERDUE]: 'border-l-rose-500',
+                  [InvoiceStatus.CANCELLED]: 'border-l-red-500',
+                  [InvoiceStatus.CARRIED_OVER]: 'border-l-zinc-400',
+                  [InvoiceStatus.PENDING_REVIEW]: 'border-l-purple-500',
+                  [InvoiceStatus.PENDING_ACCOUNTING_REVIEW]: 'border-l-orange-500',
+                };
+                const s = status as InvoiceStatus;
+                if (InvoiceStatusLabel[s]) {
+                  return { label: InvoiceStatusLabel[s], color: InvoiceStatusColor[s], border: borderMap[s] || 'border-l-slate-400' };
                 }
+                return { label: 'ยังไม่ออกบิล', color: 'bg-blue-50 text-blue-600', border: 'border-l-blue-400' };
               };
 
               // สร้าง list: ใช้ installments ถ้ามี ไม่งั้นใช้ invoices

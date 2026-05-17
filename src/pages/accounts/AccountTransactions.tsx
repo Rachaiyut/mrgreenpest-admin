@@ -24,8 +24,6 @@ import {
   AccountTransaction,
   AccountTransactionType,
 } from '../../types/entity/account.interface';
-import Swal from '../../utils/swal';
-import { usePermissions } from '../../hooks/usePermissions';
 import {
   LoadingIcon,
   CurrencyDollarIcon,
@@ -34,7 +32,6 @@ import {
   PlusIcon,
   ManageIcon,
   EyeIcon,
-  TrashIcon,
 } from '../../assets/icons/Icons';
 import { formatThaiDateTime } from '../../utils/date';
 
@@ -119,42 +116,6 @@ const AccountTransactions: FC = () => {
   const openTransactionDetail = (t: AccountTransaction) => {
     setOpenDropdownId(null);
     setDetailTrx(t);
-  };
-
-  const { hasPermission } = usePermissions();
-  const canDelete = hasPermission('CANCEL_ACCOUNT_TRANSACTION');
-
-  const isFromCashWithdrawalRequest = (t: AccountTransaction) =>
-    !!t.reference_code && t.reference_code.toUpperCase().startsWith('CW');
-
-  const handleDeleteTransaction = async (t: AccountTransaction) => {
-    setOpenDropdownId(null);
-    if (isFromCashWithdrawalRequest(t)) {
-      Swal.fire(
-        'ไม่สามารถลบได้',
-        'รายการนี้มาจากใบขอเบิก กรุณาดำเนินการที่ใบขอเบิก',
-        'warning',
-      );
-      return;
-    }
-    const result = await Swal.fire({
-      icon: 'warning',
-      title: 'ยืนยันลบรายการ',
-      text: 'ลบแล้วจะคืน (revert) ยอดเงินในบัญชีกลับ ดำเนินการต่อหรือไม่?',
-      showCancelButton: true,
-      confirmButtonText: 'ลบรายการ',
-      cancelButtonText: 'ยกเลิก',
-      confirmButtonColor: '#ef4444',
-    });
-    if (!result.isConfirmed) return;
-    try {
-      await AccountApi.deleteTransaction(t.id);
-      Swal.fire({ icon: 'success', title: 'ลบรายการแล้ว', timer: 1200, showConfirmButton: false });
-      fetchTransactions();
-    } catch (err) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถลบได้', 'error');
-    }
   };
 
   useEffect(() => {
@@ -543,31 +504,19 @@ const AccountTransactions: FC = () => {
             role="menu"
           >
             <div className="py-1">
+              {/* ห้ามลบรายรับรายจ่าย — ปิดทั้ง FE/BE เพื่อกัน balance ไม่ตรงกับ document ที่ผูกอยู่ */}
               {(() => {
                 const t = transactions.find((x) => x.id === openDropdownId);
                 if (!t) return null;
-                const fromCw = isFromCashWithdrawalRequest(t);
                 return (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); openTransactionDetail(t); }}
-                      className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                    >
-                      <EyeIcon className="w-4 h-4" />
-                      ดูรายละเอียด
-                    </button>
-                    {canDelete && !fromCw && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); handleDeleteTransaction(t); }}
-                        className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                        ลบรายการ
-                      </button>
-                    )}
-                  </>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); openTransactionDetail(t); }}
+                    className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                  >
+                    <EyeIcon className="w-4 h-4" />
+                    ดูรายละเอียด
+                  </button>
                 );
               })()}
             </div>

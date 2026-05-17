@@ -148,7 +148,7 @@ export const AccountTransactionModal: FC<Props> = ({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (amount === 0 && type !== 'ADJUSTMENT') {
+    if (amount === 0 || amount === '') {
       Swal.fire('กรอกจำนวนเงิน', 'จำนวนเงินต้องไม่เป็น 0', 'warning');
       return;
     }
@@ -163,6 +163,7 @@ export const AccountTransactionModal: FC<Props> = ({
       });
       Swal.fire({ icon: 'success', title: 'บันทึกรายการแล้ว', timer: 1200, showConfirmButton: false });
       await onSubmitted?.();
+      onClose();
     } catch (err) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถบันทึกได้', 'error');
@@ -225,8 +226,8 @@ export const AccountTransactionModal: FC<Props> = ({
         {/* Transaction type tiles */}
         <div>
           <p className="text-xs font-medium text-slate-600 mb-2">ประเภทรายการ <span className="text-red-500">*</span></p>
-          <div className="grid grid-cols-3 gap-2">
-            {(['DEPOSIT', 'WITHDRAW', 'ADJUSTMENT'] as const).map((t) => {
+          <div className={`grid gap-2 ${isView ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            {((isView ? ['DEPOSIT', 'WITHDRAW', 'ADJUSTMENT'] : ['DEPOSIT', 'WITHDRAW']) as AccountTransactionType[]).map((t) => {
               const meta = TYPE_META[t];
               const Icon = meta.icon;
               const cls = TYPE_CLASSES[meta.color];
@@ -253,9 +254,9 @@ export const AccountTransactionModal: FC<Props> = ({
         <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3.5">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-medium text-slate-600">จำนวนเงิน <span className="text-red-500">*</span></span>
-            {type === 'ADJUSTMENT' && (
+            {isView && type === 'ADJUSTMENT' && (
               <span className="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                ใส่ − ได้ (เช่น -500)
+                รายการปรับปรุงยอด
               </span>
             )}
           </div>
