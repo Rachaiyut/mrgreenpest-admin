@@ -327,7 +327,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
       const wAny = w as WithdrawalType & { requester?: User; recipient?: User };
       setFromWarehouseId(w.warehouse_id || '');
       setToWarehouseId(w.to_warehouse_id || '');
-      setIssueDate(w.issue_date ? new Date(w.issue_date) : w.created_at ? new Date(w.created_at) : new Date());
+      setIssueDate(w.created_at ? new Date(w.created_at) : new Date());
       setRequesterId(w.requester_id || wAny.requester?.id || '');
       setRecipientId(w.recipient_id || wAny.recipient?.id || '');
 
@@ -475,6 +475,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
 
   const validate = () => {
     const newErrors: Record<string, string | undefined> = {};
+    if (!issueDate) newErrors.issueDate = 'กรุณาเลือกวันที่เบิก';
     if (!requesterId) newErrors.requesterId = 'กรุณาเลือกผู้เบิก';
     if (enableGoods && !fromWarehouseId) {
       newErrors.fromWarehouseId = 'กรุณาเลือกคลังต้นทาง';
@@ -498,6 +499,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
   };
 
   const buildPayload = (lifecycle: WithdrawalLifecycle): Partial<WithdrawalType> => ({
+    created_at: issueDate ? issueDate.toISOString() : undefined,
     warehouse_id: fromWarehouseId || undefined,
     to_warehouse_id: toWarehouseId || undefined,
     requester_id: requesterId,
@@ -643,7 +645,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                   <TruckIcon className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-800">การเคลื่อนย้ายสินค้า</h3>
-                {/* <div className="ml-auto">
+                <div className="ml-auto">
                   <div className={`flex items-center gap-2 bg-white px-3 py-2 rounded-lg border hover:border-slate-400 transition-colors cursor-pointer ${!issueDate ? 'border-red-300' : 'border-slate-300'}`}>
                     <CalendarDaysIcon className="w-4 h-4 text-slate-400 shrink-0" />
                     <DatePicker
@@ -651,14 +653,14 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                       onChange={(date: Date | null) => setIssueDate(date)}
                       dateFormat="dd/MM/yyyy"
                       locale="th"
-                      placeholderText="เลือกวันที่เบิก"
+                      placeholderText="เลือกวันที่เบิก *"
                       portalId="root"
                       popperClassName="!z-[9999]"
                       showCalendarIcon={false}
-                      className="bg-transparent border-none p-0 text-slate-800 font-semibold focus:ring-0 focus:outline-none text-sm w-[100px] cursor-pointer placeholder:text-slate-400 placeholder:font-normal"
+                      className="bg-transparent border-none p-0 text-slate-800 font-semibold focus:ring-0 focus:outline-none text-sm w-[110px] cursor-pointer placeholder:text-slate-400 placeholder:font-normal"
                     />
                   </div>
-                </div> */}
+                </div>
               </div>
 
               <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-3 sm:p-5 rounded-lg border border-slate-100 relative z-50">

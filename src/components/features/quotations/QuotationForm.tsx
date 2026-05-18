@@ -818,20 +818,22 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     }));
   };
 
+  // Initialize quotationDate ครั้งแรกเท่านั้น (กัน reset เมื่อ user เลือกวันย้อน)
   useEffect(() => {
-    if (mode === 'create' && !initialValues) {
-      const today = new Date();
-      const expiry = new Date();
-      expiry.setDate(today.getDate() + validityDays);
+    if (mode === 'create' && !initialValues && !quotationDate) {
+      setQuotationDate(new Date().toISOString().substring(0, 10));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, initialValues]);
 
-      setQuotationDate(today.toISOString().substring(0, 10));
-      setExpiresAt(expiry.toISOString().substring(0, 10));
-    } else if (quotationDate) {
+  // Sync expiresAt เมื่อ quotationDate หรือ validityDays เปลี่ยน
+  useEffect(() => {
+    if (quotationDate) {
       const date = new Date(quotationDate);
       date.setDate(date.getDate() + validityDays);
       setExpiresAt(date.toISOString().substring(0, 10));
     }
-  }, [quotationDate, validityDays, mode, initialValues]);
+  }, [quotationDate, validityDays]);
 
   useEffect(() => {
     if (fetchedPackage && !selectedAssessmentId) {

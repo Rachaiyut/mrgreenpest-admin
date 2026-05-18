@@ -117,7 +117,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       const query: any = {
         page,
         limit,
-        sort_by: 'created_at',
+        sort_by: 'code',
         sort_order: 'DESC',
       };
       if (searchQuery.trim()) query.search = searchQuery.trim();
