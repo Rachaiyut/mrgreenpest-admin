@@ -1841,6 +1841,7 @@ const RevenueChart: React.FC<{
                     <g>
                       <rect x={tipX} y={tipY} width={tipW} height={tipH} rx="8" fill="#0f172a" opacity="0.95" />
                       <text x={tipCenter} y={labelY} textAnchor="middle" fill="#fff" fontSize="12" fontWeight="700">
+                        
                         ฿{fmt(p.val)}
                       </text>
                       {change !== null && (

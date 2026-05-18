@@ -503,6 +503,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">เลขที่สัญญา</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อลูกค้า</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ประเภทลูกค้า</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">อายุสัญญา</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันเริ่มต้น</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันสิ้นสุด</th>
@@ -540,6 +541,15 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
                           <span className="font-semibold text-slate-800">{customerName || '-'}</span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
+                          {c.customer?.type === 'CORPORATE' ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-700 border border-sky-200">นิติบุคคล</span>
+                          ) : c.customer?.type === 'INDIVIDUAL' ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">บุคคลธรรมดา</span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600 text-center">
                           {formatContractDuration(c.start_date, c.end_date)}
