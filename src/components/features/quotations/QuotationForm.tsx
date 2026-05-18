@@ -1354,7 +1354,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       ...initialValues,
       assessment_id: selectedAssessmentId || undefined,
       customer_id: selectedCustomerId,
-      customer_name: `${selectedCustomer.first_name} ${selectedCustomer.last_name}`,
+      customer_name: [selectedCustomer.first_name, selectedCustomer.last_name].filter(Boolean).join(' ').trim(),
       created_at: quotationDate,
       expires_at: expiresAt,
       status: initialValues?.status || QuotationStatus.DRAFT,
