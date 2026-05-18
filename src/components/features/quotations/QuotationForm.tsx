@@ -523,6 +523,17 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
         setInstallments(mappedInst);
       }
+
+      // Sync attachment fields (procedure templates / service schedule / chemical catalogs)
+      const ad = activeData as unknown as Record<string, unknown>;
+      const procTemplateIds = Array.isArray(ad.service_procedure_template_ids)
+        ? (ad.service_procedure_template_ids as string[])
+        : (ad.service_procedure_template_id ? [ad.service_procedure_template_id as string] : []);
+      if (procTemplateIds.length > 0) setProcedureTemplateIds(procTemplateIds);
+      if (ad.service_schedule_id) setScheduleId(ad.service_schedule_id as string);
+      if (Array.isArray(ad.chemical_catalog_ids)) {
+        setChemicalCatalogIds((ad.chemical_catalog_ids as string[]).filter((s) => typeof s === 'string' && s.length === 36));
+      }
     }
   }, [activeData, mode]);
 

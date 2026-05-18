@@ -35,7 +35,7 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
   const footer = (
     <div className="flex gap-3 w-full justify-end">
       <Button variant="secondary" onClick={onClose} type="button">
-        ยกเลิก
+        {mode === 'detail' ? 'ปิด' : 'ยกเลิก'}
       </Button>
       {mode !== 'detail' && (
         <Button variant="primary" type="submit" form="quotation-form">

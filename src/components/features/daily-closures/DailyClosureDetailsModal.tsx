@@ -12,7 +12,7 @@ interface DailyClosureDetailsModalProps {
 const StatusBadge: React.FC<{ status: DailyJobClosure['status'] }> = ({
   status,
 }) => {
-  const config = {
+  const config: Record<string, { label: string; className: string }> = {
     OPEN: {
       label: 'เปิดอยู่',
       className: 'bg-amber-100 text-amber-800 border-amber-200',
@@ -22,7 +22,8 @@ const StatusBadge: React.FC<{ status: DailyJobClosure['status'] }> = ({
       className: 'bg-green-100 text-green-800 border-green-200',
     },
   };
-  const { label, className } = config[status];
+  const fallback = { label: String(status || '-'), className: 'bg-slate-100 text-slate-700 border-slate-200' };
+  const { label, className } = config[status as string] || fallback;
   return (
     <span
       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${className}`}

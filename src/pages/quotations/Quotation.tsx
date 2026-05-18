@@ -31,13 +31,15 @@ import { StorageApi } from '../../api/storage';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { CustomerApi } from '../../api/customer';
 
+// ค่าต้องตรงกับ StatusBadge (src/components/common/StatusBadge.tsx) เพื่อให้
+// ป้าย status ในตารางกับใน popup แสดงเหมือนกัน
 const statusLabels: Record<QuotationStatus, string> = {
-  [QuotationStatus.DRAFT]: 'จัดทำ',
+  [QuotationStatus.DRAFT]: 'ฉบับร่าง',
   [QuotationStatus.PENDING_APPROVAL]: 'รออนุมัติ',
-  [QuotationStatus.APPROVED]: 'อนุมัติ',
-  [QuotationStatus.PENDING_SIGNATURE]: 'ยังไม่เซ็นต์',
-  [QuotationStatus.SIGNED]: 'เซ็นต์',
-  [QuotationStatus.FOLLOW_UP]: 'ติดตามครั้งที่',
+  [QuotationStatus.APPROVED]: 'อนุมัติแล้ว',
+  [QuotationStatus.PENDING_SIGNATURE]: 'รอเซ็น',
+  [QuotationStatus.SIGNED]: 'เซ็นแล้ว',
+  [QuotationStatus.FOLLOW_UP]: 'ติดตาม',
   [QuotationStatus.REVISED]: 'ปรับปรุง',
   [QuotationStatus.CANCELLED]: 'ยกเลิก',
   [QuotationStatus.EXPIRED]: 'หมดอายุ',
@@ -397,10 +399,23 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         await QuotationApi.update(selectedQuotation.id, updatePayload);
       }
       fetchQuotations();
+      setIsStatusModalOpen(false);
+      Swal.fire({
+        icon: 'success',
+        title: 'อัปเดตสถานะสำเร็จ',
+        timer: 1500,
+        showConfirmButton: false,
+        timerProgressBar: true,
+      });
     } catch (error) {
       console.error('Failed to update status:', error);
+      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: msg || 'ไม่สามารถอัปเดตสถานะได้',
+      });
     }
-    setIsStatusModalOpen(false);
   };
 
   // Handle cancellation with reason via Swal
