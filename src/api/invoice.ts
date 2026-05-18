@@ -63,11 +63,13 @@ class InvoiceService extends AuthService {
     return res.data;
   }
 
-  /** Step 2: Accounting/CFO finalizes — issues receipt + records DEPOSIT. */
-  async accountingApprove(id: string): Promise<Invoice> {
+  /** Step 2: Accounting/CFO finalizes — issues receipt + records DEPOSIT.
+   *  Optionally override account_id if CFO wants to deposit to a different bank
+   *  account than the one admin originally picked. */
+  async accountingApprove(id: string, accountId?: string): Promise<Invoice> {
     const res = await this.http.post<Invoice>(
       `${this.path}/${id}/accounting-approve`,
-      {},
+      accountId ? { account_id: accountId } : {},
     );
     return res.data;
   }

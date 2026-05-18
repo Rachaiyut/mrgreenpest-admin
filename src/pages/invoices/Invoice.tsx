@@ -429,28 +429,94 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       if (!c) return '-';
       return pickName(joinName(c.first_name, c.last_name), (c as any).nickname, (c as any).code) || '-';
     })();
+
+    // ดึงบัญชีที่ admin เลือกไว้ตอน step 1 (admin-approve)
+    let currentAccountId = '';
+    try {
+      const res = await InvoiceApi.getById(invoice.id) as unknown as Record<string, unknown>;
+      // ResponseService wraps body — unwrap if needed
+      const data = (res?.data as Record<string, unknown> | undefined) || res;
+      const payments = (Array.isArray(data?.payments) ? data.payments : []) as Array<{
+        created_at?: string;
+        admin_approved_at?: string;
+        account_id?: string | null;
+      }>;
+      // หา payment ที่มี account_id ก่อน (admin เลือกไว้แล้ว) — ถ้าไม่เจอ ใช้ตัวล่าสุด
+      const withAccount = [...payments]
+        .filter((p) => !!p?.account_id)
+        .sort((a, b) =>
+          new Date(b.admin_approved_at || b.created_at || 0).getTime()
+          - new Date(a.admin_approved_at || a.created_at || 0).getTime(),
+        )[0];
+      const latest = withAccount || [...payments].sort((a, b) =>
+        new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
+      )[0];
+      currentAccountId = String(latest?.account_id || '');
+    } catch {
+      currentAccountId = '';
+    }
+
+    if (activeAccounts.length === 0) {
+      Swal.fire('ไม่พบบัญชี', 'ยังไม่มีบัญชีที่เปิดใช้งานในระบบ', 'warning');
+      return;
+    }
+
+    const accountOptionsHtml = activeAccounts
+      .map((acc) => {
+        const selected = acc.id === currentAccountId ? 'selected' : '';
+        return `<option value="${acc.id}" ${selected}>${acc.bank_name} ${acc.account_number} (${acc.account_name})</option>`;
+      })
+      .join('');
+
+    const currentAccount = activeAccounts.find((a) => a.id === currentAccountId);
+    const currentAccountLabel = currentAccount
+      ? `${currentAccount.bank_name} ${currentAccount.account_number} (${currentAccount.account_name})`
+      : '— ยังไม่ระบุ —';
+
     const r = await Swal.fire({
       icon: 'question',
       title: 'ยืนยันอนุมัติรายรับ',
-      width: 560,
+      width: 600,
       html: `
-        ${renderApprovalDetails([
-          { label: 'เลขที่ใบแจ้งหนี้', value: invoice.code || null },
-          { label: 'ลูกค้า', value: customerName },
-          { label: 'ยอดรวม', value: `${amountStr} บาท`, accent: 'money' },
-        ])}
-        <div style="margin-top:12px;font-size:13px;color:#64748b;text-align:center;">
-          ระบบจะออกใบเสร็จและบันทึกเงินเข้าบัญชีอัตโนมัติ
+        <div style="box-sizing:border-box; width:100%; text-align:left;">
+          ${renderApprovalDetails([
+            { label: 'เลขที่ใบแจ้งหนี้', value: invoice.code || null },
+            { label: 'ลูกค้า', value: customerName },
+            { label: 'ยอดรวม', value: `${amountStr} บาท`, accent: 'money' },
+          ])}
+          <div style="margin-top:14px; padding:10px 12px; background:#f8fafc; border-radius:6px; border:1px solid #e2e8f0;">
+            <div style="font-size:13px; color:#64748b; margin-bottom:4px;">บัญชีรับเข้าที่บันทึกไว้</div>
+            <div style="font-size:15px; font-weight:600; color:#1e293b;">${currentAccountLabel}</div>
+          </div>
+          <div style="font-size:14px; color:#64748b; margin-top:14px; line-height:1.6;">
+            เลือกบัญชีรับเข้า
+          </div>
+          <select id="accountSelect" style="width:100%; box-sizing:border-box; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:15px; background:#fff; margin-top:6px;">
+            ${accountOptionsHtml}
+          </select>
+          <div style="margin-top:12px;font-size:13px;color:#64748b;text-align:center;">
+            ระบบจะออกใบเสร็จและบันทึกเงินเข้าบัญชีอัตโนมัติ
+          </div>
         </div>
       `,
       showCancelButton: true,
       confirmButtonText: 'อนุมัติรายรับ',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: '#10b981',
+      preConfirm: () => {
+        const sel = document.getElementById('accountSelect') as HTMLSelectElement | null;
+        const accountId = sel?.value || '';
+        if (!accountId) {
+          Swal.showValidationMessage('กรุณาเลือกบัญชีรับเข้า');
+          return false;
+        }
+        return { accountId };
+      },
     });
     if (!r.isConfirmed) return;
+    const chosenAccountId = (r.value as { accountId?: string })?.accountId || currentAccountId;
     try {
-      await InvoiceApi.accountingApprove(invoice.id);
+      await InvoiceApi.accountingApprove(invoice.id, chosenAccountId || undefined);
       await fetchData(['invoices']);
       Swal.fire({
         icon: 'success',
