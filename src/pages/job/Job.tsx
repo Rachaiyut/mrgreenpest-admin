@@ -472,10 +472,16 @@ const Job: React.FC<JobProps> = ({
   };
 
   // Fetch reports (รายงาน)
-  const fetchReports = async (page = reportCurrentPage) => {
+  const fetchReports = async (
+    page = reportCurrentPage,
+    startDate = reportStartDate,
+    endDate = reportEndDate,
+  ) => {
     setIsLoading(true);
     try {
       const params: Record<string, unknown> = { limit: reportItemsPerPage, page };
+      if (startDate) params.start_date = startDate;
+      if (endDate) params.end_date = endDate;
       // Field roles see only their own reports
       if (isFieldRole(authUser?.roleType) && authUser?.id) {
         params.technician_id = authUser.id;
@@ -765,6 +771,8 @@ const Job: React.FC<JobProps> = ({
   const [reportCurrentPage, setReportCurrentPage] = useState(1);
   const [reportItemsPerPage, setReportItemsPerPage] = useState(10);
   const [reportTotal, setReportTotal] = useState(0);
+  const [reportStartDate, setReportStartDate] = useState<string>('');
+  const [reportEndDate, setReportEndDate] = useState<string>('');
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
@@ -2064,6 +2072,50 @@ const Job: React.FC<JobProps> = ({
                   />
                 </>
               )}
+
+              {/* Reports tab filters — date range sent to API */}
+              {activeTab === 'reports' && (() => {
+                const toLocalYMD = (d: Date) =>
+                  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                return (
+                  <>
+                    <div className="w-[calc(50%-0.25rem)] sm:w-auto">
+                      <DatePicker
+                        selected={reportStartDate ? new Date(reportStartDate) : null}
+                        onChange={(date: Date | null) => {
+                          const formatted = date ? toLocalYMD(date) : '';
+                          setReportStartDate(formatted);
+                          setReportCurrentPage(1);
+                          fetchReports(1, formatted, reportEndDate);
+                        }}
+                        placeholderText="ตั้งแต่วันที่"
+                        dateFormat="dd/MM/yyyy"
+                        locale="th"
+                        isClearable
+                        className="w-full sm:w-40 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                        wrapperClassName="w-full sm:w-auto"
+                      />
+                    </div>
+                    <div className="w-[calc(50%-0.25rem)] sm:w-auto">
+                      <DatePicker
+                        selected={reportEndDate ? new Date(reportEndDate) : null}
+                        onChange={(date: Date | null) => {
+                          const formatted = date ? toLocalYMD(date) : '';
+                          setReportEndDate(formatted);
+                          setReportCurrentPage(1);
+                          fetchReports(1, reportStartDate, formatted);
+                        }}
+                        placeholderText="ถึงวันที่"
+                        dateFormat="dd/MM/yyyy"
+                        locale="th"
+                        isClearable
+                        className="w-full sm:w-40 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                        wrapperClassName="w-full sm:w-auto"
+                      />
+                    </div>
+                  </>
+                );
+              })()}
 
               {/* Work-schedule tab filters */}
               {activeTab === 'work-schedule' && (
