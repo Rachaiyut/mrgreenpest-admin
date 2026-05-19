@@ -699,12 +699,21 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     if (mode !== 'create' && !fetchedQuotation) return;
 
     // Priority: fetchedQuotation.quotation_areas > activeData.quotation_areas > assessment_areas
+    // ยกเว้น: ถ้า user เปลี่ยน assessment ไปจากของเดิมที่บันทึกใน quotation → ใช้ areas จาก assessment ใหม่
     const assessmentAreas = selectedAssessment?.assessment_areas || [];
-    let source = (fetchedQuotation?.quotation_areas && fetchedQuotation.quotation_areas.length > 0)
-      ? fetchedQuotation.quotation_areas
-      : (activeData?.quotation_areas && activeData.quotation_areas.length > 0)
-        ? activeData.quotation_areas
-        : assessmentAreas;
+    const savedAssessmentId = (fetchedQuotation as { assessment_id?: string } | null)?.assessment_id
+      || (activeData as { assessment_id?: string } | undefined)?.assessment_id;
+    const userPickedDifferentAssessment = !!selectedAssessmentId
+      && !!savedAssessmentId
+      && selectedAssessmentId !== savedAssessmentId;
+
+    let source = userPickedDifferentAssessment
+      ? assessmentAreas
+      : (fetchedQuotation?.quotation_areas && fetchedQuotation.quotation_areas.length > 0)
+        ? fetchedQuotation.quotation_areas
+        : (activeData?.quotation_areas && activeData.quotation_areas.length > 0)
+          ? activeData.quotation_areas
+          : assessmentAreas;
 
     if (source && source.length > 0) {
       const sortedSource = [...source].sort((a: any, b: any) =>
@@ -759,8 +768,15 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             return { category_id: catId, name: cs.category?.name || cs.name || '' };
           }),
           items: a.items || [],
-          site_image_id: a.site_image_id || null,
-          site_image_url: a.site_image_url || null,
+          site_image_id: a.site_image_id || a.site_image?.id || null,
+          site_image_url: a.site_image_url || a.site_image?.url || null,
+          // Multi-image: รับ array ถ้ามี > 0 ตัว, ไม่งั้น fallback ตัวเดียว (legacy + included site_image object)
+          site_image_ids: (Array.isArray(a.site_image_ids) && a.site_image_ids.length > 0)
+            ? a.site_image_ids
+            : (a.site_image_id ? [a.site_image_id] : (a.site_image?.id ? [a.site_image.id] : [])),
+          site_image_urls: (Array.isArray(a.site_image_urls) && a.site_image_urls.length > 0)
+            ? a.site_image_urls
+            : (a.site_image_url ? [a.site_image_url] : (a.site_image?.url ? [a.site_image.url] : [])),
         };
       }));
       setHasInitializedAreas(true);
@@ -785,7 +801,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         }).catch(() => {});
       }
     }
-  }, [activeData, selectedAssessment, hasInitializedAreas, fetchedQuotation]);
+  }, [activeData, selectedAssessment, hasInitializedAreas, fetchedQuotation, selectedAssessmentId]);
 
   const addNewArea = () => {
     setEditableAreas(prev => [...prev, {
@@ -895,13 +911,15 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     }
   }, [selectedAssessmentId]);
 
-  // Fetch full assessment (with packagePriceRelation) when assessment is selected
+  // Fetch full assessment (with packagePriceRelation + site images) when assessment is selected
   useEffect(() => {
     if (!selectedAssessmentId) return;
-    // Only fetch if we don't already have full data (package with package_prices)
-    if (fullAssessment?.id === selectedAssessmentId && fullAssessment?.package) return;
-    const currentAssessment = fetchedAssessments.find(a => a.id === selectedAssessmentId);
-    if (currentAssessment?.package?.package_prices?.length) return;
+    // Skip only if we already fetched the full data for this exact assessment
+    // (อย่า skip โดยเช็คแค่ package_prices จาก list — list endpoint ไม่ populate site_image_urls)
+    if (fullAssessment?.id === selectedAssessmentId
+        && fullAssessment?.package
+        && (fullAssessment as unknown as { assessment_areas?: Array<{ site_image_urls?: string[] }> })?.assessment_areas?.some?.((a) => Array.isArray(a.site_image_urls))
+    ) return;
 
     (async () => {
       try {
@@ -913,10 +931,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             const others = prev.filter(a => a.id !== fullData.id);
             return [fullData, ...others];
           });
-          // Re-initialize areas from full assessment data (includes site_image_url, package, etc.)
-          if (hasInitializedAreas) {
-            setHasInitializedAreas(false);
-          }
+          // Force re-initialize areas from full assessment data (includes site images)
+          setHasInitializedAreas(false);
         }
       } catch (err) {
         console.error('Failed to fetch full assessment:', err);
@@ -1349,7 +1365,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       package_price: Number(a.package_price) || Number(a.total_price) || 0,
       package_price_id: a.package_price_id || undefined,
       package_type: a.package_type || undefined,
-      site_image_id: a.site_image_id || undefined,
+      site_image_id: a.site_image_id || (Array.isArray(a.site_image_ids) ? a.site_image_ids[0] : undefined),
+      site_image_ids: Array.isArray(a.site_image_ids) && a.site_image_ids.length > 0 ? a.site_image_ids : undefined,
       category_ids: (a.category_services || []).map((cs: any) => cs.category_id).filter(Boolean),
       items: (a.items || []).filter((item: any) => item.product_id).map((item: any) => ({
         product_id: item.product_id,

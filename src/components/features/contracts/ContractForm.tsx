@@ -78,6 +78,8 @@ export interface ContractArea {
   package_price?: number | null;
   package_type?: string;
   site_image_id?: string;
+  site_image_ids?: string[];
+  site_image_urls?: string[];
 
   category_service?: ContractAreaCategory[];
 }
@@ -721,8 +723,14 @@ export const ContractForm: FC<ContractFormProps> = ({
                 package_price_id: a.package_price_id || null,
                 package_type: a.package_type || (a.service_system === 'PREY' ? 'WITH_TERMITE' : undefined),
                 packagePriceRelation: a.packagePriceRelation || null,
-                site_image_id: a.site_image_id || null,
-                site_image_url: a.site_image_url || null,
+                site_image_id: a.site_image_id || a.site_image?.id || null,
+                site_image_url: a.site_image_url || a.site_image?.url || null,
+                site_image_ids: (Array.isArray(a.site_image_ids) && a.site_image_ids.length > 0)
+                  ? a.site_image_ids
+                  : (a.site_image_id ? [a.site_image_id] : (a.site_image?.id ? [a.site_image.id] : [])),
+                site_image_urls: (Array.isArray(a.site_image_urls) && a.site_image_urls.length > 0)
+                  ? a.site_image_urls
+                  : (a.site_image_url ? [a.site_image_url] : (a.site_image?.url ? [a.site_image.url] : [])),
                 category_services: (a.category_services || []).map((cs: any) => ({
                   category_id: cs.category_id || cs.category?.id,
                   name: cs.category?.name || cs.name || '',
@@ -882,8 +890,14 @@ export const ContractForm: FC<ContractFormProps> = ({
             package_price_id: a.package_price_id || null,
             package_type: a.package_type || (a.service_system === 'PREY' ? 'WITH_TERMITE' : undefined),
             packagePriceRelation: a.packagePriceRelation || null,
-            site_image_id: a.site_image_id || null,
-            site_image_url: a.site_image_url || null,
+            site_image_id: a.site_image_id || a.site_image?.id || null,
+            site_image_url: a.site_image_url || a.site_image?.url || null,
+            site_image_ids: (Array.isArray(a.site_image_ids) && a.site_image_ids.length > 0)
+              ? a.site_image_ids
+              : (a.site_image_id ? [a.site_image_id] : (a.site_image?.id ? [a.site_image.id] : [])),
+            site_image_urls: (Array.isArray(a.site_image_urls) && a.site_image_urls.length > 0)
+              ? a.site_image_urls
+              : (a.site_image_url ? [a.site_image_url] : (a.site_image?.url ? [a.site_image.url] : [])),
             category_services: (a.category_services || a.category_service || []).map((cs: any) => ({
               category_id: cs.category_id || cs.category?.id,
               name: cs.category?.name || cs.name || '',
@@ -1131,7 +1145,8 @@ export const ContractForm: FC<ContractFormProps> = ({
           package_price: Number(area.package_price) || Number(area.total_price) || 0,
           package_price_id: area.package_price_id || undefined,
           package_type: area.package_type || undefined,
-          site_image_id: area.site_image_id || undefined,
+          site_image_id: area.site_image_id || (Array.isArray(area.site_image_ids) ? area.site_image_ids[0] : undefined),
+          site_image_ids: Array.isArray(area.site_image_ids) && area.site_image_ids.length > 0 ? area.site_image_ids : undefined,
           category_services: categoryServices,
           items: (area.items || []).filter((item: any) => item.product_id).map((item: any) => ({
             product_id: item.product_id,
@@ -1164,7 +1179,8 @@ export const ContractForm: FC<ContractFormProps> = ({
           package_price: Number(area.package_price) || Number(area.total_price) || 0,
           package_price_id: area.package_price_id || undefined,
           package_type: area.package_type || undefined,
-          site_image_id: area.site_image_id || undefined,
+          site_image_id: area.site_image_id || (Array.isArray(area.site_image_ids) ? area.site_image_ids[0] : undefined),
+          site_image_ids: Array.isArray(area.site_image_ids) && area.site_image_ids.length > 0 ? area.site_image_ids : undefined,
           category_services: categoryServices,
         };
       });

@@ -488,7 +488,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
 
       // If uploaded file, upload to storage first (priority over drawn)
       if (hasUploadedFile) {
-        const uploaded = await StorageApi.upload({
+        const uploadRes = await StorageApi.upload({
           file: signatureFile!,
           path: `quotations/${selectedQuotation.id}/signature`,
           provider: 'local',
@@ -496,8 +496,14 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
           visibility: 'private',
           entity_type: 'quotation',
           entity_id: selectedQuotation.id,
-        });
-        updatePayload.signature_file_id = uploaded.id;
+        }) as unknown as Record<string, unknown>;
+        // ResponseService wraps body — unwrap if needed
+        const uploaded = (uploadRes?.data as Record<string, unknown> | undefined) || uploadRes;
+        const uploadedId = uploaded?.id as string | undefined;
+        if (!uploadedId) {
+          throw new Error('Storage upload did not return file id');
+        }
+        updatePayload.signature_file_id = uploadedId;
 
         // ใช้รูปที่ upload เป็น signature base64 สำหรับแสดงใน PDF
         if (signaturePreview) {
@@ -514,6 +520,8 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         await QuotationApi.update(selectedQuotation.id, updatePayload);
       }
 
+      setIsSignatureModalOpen(false);
+      await fetchQuotations();
       Swal.fire({
         title: 'บันทึกสำเร็จ!',
         text: 'ลูกค้าเซ็นรับใบเสนอราคาเรียบร้อยแล้ว',
@@ -523,10 +531,15 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         timer: 2000,
         timerProgressBar: true,
       });
-
-      fetchQuotations();
     } catch (error) {
       console.error('Failed to save signature:', error);
+      const msg = (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+        || (error as { message?: string })?.message;
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: msg || 'ไม่สามารถบันทึกลายเซ็นได้',
+      });
     } finally {
       setIsUploadingSignature(false);
     }
