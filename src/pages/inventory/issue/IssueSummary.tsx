@@ -503,7 +503,7 @@ const IssueSummaryPage: React.FC = () => {
         category,
       });
       Swal.fire({ icon: 'success', title: 'อนุมัติแล้ว', timer: 1500, showConfirmButton: false });
-      await fetchData(['stockIssueSummaries']);
+      await fetchList();
     } catch (error) {
       const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
       Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถอนุมัติได้', 'error');
@@ -535,7 +535,7 @@ const IssueSummaryPage: React.FC = () => {
         remark: r.value.trim(),
       });
       Swal.fire({ icon: 'success', title: 'ไม่อนุมัติแล้ว', timer: 1500, showConfirmButton: false });
-      await fetchData(['stockIssueSummaries']);
+      await fetchList();
     } catch (error) {
       const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
       Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถดำเนินการได้', 'error');
