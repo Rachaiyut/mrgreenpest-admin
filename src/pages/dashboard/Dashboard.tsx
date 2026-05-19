@@ -241,64 +241,31 @@ const Dashboard: React.FC<DashboardProps> = () => {
           <CancelledJobsCard jobs={cancelledJobsToday} onNavigate={navigate} />
         </div>
 
-        {/* PRIORITY 4: งานวันนี้ + สถานะงาน (operational right now) */}
+        {/* PRIORITY 4: งานที่ใกล้จะถึงวันที่นัดหมาย + สถานะงาน (operational right now) */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
           <Card className="xl:col-span-2">
-            <CardHeader
-              title="งานวันนี้"
-              right={
-                <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full">
-                  {todayJobs.length} งาน
-                </span>
-              }
-            />
-            {todayJobs.length > 0 ? (
-              <div className="overflow-x-auto -mx-2">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100">
-                      <th className="font-medium px-2 py-2">ลำดับ</th>
-                      <th className="font-medium px-2 py-2">ลูกค้า</th>
-                      <th className="font-medium px-2 py-2 hidden md:table-cell">บริการ / ที่อยู่</th>
-                      <th className="font-medium px-2 py-2">เวลา</th>
-                      <th className="font-medium px-2 py-2">สถานะ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {todayJobs.slice(0, 8).map((job: DashboardJobItem, idx: number) => {
-                      const time = job.actual_start_time
-                        ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
-                        : '-';
-                      return (
-                        <tr
-                          key={job.id}
-                          className="border-b border-slate-50 last:border-0 hover:bg-emerald-50/40 transition-colors"
-                        >
-                          <td className="px-2 py-3 text-slate-400 tabular-nums">{idx + 1}</td>
-                          <td className="px-2 py-3">
-                            <span className="font-medium text-slate-700 truncate">
-                              {fmtCustomerName(job.customer_first_name, job.customer_last_name)}
-                            </span>
-                          </td>
-                          <td className="px-2 py-3 text-slate-500 truncate max-w-[280px] hidden md:table-cell">
-                            {job.service_system || ''}
-                            {job.address ? ` • ${job.address}` : ''}
-                          </td>
-                          <td className="px-2 py-3 tabular-nums text-slate-700">{time}</td>
-                          <td className="px-2 py-3">
-                            <StatusBadge status={job.status} />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            <CardHeader title="งานที่ใกล้จะถึงวันที่นัดหมาย" subtitle="ภายใน 7 วัน" />
+            {upcomingJobs.length > 0 ? (
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {upcomingJobs.map((job: DashboardJobItem) => (
+                  <div key={job.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-md">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-800 truncate">
+                        {fmtCustomerName(job.customer_first_name, job.customer_last_name)}
+                      </p>
+                      <p className="text-xs text-slate-400 truncate">{job.id?.slice(0, 8)}</p>
+                    </div>
+                    <div className="text-right ml-3 shrink-0">
+                      <p className="text-xs font-semibold text-emerald-700">{fmtDate(job.appointment_date)}</p>
+                      <p className="text-[10px] text-slate-400">{job.start_time || ''}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="h-32 flex items-center justify-center text-slate-400 text-sm">ไม่มีงานวันนี้</div>
+              <div className="h-32 flex items-center justify-center text-slate-400 text-sm">
+                ไม่มีงานใน 7 วันข้างหน้า
+              </div>
             )}
           </Card>
 
@@ -563,31 +530,64 @@ const Dashboard: React.FC<DashboardProps> = () => {
           </Card>
         </div>
 
-        {/* PRIORITY 12: Upcoming Jobs (history & forecast) */}
+        {/* PRIORITY 12: งานวันนี้ (history & forecast) */}
         <div className="grid grid-cols-1 gap-5">
           <Card>
-            <CardHeader title="งานที่ใกล้จะถึงวันที่นัดหมาย" subtitle="ภายใน 7 วัน" />
-            {upcomingJobs.length > 0 ? (
-              <div className="space-y-2 max-h-72 overflow-y-auto">
-                {upcomingJobs.map((job: DashboardJobItem) => (
-                  <div key={job.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-md">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">
-                        {fmtCustomerName(job.customer_first_name, job.customer_last_name)}
-                      </p>
-                      <p className="text-xs text-slate-400 truncate">{job.id?.slice(0, 8)}</p>
-                    </div>
-                    <div className="text-right ml-3 shrink-0">
-                      <p className="text-xs font-semibold text-emerald-700">{fmtDate(job.appointment_date)}</p>
-                      <p className="text-[10px] text-slate-400">{job.start_time || ''}</p>
-                    </div>
-                  </div>
-                ))}
+            <CardHeader
+              title="งานวันนี้"
+              right={
+                <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full">
+                  {todayJobs.length} งาน
+                </span>
+              }
+            />
+            {todayJobs.length > 0 ? (
+              <div className="overflow-x-auto rounded-md border border-slate-200">
+                <table className="w-full text-sm border-collapse">
+                  <thead className="bg-slate-50">
+                    <tr className="text-left text-xs text-slate-500 uppercase tracking-wide">
+                      <th className="font-semibold px-3 py-2.5 border border-slate-200">ลำดับ</th>
+                      <th className="font-semibold px-3 py-2.5 border border-slate-200">ลูกค้า</th>
+                      <th className="font-semibold px-3 py-2.5 border border-slate-200 hidden md:table-cell">บริการ / ที่อยู่</th>
+                      <th className="font-semibold px-3 py-2.5 border border-slate-200">เวลา</th>
+                      <th className="font-semibold px-3 py-2.5 border border-slate-200">สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {todayJobs.slice(0, 8).map((job: DashboardJobItem, idx: number) => {
+                      const time = job.actual_start_time
+                        ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : '-';
+                      return (
+                        <tr
+                          key={job.id}
+                          className="hover:bg-emerald-50/40 transition-colors"
+                        >
+                          <td className="px-3 py-2.5 text-slate-500 tabular-nums border border-slate-200">{idx + 1}</td>
+                          <td className="px-3 py-2.5 border border-slate-200">
+                            <span className="font-medium text-slate-700 truncate">
+                              {fmtCustomerName(job.customer_first_name, job.customer_last_name)}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 text-slate-500 truncate max-w-[280px] hidden md:table-cell border border-slate-200">
+                            {job.service_system || ''}
+                            {job.address ? ` • ${job.address}` : ''}
+                          </td>
+                          <td className="px-3 py-2.5 tabular-nums text-slate-700 border border-slate-200">{time}</td>
+                          <td className="px-3 py-2.5 border border-slate-200">
+                            <StatusBadge status={job.status} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             ) : (
-              <div className="h-32 flex items-center justify-center text-slate-400 text-sm">
-                ไม่มีงานใน 7 วันข้างหน้า
-              </div>
+              <div className="h-32 flex items-center justify-center text-slate-400 text-sm">ไม่มีงานวันนี้</div>
             )}
           </Card>
         </div>
