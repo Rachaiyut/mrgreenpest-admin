@@ -308,7 +308,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
           </Card>
 
           <Card>
-            <CardHeader title="สถานะงาน" subtitle={RANGE_LABELS[range]} />
+            <CardHeader title="งานที่ค้ายกเลิก เปลี่ยนงาน งานที่เข้าบ้านลูกค้าไม่ได้" subtitle={RANGE_LABELS[range]} />
             <JobStatusBars items={jobsByStatus} />
           </Card>
         </div>
@@ -364,7 +364,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
           </Card>
 
           <Card>
-            <CardHeader title="เปรียบเทียบ" subtitle="เดือนนี้ vs เดือนก่อน" />
+            <CardHeader title="เปรียบเทียรายได้" subtitle="เดือนนี้ vs เดือนก่อน" />
             <div className="space-y-2.5">
               {comparison &&
                 [
@@ -391,7 +391,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
           </Card>
 
           <Card>
-            <CardHeader title="Sales Pipeline" subtitle="กระบวนการขาย" />
+            <CardHeader title="ยอดรวมใบประเมิน, ใบเสนอราคา, สัญญา" subtitle="กระบวนการขาย" />
             <div className="space-y-5">
               <PipelineRow
                 label="ใบประเมิน"
@@ -571,7 +571,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
         {/* PRIORITY 12: Upcoming Jobs + Recent Activities (history & forecast) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <Card>
-            <CardHeader title="งานที่จะมาถึง" subtitle="ภายใน 7 วัน" />
+            <CardHeader title="งานที่ใกล้จะถึงวันที่นัดหมาย" subtitle="ภายใน 7 วัน" />
             {upcomingJobs.length > 0 ? (
               <div className="space-y-2 max-h-72 overflow-y-auto">
                 {upcomingJobs.map((job: DashboardJobItem) => (
