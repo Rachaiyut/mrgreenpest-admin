@@ -39,12 +39,15 @@ type Props = {
   /** เปิด modal สร้างใบจาก parent (ถ้าไม่ส่ง จะใช้ state ภายในเอง) */
   externalCreateOpen?: boolean;
   onExternalCreateClose?: () => void;
+  /** ซ่อน column "บัญชีที่ตัด" — default แสดง (ใช้กับเมนู รายรับรายจ่าย ที่ไม่อยากแสดง) */
+  hideSourceAccount?: boolean;
 };
 
 export const CashWithdrawalRequestList: FC<Props> = ({
   toolbarExtra,
   externalCreateOpen,
   onExternalCreateClose,
+  hideSourceAccount = false,
 }) => {
   const { hasPermission } = usePermissions();
   const canApprove = hasPermission('APPROVE_CASH_WITHDRAWAL_REQUEST');
@@ -297,7 +300,9 @@ export const CashWithdrawalRequestList: FC<Props> = ({
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">เลขที่</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">วันที่ขอ</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">หมายเหตุ</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">บัญชีที่ตัด</th>
+                  {!hideSourceAccount && (
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">บัญชีที่ตัด</th>
+                  )}
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase">ยอดรวม</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">สถานะ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">จัดการ</th>
@@ -318,11 +323,13 @@ export const CashWithdrawalRequestList: FC<Props> = ({
                           {req.request_note || <span className="text-slate-300">—</span>}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
-                        {req.sourceAccount
-                          ? `${req.sourceAccount.account_number} (${req.sourceAccount.account_name})`
-                          : <span className="text-slate-300">—</span>}
-                      </td>
+                      {!hideSourceAccount && (
+                        <td className="px-4 py-3 text-sm text-slate-700">
+                          {req.sourceAccount
+                            ? `${req.sourceAccount.account_number} (${req.sourceAccount.account_name})`
+                            : <span className="text-slate-300">—</span>}
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-sm text-right font-bold tabular-nums">
                         {fmtBaht(Number(req.total_amount))} บาท
                       </td>

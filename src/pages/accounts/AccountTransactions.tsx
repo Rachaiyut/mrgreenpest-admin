@@ -265,6 +265,7 @@ const AccountTransactions: FC = () => {
             toolbarExtra={
               <CashTabBar active={activeTab} onChange={setActiveTab} />
             }
+            hideSourceAccount
           />
         ) : (
           <>
