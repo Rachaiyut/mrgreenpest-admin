@@ -29,6 +29,7 @@ import {
   CreditCardIcon,
 } from '../../../assets/icons/Icons';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
+import { useData } from '@/src/contexts/DataContext';
 
 interface ServiceReportModalProps {
   isOpen: boolean;
@@ -96,6 +97,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   readOnly = false,
 }) => {
   const authUser = useCurrentUser();
+  const { users } = useData();
+  const userById = useMemo(
+    () => new Map((users || []).map((u) => [u.id, u])),
+    [users],
+  );
   const [reportState, setReportState] = useState<Partial<ServiceReport & {
     payment_amount?: string | number;
     payment_slip_url?: string | null;
@@ -1583,14 +1589,84 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                     ...(reportJob?.primary_technician ? [reportJob.primary_technician] : []),
                     ...((reportJob?.job_team_members || []) as User[]),
                   ];
-                  return allTechs.length > 0
-                    ? allTechs.map((t: any) => t.name || `${t.first_name || ''} ${t.last_name || ''}`.trim()).join(', ')
-                    : 'ไม่มีช่างเทคนิค';
+                  if (allTechs.length === 0) return 'ไม่มีช่างเทคนิค';
+                  return (
+                    <div className="flex flex-wrap items-center gap-3">
+                      {allTechs.map((t: any) => {
+                        const fullUser = (t.id && userById.get(t.id)) as User | undefined;
+                        const avatarUrl = fullUser?.url || t.url || null;
+                        const displayName = t.name || `${t.first_name || ''} ${t.last_name || ''}`.trim() || '-';
+                        const initial = (t.nick_name || t.first_name || '?').toString().charAt(0).toUpperCase();
+                        return (
+                          <div key={t.id || displayName} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full pl-1 pr-3 py-1">
+                            {avatarUrl ? (
+                              <img
+                                src={avatarUrl}
+                                alt={displayName}
+                                className="w-7 h-7 rounded-full object-cover border border-slate-200"
+                              />
+                            ) : (
+                              <div className="w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center border border-primary/20">
+                                {initial}
+                              </div>
+                            )}
+                            <span className="text-sm font-medium text-slate-800">{displayName}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
                 })()}
               </dd>
             </div>
           </div>
         </div>
+
+        {/* Technician Photos */}
+        {(() => {
+          const techs = job.technicians?.length > 0 ? job.technicians : [];
+          const reportJob = ((job.service_report as unknown as Record<string, unknown>)?.job || (reportState as unknown as Record<string, unknown>)?.job) as Record<string, unknown> | undefined;
+          const allTechs = techs.length > 0 ? techs : [
+            ...(reportJob?.primary_technician ? [reportJob.primary_technician] : []),
+            ...((reportJob?.job_team_members || []) as User[]),
+          ];
+          if (allTechs.length === 0) return null;
+          return (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+              <h3 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <DocumentIcon className="w-5 h-5 text-primary" />
+                ช่างที่เข้าปฏิบัติงาน
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {allTechs.map((t: any) => {
+                  const fullUser = (t.id && userById.get(t.id)) as User | undefined;
+                  const avatarUrl = fullUser?.url || t.url || null;
+                  const displayName = t.name || `${t.first_name || ''} ${t.last_name || ''}`.trim() || '-';
+                  const nickName = t.nick_name || fullUser?.nick_name || '';
+                  const initial = (nickName || t.first_name || '?').toString().charAt(0).toUpperCase();
+                  return (
+                    <div key={t.id || displayName} className="flex flex-col items-center text-center">
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt={displayName}
+                          className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => window.open(avatarUrl, '_blank')}
+                        />
+                      ) : (
+                        <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl bg-primary/10 text-primary text-3xl font-bold flex items-center justify-center border border-primary/20">
+                          {initial}
+                        </div>
+                      )}
+                      <p className="mt-2 text-sm font-semibold text-slate-800 truncate w-full">{displayName}</p>
+                      {nickName && <p className="text-xs text-slate-500 truncate w-full">({nickName})</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Global Service Checkboxes (Types & Actions) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
