@@ -2,7 +2,6 @@ import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   DashboardApi,
-  DashboardActivityItem,
   DashboardCancelledJob,
   DashboardContractItem,
   DashboardCustomerAcquisition,
@@ -41,13 +40,6 @@ const JOB_STATUS_LABELS: Record<string, string> = {
   WAITING_CLEAR: 'รอเคลียค่าใช้จ่ายและสารเคมี',
   CANCELLED: 'ยกเลิก',
   REJECTED: 'ถูกปฏิเสธ',
-};
-
-const ACTIVITY_LABELS: Record<string, string> = {
-  job: 'งาน',
-  invoice: 'ใบแจ้งหนี้',
-  contract: 'สัญญา',
-  quotation: 'ใบเสนอราคา',
 };
 
 const fmt = (n: number) => n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -145,7 +137,6 @@ const Dashboard: React.FC<DashboardProps> = () => {
     expiringContracts,
     revenueByMonth,
     jobsByStatus,
-    recentActivities,
     pendingActions,
     comparison,
     todayPayments,
@@ -176,6 +167,10 @@ const Dashboard: React.FC<DashboardProps> = () => {
           <QuickAction onClick={() => navigate('/quotations')} label="สร้างใบเสนอราคา" iconPath="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           <QuickAction onClick={() => navigate('/customers')} label="ลูกค้า" iconPath="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </div>
+
+        {/* View-only zone: card / list ทั้งหมดด้านล่างนี้ disable การ click (Range + Quick Actions ด้านบนยังใช้งานได้) */}
+        {/* pointer-events-none ตัด click/hover, cursor-default + [&_*]:cursor-default บังคับเคอร์เซอร์เป็นลูกศรปกติ (ไม่ขึ้นนิ้วชี้) */}
+        <div className="space-y-5 sm:space-y-6 pointer-events-none select-none cursor-default [&_*]:cursor-default">
 
         {/* PRIORITY 1: Daily Closure Alert (urgent action) */}
         {openClosures.length > 0 && (
@@ -568,8 +563,8 @@ const Dashboard: React.FC<DashboardProps> = () => {
           </Card>
         </div>
 
-        {/* PRIORITY 12: Upcoming Jobs + Recent Activities (history & forecast) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* PRIORITY 12: Upcoming Jobs (history & forecast) */}
+        <div className="grid grid-cols-1 gap-5">
           <Card>
             <CardHeader title="งานที่ใกล้จะถึงวันที่นัดหมาย" subtitle="ภายใน 7 วัน" />
             {upcomingJobs.length > 0 ? (
@@ -595,34 +590,8 @@ const Dashboard: React.FC<DashboardProps> = () => {
               </div>
             )}
           </Card>
-
-          <Card>
-            <CardHeader title="กิจกรรมล่าสุด" />
-            {recentActivities.length > 0 ? (
-              <div className="space-y-1 max-h-72 overflow-y-auto">
-                {recentActivities.map((act: DashboardActivityItem, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-2 hover:bg-emerald-50/40 rounded-md">
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <ActivityDot type={act.type} />
-                      <div className="min-w-0">
-                        <p className="text-sm text-slate-800 truncate">
-                          <span className="font-medium">{act.ref_code}</span>
-                          <span className="text-slate-400 ml-1">({ACTIVITY_LABELS[act.type] || act.type})</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right ml-2 shrink-0">
-                      <StatusBadge status={act.status} />
-                      <p className="text-[10px] text-slate-400 mt-0.5">{fmtDate(act.created_at)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="h-32 flex items-center justify-center text-slate-400 text-sm">ไม่มีกิจกรรม</div>
-            )}
-          </Card>
         </div>
+        </div>{/* end view-only zone */}
       </div>
     </div>
   );
@@ -788,16 +757,6 @@ const PipelineRow: React.FC<{ label: string; total: number; done: number; color:
       </div>
     </div>
   );
-};
-
-const ActivityDot: React.FC<{ type: string }> = ({ type }) => {
-  const colors: Record<string, string> = {
-    job: 'bg-blue-400',
-    invoice: 'bg-emerald-400',
-    contract: 'bg-violet-400',
-    quotation: 'bg-amber-400',
-  };
-  return <div className={`w-2 h-2 rounded-full shrink-0 ${colors[type] || 'bg-slate-400'}`} />;
 };
 
 // ── Job status horizontal bars ──
