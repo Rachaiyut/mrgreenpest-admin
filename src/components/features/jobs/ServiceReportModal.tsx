@@ -124,9 +124,26 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     tryAdd(job.secondary_technician);
     for (const m of (job.job_team_members || [])) tryAdd(m);
     tryAdd(reportJob?.primary_technician);
+    tryAdd(reportJob?.secondary_technician);
     for (const m of ((reportJob?.job_team_members || []) as unknown[])) tryAdd(m);
     return out;
   }, [job]);
+
+  // Map role_type / role to a Thai label for display under each technician
+  const resolveTechRole = (tech: User | undefined, fullUser: User | undefined): string => {
+    const ROLE_TYPE_LABEL: Record<string, string> = {
+      FIELD_LEAD: 'หัวหน้าทีมช่าง',
+      FIELD_TECH: 'ช่างปฏิบัติงาน',
+      MANAGEMENT: 'ผู้บริหาร',
+      EXECUTIVE: 'ผู้บริหารระดับสูง',
+    };
+    const rt = (tech as any)?.role_type || (fullUser as any)?.role_type;
+    if (rt && ROLE_TYPE_LABEL[rt]) return ROLE_TYPE_LABEL[rt];
+    const role = (tech as any)?.role || (fullUser as any)?.role;
+    if (typeof role === 'string') return role;
+    if (role && typeof role === 'object' && (role as any).name) return (role as any).name as string;
+    return '';
+  };
 
   const [reportState, setReportState] = useState<Partial<ServiceReport & {
     payment_amount?: string | number;
@@ -1618,6 +1635,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                         const avatarUrl = fullUser?.url || t.url || null;
                         const displayName = t.name || `${t.first_name || ''} ${t.last_name || ''}`.trim() || '-';
                         const initial = (t.nick_name || t.first_name || '?').toString().charAt(0).toUpperCase();
+                        const roleLabel = resolveTechRole(t, fullUser);
                         return (
                           <div key={t.id || displayName} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full pl-1 pr-3 py-1">
                             {avatarUrl ? (
@@ -1632,6 +1650,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                               </div>
                             )}
                             <span className="text-sm font-medium text-slate-800">{displayName}</span>
+                            {roleLabel && (
+                              <span className="text-[11px] font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">
+                                {roleLabel}
+                              </span>
+                            )}
                           </div>
                         );
                       })}
@@ -1660,6 +1683,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   const displayName = t.name || `${t.first_name || ''} ${t.last_name || ''}`.trim() || '-';
                   const nickName = t.nick_name || fullUser?.nick_name || '';
                   const initial = (nickName || t.first_name || '?').toString().charAt(0).toUpperCase();
+                  const roleLabel = resolveTechRole(t, fullUser);
                   return (
                     <div key={t.id || displayName} className="flex flex-col items-center text-center">
                       {avatarUrl ? (
@@ -1676,6 +1700,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                       )}
                       <p className="mt-2 text-sm font-semibold text-slate-800 truncate w-full">{displayName}</p>
                       {nickName && <p className="text-xs text-slate-500 truncate w-full">({nickName})</p>}
+                      {roleLabel && (
+                        <span className="mt-1 inline-block text-[11px] font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">
+                          {roleLabel}
+                        </span>
+                      )}
                     </div>
                   );
                 })}
