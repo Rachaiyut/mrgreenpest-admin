@@ -504,6 +504,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">เลขที่สัญญา</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อลูกค้า</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ประเภทลูกค้า</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">จำนวนสัญญา</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">อายุสัญญา</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันเริ่มต้น</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันสิ้นสุด</th>
@@ -550,6 +551,11 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                           ) : (
                             <span className="text-slate-400">-</span>
                           )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
+                          <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                            {Number((c as unknown as Record<string, unknown>).customer_contracts_count) || 0}
+                          </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600 text-center">
                           {formatContractDuration(c.start_date, c.end_date)}
