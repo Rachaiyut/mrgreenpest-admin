@@ -102,6 +102,32 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     () => new Map((users || []).map((u) => [u.id, u])),
     [users],
   );
+
+  // Collect every technician assigned to this job from every available source
+  // (job.technicians + primary/secondary + job_team_members + report's nested job)
+  // and dedupe by id so no one is missed regardless of which payload populated which field.
+  const allAssignedTechs = useMemo(() => {
+    if (!job) return [] as User[];
+    const reportJob = ((job.service_report as unknown as Record<string, unknown>)?.job) as Record<string, unknown> | undefined;
+    const seen = new Set<string>();
+    const out: User[] = [];
+    const tryAdd = (u: unknown) => {
+      if (!u || typeof u !== 'object') return;
+      const obj = u as Record<string, unknown>;
+      const key = (obj.id as string) || `${obj.first_name || ''} ${obj.last_name || ''}`.trim();
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push(u as User);
+    };
+    for (const t of (job.technicians || [])) tryAdd(t);
+    tryAdd(job.primary_technician);
+    tryAdd(job.secondary_technician);
+    for (const m of (job.job_team_members || [])) tryAdd(m);
+    tryAdd(reportJob?.primary_technician);
+    for (const m of ((reportJob?.job_team_members || []) as unknown[])) tryAdd(m);
+    return out;
+  }, [job]);
+
   const [reportState, setReportState] = useState<Partial<ServiceReport & {
     payment_amount?: string | number;
     payment_slip_url?: string | null;
@@ -1583,12 +1609,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               <dt className="text-slate-500 mb-1">ช่างเทคนิค</dt>
               <dd className="font-semibold text-slate-900">
                 {(() => {
-                  const techs = job.technicians?.length > 0 ? job.technicians : [];
-                  const reportJob = ((job.service_report as unknown as Record<string, unknown>)?.job || (reportState as unknown as Record<string, unknown>)?.job) as Record<string, unknown> | undefined;
-                  const allTechs = techs.length > 0 ? techs : [
-                    ...(reportJob?.primary_technician ? [reportJob.primary_technician] : []),
-                    ...((reportJob?.job_team_members || []) as User[]),
-                  ];
+                  const allTechs = allAssignedTechs;
                   if (allTechs.length === 0) return 'ไม่มีช่างเทคนิค';
                   return (
                     <div className="flex flex-wrap items-center gap-3">
@@ -1624,12 +1645,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
         {/* Technician Photos */}
         {(() => {
-          const techs = job.technicians?.length > 0 ? job.technicians : [];
-          const reportJob = ((job.service_report as unknown as Record<string, unknown>)?.job || (reportState as unknown as Record<string, unknown>)?.job) as Record<string, unknown> | undefined;
-          const allTechs = techs.length > 0 ? techs : [
-            ...(reportJob?.primary_technician ? [reportJob.primary_technician] : []),
-            ...((reportJob?.job_team_members || []) as User[]),
-          ];
+          const allTechs = allAssignedTechs;
           if (allTechs.length === 0) return null;
           return (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
