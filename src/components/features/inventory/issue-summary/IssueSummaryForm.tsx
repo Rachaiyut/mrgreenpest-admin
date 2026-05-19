@@ -68,6 +68,7 @@ export interface IssueSummaryFormProps {
   onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
   onOverStockChange?: (overStock: boolean) => void;
+  onSubmittingChange?: (submitting: boolean) => void;
 }
 
 export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
@@ -83,6 +84,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   onSubmit,
   onCancel,
   onOverStockChange,
+  onSubmittingChange,
 }) => {
   const isEditMode = mode === 'edit';
 
@@ -375,6 +377,10 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
     onOverStockChange?.(isAnyItemOverStock);
   }, [isAnyItemOverStock, onOverStockChange]);
 
+  useEffect(() => {
+    onSubmittingChange?.(isSubmitting);
+  }, [isSubmitting, onSubmittingChange]);
+
   const selectedCustomers = useMemo(
     () => customers.filter((c) => selectedCustomerIds.includes(c.id)),
     [customers, selectedCustomerIds],
@@ -427,7 +433,8 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors = {
-      warehouseId: !warehouseId ? 'กรุณาเลือกรถบริการ' : '',
+      // วงเงิน warehouseId จำเป็นเฉพาะตอน "เบิกสินค้า" — ถ้าเบิกเฉพาะค่าใช้จ่ายไม่ต้องเลือกรถ
+      warehouseId: enableGoods && !warehouseId ? 'กรุณาเลือกรถบริการ' : '',
       issueDate: !issueDate ? 'กรุณาเลือกวันที่เบิก' : '',
       requesterId: !requesterId ? 'กรุณาเลือกผู้เบิก' : '',
       items: !hasValidEntries ? 'กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ หรือกรอกค่าใช้จ่ายอย่างน้อย 1 รายการ' : '',
@@ -484,7 +491,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
 
       const payload: any = {
         ...(isEditMode && summary ? summary : {}), // spread original fields for edit
-        warehouse_id: warehouseId,
+        warehouse_id: warehouseId || undefined,
         issue_date: issueDate
           ? `${issueDate.getFullYear()}-${String(issueDate.getMonth() + 1).padStart(2, '0')}-${String(issueDate.getDate()).padStart(2, '0')}`
           : undefined,
@@ -577,56 +584,98 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   return (
     <>
       <form ref={goodsFormRef} id="issue-summary-form" onSubmit={handleSubmit}>
+        {/* วันที่เบิก — อยู่นอกกรอบ form ด้านบนสุด (เอา label ออก เหลือเฉพาะ datepicker) */}
+        <div className="flex items-end justify-end gap-3 mb-4 px-1">
+          <div className="flex flex-col">
+            <div className={`flex items-center gap-2 bg-white px-3 py-2 rounded-lg border hover:border-slate-400 transition-colors cursor-pointer ${formErrors.issueDate ? 'border-red-500' : 'border-slate-300'}`}>
+              <CalendarDaysIcon className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              <DatePicker
+                selected={issueDate}
+                onChange={(date: Date | null) => { setIssueDate(date); if (date) setFormErrors((prev) => ({ ...prev, issueDate: '' })); }}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="เลือกวันที่เบิก *"
+                required
+                portalId="root"
+                popperClassName="!z-[9999]"
+                showCalendarIcon={false}
+                className="bg-transparent border-none p-0 text-slate-800 font-semibold focus:ring-0 focus:outline-none text-sm w-[130px] cursor-pointer placeholder:text-slate-400 placeholder:font-normal"
+              />
+            </div>
+            {formErrors.issueDate && <p className="text-xs text-red-500 mt-1">{formErrors.issueDate}</p>}
+          </div>
+        </div>
+
         <div className="flex flex-col gap-6">
 
-          {/* Card 1: Logistics Header */}
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-50">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-2.5 bg-blue-50 rounded-lg text-blue-600">
-                <TruckIcon className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-800">การเคลื่อนย้ายสินค้า</h3>
-              <div className="ml-auto">
-              <div className={`flex items-center gap-2 bg-white px-3 py-2 rounded-lg border hover:border-slate-400 transition-colors cursor-pointer ${formErrors.issueDate ? 'border-red-500' : 'border-slate-300'}`}>
-                <CalendarDaysIcon className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <DatePicker
-                  selected={issueDate}
-                  onChange={(date: Date | null) => { setIssueDate(date); if (date) setFormErrors((prev) => ({ ...prev, issueDate: '' })); }}
-                  dateFormat="dd/MM/yyyy"
-                  locale="th"
-                  placeholderText="เลือกวันที่เบิก *"
-                  required
-                  portalId="root"
-                  popperClassName="!z-[9999]"
-                  showCalendarIcon={false}
-                  className="bg-transparent border-none p-0 text-slate-800 font-semibold focus:ring-0 focus:outline-none text-sm w-[100px] cursor-pointer placeholder:text-slate-400 placeholder:font-normal"
-                />
-              </div>
-              {formErrors.issueDate && <p className="text-xs text-red-500 mt-1">{formErrors.issueDate}</p>}
-              </div>
-            </div>
-
-            <div className="flex flex-col md:flex-row items-center gap-4 relative z-50">
-              <div className="flex-1 w-full relative z-50">
-                <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">
-                  เบิกจากรถ <span className="text-red-500">*</span>
-                </label>
-                <SearchableSelect
-                  options={vehicleWarehouseOptions}
-                  value={warehouseId}
-                  onChange={(v) => { setWarehouseId(v); if (v) setFormErrors((prev) => ({ ...prev, warehouseId: '' })); }}
-                  onSearchChange={(q) => {
-                    // Debounce backend search (300ms)
-                    if (vehicleSearchTimerRef.current) clearTimeout(vehicleSearchTimerRef.current);
-                    vehicleSearchTimerRef.current = setTimeout(() => fetchWarehouses(q), 300);
+          {/* Card 0: ประเภทการเบิก (Top of form — drives required fields below) */}
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-[60]">
+            <h3 className="text-lg font-bold text-slate-800 mb-3">ประเภทการเบิก <span className="text-red-500">*</span></h3>
+            <div className="flex items-center gap-6 flex-wrap">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={enableGoods}
+                  onChange={(e) => {
+                    if (!e.target.checked && !enableExpense) return;
+                    if (!e.target.checked) {
+                      setItems([]);
+                      setWarehouseId('');
+                      setFormErrors((prev) => ({ ...prev, warehouseId: '' }));
+                    }
+                    setEnableGoods(e.target.checked);
                   }}
-                  placeholder="เลือกรถบริการ..."
-                  required
+                  className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
                 />
-                {formErrors.warehouseId && <p className="text-xs text-red-500 mt-1">{formErrors.warehouseId}</p>}
-              </div>
+                <span className="text-base font-semibold text-slate-700">รายการสินค้า</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={enableExpense}
+                  onChange={(e) => {
+                    if (!e.target.checked && !enableGoods) return;
+                    if (!e.target.checked) setExpenseItems([]);
+                    setEnableExpense(e.target.checked);
+                  }}
+                  className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
+                />
+                <span className="text-base font-semibold text-slate-700">การเงินและค่าใช้จ่าย</span>
+              </label>
             </div>
           </div>
+
+          {/* Card 1: การเคลื่อนย้ายสินค้า — แสดงเฉพาะตอนเลือก "รายการสินค้า" */}
+          {enableGoods && (
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-50">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2.5 bg-blue-50 rounded-lg text-blue-600">
+                  <TruckIcon className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-800">การเคลื่อนย้ายสินค้า</h3>
+              </div>
+
+              <div className="flex flex-col md:flex-row items-center gap-4 relative z-50">
+                <div className="flex-1 w-full relative z-50">
+                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">
+                    เบิกจากรถ <span className="text-red-500">*</span>
+                  </label>
+                  <SearchableSelect
+                    options={vehicleWarehouseOptions}
+                    value={warehouseId}
+                    onChange={(v) => { setWarehouseId(v); if (v) setFormErrors((prev) => ({ ...prev, warehouseId: '' })); }}
+                    onSearchChange={(q) => {
+                      if (vehicleSearchTimerRef.current) clearTimeout(vehicleSearchTimerRef.current);
+                      vehicleSearchTimerRef.current = setTimeout(() => fetchWarehouses(q), 300);
+                    }}
+                    placeholder="เลือกรถบริการ..."
+                    required
+                  />
+                  {formErrors.warehouseId && <p className="text-xs text-red-500 mt-1">{formErrors.warehouseId}</p>}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Card 2: Requester / Recipient Card */}
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-40">
@@ -639,7 +688,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex-1 w-full relative z-40">
                 <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">
-                  ผู้เบิก (Requester) <span className="text-red-500">*</span>
+                  ผู้เบิก <span className="text-red-500">*</span>
                 </label>
                 <SearchableSelect
                   options={requesterOptions}
@@ -654,42 +703,9 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                 {formErrors.requesterId && <p className="text-xs text-red-500 mt-1">{formErrors.requesterId}</p>}
               </div>
               <div className="flex-1 w-full relative z-30">
-                <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ผู้รับเงิน (Recipient)</label>
+                <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ผู้รับเงิน</label>
                 <SearchableSelect options={userOptions} value={recipientId} onChange={setRecipientId} placeholder="ค้นหาผู้รับเงิน..." />
               </div>
-            </div>
-          </div>
-
-          {/* Section Toggles */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h3 className="text-lg font-bold text-slate-800 mb-5">ประเภทการเบิก</h3>
-            <div className="flex items-center gap-10">
-              <label className="flex items-center gap-3 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={enableGoods}
-                  onChange={(e) => {
-                    if (!e.target.checked && !enableExpense) return;
-                    if (!e.target.checked) setItems([]);
-                    setEnableGoods(e.target.checked);
-                  }}
-                  className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
-                />
-                <span className="text-base font-semibold text-slate-700">รายการสินค้า</span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={enableExpense}
-                  onChange={(e) => {
-                    if (!e.target.checked && !enableGoods) return;
-                    if (!e.target.checked) setExpenseItems([]);
-                    setEnableExpense(e.target.checked);
-                  }}
-                  className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
-                />
-                <span className="text-base font-semibold text-slate-700">การเงินและค่าใช้จ่าย</span>
-              </label>
             </div>
           </div>
 
@@ -1110,7 +1126,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">
-                  หมายเหตุ (Notes) {isOverLimit && <span className="text-red-500">*</span>}
+                  หมายเหตุ {isOverLimit && <span className="text-red-500">*</span>}
                 </label>
                 <textarea
                   value={notes}

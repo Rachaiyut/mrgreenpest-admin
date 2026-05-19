@@ -24,6 +24,7 @@ import {
   DocumentCheckIcon,
   BanknotesIcon,
   CalendarDaysIcon,
+  LoadingIcon,
 } from '../../../../assets/icons/Icons';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { ProductSelectionModal } from '../../products/ProductSelectionModal';
@@ -624,85 +625,137 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                   isOverLimit || isAnyItemOverLimit ? 'bg-amber-500 hover:bg-amber-600' : 'bg-primary hover:bg-primary/90'
                 }`}
               >
-                {isSubmitting
-                  ? 'กำลังบันทึก...'
-                  : mode === 'edit'
-                    ? 'บันทึกการแก้ไข'
-                    : isAnyItemOverLimit || isOverLimit
-                      ? 'ส่งเพื่อขออนุมัติ'
-                      : 'บันทึกและส่งอนุมัติ'}
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <LoadingIcon className="w-4 h-4" />
+                    กำลังบันทึก...
+                  </span>
+                ) : mode === 'edit'
+                  ? 'บันทึกการแก้ไข'
+                  : isAnyItemOverLimit || isOverLimit
+                    ? 'ส่งเพื่อขออนุมัติ'
+                    : 'บันทึกและส่งอนุมัติ'}
               </Button>
             </div>
           </div>
         }
       >
         <form ref={goodsFormRef} id="withdrawal-form" onSubmit={handleSubmit}>
+          {/* วันที่เบิก — อยู่นอกกรอบ form ด้านบนสุด (ไม่มี label) */}
+          {/* กรอบแดง + error เฉพาะตอนกด submit แล้วยังไม่ได้เลือก (ก่อนกด: เทาปกติ) */}
+          <div className="flex items-end justify-end gap-3 mb-4 px-1">
+            <div className="flex flex-col items-end">
+              <div className={`flex items-center gap-2 bg-white px-3 py-2 rounded-lg border hover:border-slate-400 transition-colors cursor-pointer ${errors.issueDate ? 'border-red-500' : 'border-slate-300'}`}>
+                <CalendarDaysIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                <DatePicker
+                  selected={issueDate}
+                  onChange={(date: Date | null) => {
+                    setIssueDate(date);
+                    if (date) setErrors((prev) => ({ ...prev, issueDate: undefined }));
+                  }}
+                  dateFormat="dd/MM/yyyy"
+                  locale="th"
+                  placeholderText="เลือกวันที่เบิก *"
+                  portalId="root"
+                  popperClassName="!z-[9999]"
+                  showCalendarIcon={false}
+                  className="bg-transparent border-none p-0 text-slate-800 font-semibold focus:ring-0 focus:outline-none text-sm w-[130px] cursor-pointer placeholder:text-slate-400 placeholder:font-normal"
+                />
+              </div>
+              {errors.issueDate && <p className="text-xs text-red-500 mt-1">{errors.issueDate}</p>}
+            </div>
+          </div>
+
           <div className="flex flex-col gap-6">
-            {/* Card 1: Logistics Header */}
-            <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm relative z-50">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-2.5 bg-blue-50 rounded-lg text-blue-600">
-                  <TruckIcon className="w-6 h-6" />
+            {/* Card 0: ประเภทการเบิก (Top — drives required fields below) */}
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-[60]">
+              <h3 className="text-lg font-bold text-slate-800 mb-3">ประเภทการเบิก <span className="text-red-500">*</span></h3>
+              <div className="flex items-center gap-6 flex-wrap">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={enableGoods}
+                    onChange={(e) => {
+                      if (!e.target.checked && !enableExpense) return;
+                      if (!e.target.checked) {
+                        setGoodsItems([]);
+                        setFromWarehouseId('');
+                        setToWarehouseId('');
+                        setErrors((prev) => ({ ...prev, fromWarehouseId: undefined, toWarehouseId: undefined }));
+                      }
+                      setEnableGoods(e.target.checked);
+                    }}
+                    className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-base font-semibold text-slate-700">รายการสินค้า</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={enableExpense}
+                    onChange={(e) => {
+                      if (!e.target.checked && !enableGoods) return;
+                      if (!e.target.checked) setExpenseItems([]);
+                      setEnableExpense(e.target.checked);
+                    }}
+                    className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-base font-semibold text-slate-700">การเงินและค่าใช้จ่าย</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Card 1: การเคลื่อนย้ายสินค้า — แสดงเฉพาะตอนเลือก "รายการสินค้า" */}
+            {enableGoods && (
+              <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm relative z-50">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-2.5 bg-blue-50 rounded-lg text-blue-600">
+                    <TruckIcon className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-800">การเคลื่อนย้ายสินค้า</h3>
                 </div>
-                <h3 className="text-lg font-bold text-slate-800">การเคลื่อนย้ายสินค้า</h3>
-                <div className="ml-auto">
-                  <div className={`flex items-center gap-2 bg-white px-3 py-2 rounded-lg border hover:border-slate-400 transition-colors cursor-pointer ${!issueDate ? 'border-red-300' : 'border-slate-300'}`}>
-                    <CalendarDaysIcon className="w-4 h-4 text-slate-400 shrink-0" />
-                    <DatePicker
-                      selected={issueDate}
-                      onChange={(date: Date | null) => setIssueDate(date)}
-                      dateFormat="dd/MM/yyyy"
-                      locale="th"
-                      placeholderText="เลือกวันที่เบิก *"
-                      portalId="root"
-                      popperClassName="!z-[9999]"
-                      showCalendarIcon={false}
-                      className="bg-transparent border-none p-0 text-slate-800 font-semibold focus:ring-0 focus:outline-none text-sm w-[110px] cursor-pointer placeholder:text-slate-400 placeholder:font-normal"
+
+                <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-3 sm:p-5 rounded-lg border border-slate-100 relative z-50">
+                  <div className="flex-1 w-full relative z-50">
+                    <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">เบิกจากคลัง (ต้นทาง) <span className="text-red-500">*</span></label>
+                    <SearchableSelect
+                      value={fromWarehouseId}
+                      onChange={(v) => {
+                        setFromWarehouseId(v);
+                        setErrors((prev) => ({ ...prev, fromWarehouseId: undefined }));
+                      }}
+                      onSearchChange={(q) => {
+                        if (sourceSearchTimerRef.current) clearTimeout(sourceSearchTimerRef.current);
+                        sourceSearchTimerRef.current = setTimeout(() => fetchSourceWarehouses(q), 300);
+                      }}
+                      options={sourceWarehouseOptions}
+                      placeholder="เลือกคลังต้นทาง"
                     />
+                    {errors.fromWarehouseId && <p className="text-red-500 text-xs mt-1">{errors.fromWarehouseId}</p>}
+                  </div>
+                  <div className="pt-6 hidden md:block">
+                    <ArrowRightIcon className="w-5 h-5 text-slate-400" />
+                  </div>
+                  <div className="flex-1 w-full relative z-40">
+                    <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ไปยังคลัง/รถ (ปลายทาง) <span className="text-red-500">*</span></label>
+                    <SearchableSelect
+                      value={toWarehouseId}
+                      onChange={(v) => {
+                        setToWarehouseId(v);
+                        setErrors((prev) => ({ ...prev, toWarehouseId: undefined }));
+                      }}
+                      onSearchChange={(q) => {
+                        if (vehicleSearchTimerRef.current) clearTimeout(vehicleSearchTimerRef.current);
+                        vehicleSearchTimerRef.current = setTimeout(() => fetchVehicleWarehouses(q), 300);
+                      }}
+                      options={vehicleWarehouseOptions}
+                      placeholder="เลือกคลังปลายทาง"
+                    />
+                    {errors.toWarehouseId && <p className="text-red-500 text-xs mt-1">{errors.toWarehouseId}</p>}
                   </div>
                 </div>
               </div>
-
-              <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-3 sm:p-5 rounded-lg border border-slate-100 relative z-50">
-                <div className="flex-1 w-full relative z-50">
-                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">เบิกจากคลัง (ต้นทาง) <span className="text-red-500">*</span></label>
-                  <SearchableSelect
-                    value={fromWarehouseId}
-                    onChange={(v) => {
-                      setFromWarehouseId(v);
-                      setErrors((prev) => ({ ...prev, fromWarehouseId: undefined }));
-                    }}
-                    onSearchChange={(q) => {
-                      if (sourceSearchTimerRef.current) clearTimeout(sourceSearchTimerRef.current);
-                      sourceSearchTimerRef.current = setTimeout(() => fetchSourceWarehouses(q), 300);
-                    }}
-                    options={sourceWarehouseOptions}
-                    placeholder="เลือกคลังต้นทาง"
-                  />
-                  {errors.fromWarehouseId && <p className="text-red-500 text-xs mt-1">{errors.fromWarehouseId}</p>}
-                </div>
-                <div className="pt-6 hidden md:block">
-                  <ArrowRightIcon className="w-5 h-5 text-slate-400" />
-                </div>
-                <div className="flex-1 w-full relative z-40">
-                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ไปยังคลัง/รถ (ปลายทาง) <span className="text-red-500">*</span></label>
-                  <SearchableSelect
-                    value={toWarehouseId}
-                    onChange={(v) => {
-                      setToWarehouseId(v);
-                      setErrors((prev) => ({ ...prev, toWarehouseId: undefined }));
-                    }}
-                    onSearchChange={(q) => {
-                      if (vehicleSearchTimerRef.current) clearTimeout(vehicleSearchTimerRef.current);
-                      vehicleSearchTimerRef.current = setTimeout(() => fetchVehicleWarehouses(q), 300);
-                    }}
-                    options={vehicleWarehouseOptions}
-                    placeholder="เลือกคลังปลายทาง"
-                  />
-                  {errors.toWarehouseId && <p className="text-red-500 text-xs mt-1">{errors.toWarehouseId}</p>}
-                </div>
-              </div>
-            </div>
+            )}
 
             {/* Card 2: Requester / Recipient */}
             <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm relative z-40">
@@ -715,7 +768,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex-1 w-full relative z-40">
                   <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">
-                    ผู้เบิก (Requester) <span className="text-red-500">*</span>
+                    ผู้เบิก <span className="text-red-500">*</span>
                   </label>
                   <SearchableSelect
                     value={requesterId}
@@ -732,7 +785,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                   {errors.requesterId && <p className="text-red-500 text-xs mt-1">{errors.requesterId}</p>}
                 </div>
                 <div className="flex-1 w-full relative z-30">
-                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ผู้รับเงิน (Recipient)</label>
+                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ผู้รับเงิน</label>
                   <SearchableSelect
                     value={recipientId}
                     onChange={(v) => {
@@ -745,39 +798,6 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     disabled={!enableExpense || isRequesterLocked}
                   />
                 </div>
-              </div>
-            </div>
-
-            {/* Section Toggles */}
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-5">ประเภทการเบิก</h3>
-              <div className="flex items-center gap-10">
-                <label className="flex items-center gap-3 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={enableGoods}
-                    onChange={(e) => {
-                      if (!e.target.checked && !enableExpense) return;
-                      if (!e.target.checked) setGoodsItems([]);
-                      setEnableGoods(e.target.checked);
-                    }}
-                    className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
-                  />
-                  <span className="text-base font-semibold text-slate-700">รายการสินค้า</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={enableExpense}
-                    onChange={(e) => {
-                      if (!e.target.checked && !enableGoods) return;
-                      if (!e.target.checked) setExpenseItems([]);
-                      setEnableExpense(e.target.checked);
-                    }}
-                    className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
-                  />
-                  <span className="text-base font-semibold text-slate-700">การเงินและค่าใช้จ่าย</span>
-                </label>
               </div>
             </div>
 

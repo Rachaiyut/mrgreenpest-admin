@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal } from '../../../common/Modal';
 import { Button } from '../../../common/FormControls';
 import { IssueSummaryForm } from './IssueSummaryForm';
+import { LoadingIcon } from '../../../../assets/icons/Icons';
 
 // ===== Types =====
 import {
@@ -45,6 +46,7 @@ export const IssueSummaryModal: React.FC<IssueSummaryModalProps> = ({
 }) => {
   const isEditMode = mode === 'edit';
   const [isOverStock, setIsOverStock] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getTitle = () => {
     if (isEditMode) return 'แก้ไขสรุปเบิกสินค้า/อุปกรณ์';
@@ -64,7 +66,7 @@ export const IssueSummaryModal: React.FC<IssueSummaryModalProps> = ({
         </div>
       )}
       <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 w-full sm:justify-end">
-        <Button variant="secondary" onClick={onClose} type="button" className="w-full sm:w-auto">
+        <Button variant="secondary" onClick={onClose} type="button" className="w-full sm:w-auto" disabled={isSubmitting}>
           ยกเลิก
         </Button>
         <Button
@@ -72,7 +74,7 @@ export const IssueSummaryModal: React.FC<IssueSummaryModalProps> = ({
           type="button"
           className="w-full sm:w-auto"
           onClick={() => document.getElementById('issue-summary-draft-btn')?.click()}
-          disabled={isOverStock}
+          disabled={isOverStock || isSubmitting}
           title={overStockTitle}
         >
           บันทึกฉบับร่าง
@@ -82,10 +84,15 @@ export const IssueSummaryModal: React.FC<IssueSummaryModalProps> = ({
           type="submit"
           form="issue-summary-form"
           className="w-full sm:w-auto"
-          disabled={isOverStock}
+          disabled={isOverStock || isSubmitting}
           title={overStockTitle}
         >
-          {isEditMode ? 'บันทึกการแก้ไข' : 'บันทึกและตัดสต็อก'}
+          {isSubmitting ? (
+            <span className="flex items-center gap-2">
+              <LoadingIcon className="w-4 h-4" />
+              กำลังบันทึก...
+            </span>
+          ) : isEditMode ? 'บันทึกการแก้ไข' : 'บันทึกและตัดสต็อก'}
         </Button>
       </div>
     </div>
@@ -112,6 +119,7 @@ export const IssueSummaryModal: React.FC<IssueSummaryModalProps> = ({
         onSubmit={onSubmit}
         onCancel={onClose}
         onOverStockChange={setIsOverStock}
+        onSubmittingChange={setIsSubmitting}
       />
     </Modal>
   );
