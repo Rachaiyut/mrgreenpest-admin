@@ -457,11 +457,21 @@ const IssueSummaryPage: React.FC = () => {
         'เหตุผลเกินลิมิต',
       );
       html += renderItemList(
-        items.map((it: any) => ({
-          name: it.product?.name || it.name || it.product_id || '-',
-          right: `${Number(it.quantity || 0)} ชิ้น`,
-          rightColor: '#64748b',
-        })),
+        items.map((it: any) => {
+          // หาชื่อสินค้าตามลำดับ: snapshot บน item → product relation → products list lookup → "-"
+          const fromList = products?.find((p: any) => p.id === it.product_id);
+          const name =
+            it.product_name ||
+            it.product?.name ||
+            it.name ||
+            (fromList as any)?.name ||
+            '-';
+          return {
+            name,
+            right: `${Number(it.quantity || 0)} ชิ้น`,
+            rightColor: '#64748b',
+          };
+        }),
       );
     } else {
       const expenses = (summary?.expense_items || []) as any[];
