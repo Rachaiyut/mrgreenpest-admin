@@ -1255,8 +1255,12 @@ const Job: React.FC<JobProps> = ({
             return;
           }
           try {
+            // Pass requester_id so the backend OR-matches expense-only summaries
+            // (warehouse_id IS NULL) created by this tech alongside stock summaries
+            // for the vehicle. Otherwise an expense-only summary would not count.
             const res = await StockIssueSummaryApi.getAll({
               warehouse_id: vehicleId,
+              requester_id: currentUser?.id,
               start_date: `${dateStr}T00:00:00`,
               end_date: `${dateStr}T23:59:59`,
               limit: 1,
@@ -1364,9 +1368,11 @@ const Job: React.FC<JobProps> = ({
       setClosureJobStats({ total, completed, incomplete });
 
       // Fetch stock issue summaries: by vehicle + selected date
+      // Include expense-only summaries (warehouse_id NULL) for the closure's primary tech
       try {
         const issueRes = await StockIssueSummaryApi.getAll({
           warehouse_id: targetVehicleId,
+          requester_id: closure?.primary_tech_id,
           start_date: `${targetDateStr}T00:00:00`,
           end_date: `${targetDateStr}T23:59:59`,
           limit: 50,
