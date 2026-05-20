@@ -293,14 +293,16 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-    const customer = customers?.find((x) => x.id === invoice.customer_id);
+    // Prefer the customer embedded on the invoice (always present in list response)
+    // before falling back to the DataContext lookup. This guarantees customer.type
+    // is available so the tax-invoice section can render for individuals.
+    const customer = invoice.customer || customers?.find((x) => x.id === invoice.customer_id);
     const customerName = (() => {
       if (customer) {
         const lookup = pickName(joinName(customer.first_name, customer.last_name), (customer as any).nickname, (customer as any).code);
         if (lookup) return lookup;
       }
-      // Fallback to the snapshot stored on the invoice itself when customer isn't
-      // loaded in DataContext (e.g. archived/inactive customer).
+      // Final fallback to the snapshot stored on the invoice itself
       return invoice.customer_name || '-';
     })();
     const issueDate = invoice.issued_at
@@ -430,12 +432,12 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       maximumFractionDigits: 2,
     });
     const customerName = (() => {
-      const c = customers?.find((x) => x.id === invoice.customer_id);
+      const c = invoice.customer || customers?.find((x) => x.id === invoice.customer_id);
       if (c) {
         const lookup = pickName(joinName(c.first_name, c.last_name), (c as any).nickname, (c as any).code);
         if (lookup) return lookup;
       }
-      // Fallback to invoice's snapshot when customer is missing in DataContext
+      // Fallback to invoice's snapshot when customer is missing
       return invoice.customer_name || '-';
     })();
 
