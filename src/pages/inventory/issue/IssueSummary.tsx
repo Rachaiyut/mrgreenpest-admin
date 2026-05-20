@@ -727,7 +727,7 @@ const IssueSummaryPage: React.FC = () => {
           </div>
           <Button onClick={() => { setModalMode('create'); setIsModalOpen(true); }} className="self-start sm:self-auto">
             <PlusIcon className="h-5 w-5" />
-            สร้างใบเบิกสินค้า/อุปกรณ์
+            สร้างสรุปการเบิกสินค้า/อุปกรณ์
           </Button>
         </div>
 
