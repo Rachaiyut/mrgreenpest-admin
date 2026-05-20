@@ -106,7 +106,8 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
         skipActions: ['CREATE', 'UPDATE', 'CANCEL'],
       },
       { label: 'คืนสินค้า', module: 'RETURN_NOTE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
-      { label: 'เบิกสินค้าคืนผู้จำหน่าย', module: 'RETURN_NOTE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      // ซ่อนจาก role matrix — เมนู "เบิกสินค้าคืนผู้จำหน่าย" ถูก hide จาก sidebar แล้ว
+      // { label: 'เบิกสินค้าคืนผู้จำหน่าย', module: 'RETURN_NOTE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
     ],
   },
   {
