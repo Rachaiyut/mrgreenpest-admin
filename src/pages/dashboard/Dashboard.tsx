@@ -660,13 +660,8 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, change, changeDir, foot
     <div
       className={`relative bg-white rounded-md border border-emerald-50 shadow-[0_2px_12px_rgba(16,185,129,0.04)] p-5 overflow-hidden before:content-[''] before:absolute before:top-0 before:left-0 before:w-1 before:h-full ${ringColor[accent]}`}
     >
-      <div className="flex items-start justify-between mb-3">
+      <div className="mb-3">
         <p className="text-sm font-medium text-slate-500">{title}</p>
-        <button className="text-slate-300 hover:text-slate-500" aria-label="more">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
-          </svg>
-        </button>
       </div>
       <p className="text-2xl sm:text-3xl font-bold text-slate-800 tabular-nums">{value}</p>
       <div className="flex items-center gap-2 mt-2">
