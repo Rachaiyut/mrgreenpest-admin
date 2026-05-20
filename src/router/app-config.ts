@@ -45,6 +45,8 @@ interface UnifiedConfig {
   icon?: React.ElementType;
   access?: string;
   roles?: Role[];
+  /** Hide from sidebar nav but keep the route reachable via direct URL */
+  hideFromNav?: boolean;
 
   // Route
   path: string;
@@ -107,6 +109,9 @@ const Account = React.lazy(() => import('../pages/accounts/Account'));
 const AccountTransactions = React.lazy(
   () => import('../pages/accounts/AccountTransactions')
 );
+
+// Documentation
+const FlowDocs = React.lazy(() => import('../pages/docs/FlowDocs'));
 
 // Report Pages
 const ArAgingPage = React.lazy(() => import('../pages/reports/ArAgingPage'));
@@ -485,6 +490,16 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
       },
     ],
   },
+
+  // Documentation — hidden from sidebar, accessible only via direct link /docs/flow
+  {
+    name: 'คู่มือธุรกิจ',
+    path: 'docs/flow',
+    icon: DocumentTextIcon,
+    access: null,
+    component: FlowDocs,
+    hideFromNav: true,
+  },
 ];
 
 // Generate Routes with proper props
@@ -552,7 +567,7 @@ export const createRoutes = (data: DataContextType): RouteConfig[] => {
 
 // Generate Navigation Items
 export const createNavigationItems = (): NavigationItem[] => {
-  return UNIFIED_CONFIG.map((config): NavigationItem => {
+  return UNIFIED_CONFIG.filter((c) => !c.hideFromNav).map((config): NavigationItem => {
     if (config.subItems) {
       return {
         type: 'group',
