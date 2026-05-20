@@ -920,7 +920,8 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
               {renderPriceSection()}
 
-              {(!readOnly || (area.items && area.items.length > 0)) && (
+              {/* ซ่อน "รายการสินค้า/บริการ (เพิ่มเติม)" ออกจากฟอร์ม — เปลี่ยน false → true เพื่อเปิดกลับ */}
+              {false && (!readOnly || (area.items && area.items.length > 0)) && (
               <div className="border border-slate-200 p-2 rounded-lg bg-white">
                 <div className="flex justify-between items-center mb-2">
                   <button
