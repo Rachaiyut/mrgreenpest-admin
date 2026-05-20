@@ -68,7 +68,10 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = () => {
-  const navigate = useNavigate();
+  // Dashboard view-only: Quick Actions ใช้ realNavigate / การ์ดอื่นๆ ใช้ stub (click ไม่ทำอะไร)
+  // เลิก pointer-events-none เพราะ chart tooltip / hover ต้องใช้ mouse events
+  const realNavigate = useNavigate();
+  const navigate: (_path?: string) => void = () => {};
   const [range, setRange] = useState<Range>('month');
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -162,15 +165,15 @@ const Dashboard: React.FC<DashboardProps> = () => {
 
         {/* Quick Actions row */}
         <div className="flex gap-2 flex-wrap">
-          <QuickAction onClick={() => navigate('/field-operations')} label="สร้างงาน" iconPath="M12 4v16m8-8H4" />
-          <QuickAction onClick={() => navigate('/invoice')} label="สร้างใบแจ้งหนี้" iconPath="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          <QuickAction onClick={() => navigate('/quotations')} label="สร้างใบเสนอราคา" iconPath="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          <QuickAction onClick={() => navigate('/customers')} label="ลูกค้า" iconPath="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          <QuickAction onClick={() => realNavigate('/field-operations')} label="สร้างงาน" iconPath="M12 4v16m8-8H4" />
+          <QuickAction onClick={() => realNavigate('/invoice')} label="สร้างใบแจ้งหนี้" iconPath="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          <QuickAction onClick={() => realNavigate('/quotations')} label="สร้างใบเสนอราคา" iconPath="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <QuickAction onClick={() => realNavigate('/customers')} label="ลูกค้า" iconPath="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </div>
 
         {/* View-only zone: card / list ทั้งหมดด้านล่างนี้ disable การ click (Range + Quick Actions ด้านบนยังใช้งานได้) */}
-        {/* pointer-events-none ตัด click/hover, cursor-default + [&_*]:cursor-default บังคับเคอร์เซอร์เป็นลูกศรปกติ (ไม่ขึ้นนิ้วชี้) */}
-        <div className="space-y-5 sm:space-y-6 pointer-events-none select-none cursor-default [&_*]:cursor-default">
+        {/* View-only: click ไม่ทำอะไร (navigate stub no-op) แต่ mouse hover / chart tooltip ยังใช้ได้ปกติ */}
+        <div className="space-y-5 sm:space-y-6">
 
         {/* PRIORITY 1: Daily Closure Alert (urgent action) */}
         {openClosures.length > 0 && (
