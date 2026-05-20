@@ -266,6 +266,22 @@ export const JobForm: React.FC<JobFormProps> = ({
           } catch (err) {
             console.error('Error fetching full assessment data:', err);
           }
+        } else if (actualContractId && rawAreas.length === 0) {
+          // No assessment but job references a contract — load contract_areas so edit mode
+          // shows the area details + images from the contract.
+          try {
+            const contractRes: any = await ContractApi.getById(actualContractId);
+            const realContract = contractRes.data || contractRes;
+            const contractAreas = realContract?.contract_areas || realContract?.areas || [];
+            if (contractAreas.length > 0) {
+              rawAreas = contractAreas;
+            }
+            if (realContract?.package_id) {
+              globalPackageId = realContract.package_id;
+            }
+          } catch (err) {
+            console.error('Error fetching full contract data:', err);
+          }
         }
 
         const enrichArea = (wa: any, index: number) => {
@@ -1341,18 +1357,17 @@ export const JobForm: React.FC<JobFormProps> = ({
                       </div>
                     ) : null}
 
+                    {/* In edit mode areas are read-only — only reference/invoice/operation-details/notes
+                        are editable. Use readOnly so users can still expand/collapse to view details. */}
                     <div className="grid grid-cols-1 gap-4">
                       {workAreas.map((area, index) => (
-                        <div key={area.id || index} className="relative">
-                          {!!selectedReference && mode !== 'edit' && (
-                            <div className="absolute inset-0 z-10 bg-slate-50/30 rounded-lg cursor-not-allowed" title="ข้อมูลจากเอกสารอ้างอิง ไม่สามารถแก้ไขได้"></div>
-                          )}
+                        <div key={area.id || index}>
                           <WorkAreaForm
                             area={area}
                             index={index}
                             onAreaChange={handleAreaChange}
                             onClearArea={handleClearArea}
-                            onRemoveArea={(!selectedReference || mode === 'edit') ? handleRemoveArea : undefined}
+                            onRemoveArea={(mode !== 'edit' && !selectedReference) ? handleRemoveArea : undefined}
                             products={products}
                             categories={categories}
                             availablePackages={packages}
@@ -1361,24 +1376,31 @@ export const JobForm: React.FC<JobFormProps> = ({
                               handleAreaChange(index, { package_id: pkgId });
                             }}
                             isEditing={mode === 'edit' && String(jobToEdit?.api_status || '').toUpperCase() !== 'UNASSIGNED'}
+                            readOnly={mode === 'edit' || !!selectedReference}
                           />
                         </div>
                       ))}
 
-                      {workAreas.length === 0 && !selectedReference && (
+                      {workAreas.length === 0 && !selectedReference && mode !== 'edit' && (
                         <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-slate-200 text-slate-400">ยังไม่มีพื้นที่ให้บริการ กด "เพิ่มพื้นที่" เพื่อเริ่มต้น</div>
                       )}
 
                       {selectedReference && workAreas.length === 0 && (
                         <div className="text-center p-4 text-slate-500">กำลังดึงข้อมูลพื้นที่จากเอกสารอ้างอิง... หรือเอกสารนี้ไม่มีพื้นที่กรอกไว้</div>
                       )}
+
+                      {mode === 'edit' && workAreas.length === 0 && !selectedReference && (
+                        <div className="text-center p-4 text-slate-400">ไม่มีพื้นที่ที่บันทึกไว้</div>
+                      )}
                     </div>
 
-                    <div className="flex justify-center mt-4">
-                      <button type="button" onClick={handleAddArea} className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium">
-                        <PlusIcon className="h-5 w-5" />เพิ่มพื้นที่ให้บริการ
-                      </button>
-                    </div>
+                    {mode !== 'edit' && (
+                      <div className="flex justify-center mt-4">
+                        <button type="button" onClick={handleAddArea} className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium">
+                          <PlusIcon className="h-5 w-5" />เพิ่มพื้นที่ให้บริการ
+                        </button>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="text-center p-8 text-slate-400 bg-white rounded-lg border border-dashed border-slate-300">
