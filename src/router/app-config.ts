@@ -36,6 +36,8 @@ interface SubItemConfig {
   roles?: Role[];
   component?: React.LazyExoticComponent<any>;
   getProps?: (data: DataContextType) => Record<string, any>;
+  /** Hide from sidebar nav but keep the route reachable via direct URL */
+  hideFromNav?: boolean;
 }
 
 // Unified Configuration Interface
@@ -340,6 +342,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         icon: NewWarehouseIcon,
         access: 'ACCESS_RETURN_NOTE',
         component: ReturnToSupplier,
+        hideFromNav: true, // ซ่อนจาก sidebar — route /return-to-supplier ยังเข้าได้ตรง
       },
     ],
   },
@@ -353,7 +356,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     component: Withdrawals,
     subItems: [
       {
-        name: 'เบิกสินค้าเข้าคลังย่อย',
+        name: 'เบิกเงิน สินค้า/สารเคมี',
         path: 'withdraw-vehicle',
         icon: NewWarehouseIcon,
         access: 'ACCESS_ISSUE_NOTE',
@@ -573,11 +576,13 @@ export const createNavigationItems = (): NavigationItem[] => {
         type: 'group',
         name: config.name,
         icon: config.icon as React.FC<any>,
-        subItems: config.subItems.map((sub) => ({
-          name: sub.name as any,
-          icon: (sub.icon as React.FC<any>) || DocumentTextIcon,
-          access: sub.access,
-        })),
+        subItems: config.subItems
+          .filter((sub) => !sub.hideFromNav)
+          .map((sub) => ({
+            name: sub.name as any,
+            icon: (sub.icon as React.FC<any>) || DocumentTextIcon,
+            access: sub.access,
+          })),
       };
     }
 

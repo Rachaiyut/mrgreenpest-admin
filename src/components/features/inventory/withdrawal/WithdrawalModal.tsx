@@ -580,8 +580,8 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
 
   const title =
     mode === 'create'
-      ? 'สร้างใบเบิกสินค้า/อุปกรณ์'
-      : `แก้ไขใบเบิกสินค้า/อุปกรณ์${initialValues?.code ? ` ${initialValues.code}` : ''}`;
+      ? 'สร้างใบเบิกเงิน สินค้า/สารเคมี'
+      : `แก้ไขใบเบิกเงิน สินค้า/สารเคมี${initialValues?.code ? ` ${initialValues.code}` : ''}`;
 
   return (
     <>

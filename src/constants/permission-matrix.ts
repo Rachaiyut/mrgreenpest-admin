@@ -87,7 +87,7 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
     groupName: 'จัดการสินค้าภายใน',
     items: [
       {
-        label: 'เบิกสินค้าเข้าคลังย่อย',
+        label: 'เบิกเงิน สินค้า/สารเคมี',
         module: 'ISSUE_NOTE',
         // ปิด APPROVE + NOTIFY ที่ parent row — ย้ายไปอยู่ใน sub-row 2 หมวดแทน (STOCK + EXPENSE)
         skipActions: ['DELETE', 'APPROVE', 'NOTIFY'],

@@ -882,7 +882,7 @@ const Issue: FC = () => {
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">
-              เบิกสินค้าเข้าคลังย่อย
+              เบิกเงิน สินค้า/สารเคมี
             </h1>
             <p className="mt-1 text-slate-600">
               ติดตามและจัดการการเบิกสินค้าและอุปกรณ์
@@ -890,7 +890,7 @@ const Issue: FC = () => {
           </div>
           <Button onClick={() => setIsAddModalOpen(true)}>
             <PlusIcon className="h-5 w-5" />
-            สร้างใบเบิกสินค้า
+            สร้างใบเบิกเงิน สินค้า/สารเคมี
           </Button>
         </div>
 
