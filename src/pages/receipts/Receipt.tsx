@@ -96,7 +96,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
     left: number;
   } | null>(null);
   const receiptDropdownRef = useRef<HTMLDivElement>(null);
-  const [isDownloading, setIsDownloading] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState<{ id: string; type: 'receipt' | 'tax_invoice' } | null>(null);
 
   // Form State
   const [receiptFormInvoiceId, setReceiptFormInvoiceId] = useState('');
@@ -533,21 +533,14 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                         })}{' '}บาท
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <Button
-                            variant="primary"
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                              isDownloading === r.id
-                                ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
-                                : 'bg-green-600 hover:bg-green-700 text-white'
-                            }`}
-                            onClick={async (e) => {
+                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                          {(() => {
+                            const handleViewPdf = async (e: React.MouseEvent, type: 'receipt' | 'tax_invoice') => {
                               e.stopPropagation();
-                              if (isDownloading === r.id) return;
-
+                              if (isDownloading?.id === r.id) return;
                               try {
-                                setIsDownloading(r.id);
-                                const blob = await ReceiptApi.getPdfBlob(r.id);
+                                setIsDownloading({ id: r.id, type });
+                                const blob = await ReceiptApi.getPdfBlob(r.id, type);
                                 const url = window.URL.createObjectURL(blob);
                                 window.open(url, '_blank');
                               } catch (err) {
@@ -556,16 +549,52 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                               } finally {
                                 setIsDownloading(null);
                               }
-                            }}
-                            disabled={isDownloading === r.id}
-                          >
-                            {isDownloading === r.id ? (
-                              <LoadingIcon className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <EyeIcon className="h-4 w-4" />
-                            )}
-                            {isDownloading === r.id ? 'กำลังโหลด...' : 'ดู PDF'}
-                          </Button>
+                            };
+                            const isLoadingReceipt = isDownloading?.id === r.id && isDownloading?.type === 'receipt';
+                            const isLoadingTax = isDownloading?.id === r.id && isDownloading?.type === 'tax_invoice';
+                            return (
+                              <>
+                                <Button
+                                  variant="primary"
+                                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                                    isLoadingReceipt
+                                      ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
+                                      : 'bg-green-600 hover:bg-green-700 text-white'
+                                  }`}
+                                  onClick={(e) => handleViewPdf(e, 'receipt')}
+                                  disabled={isLoadingReceipt}
+                                  title="ดูใบเสร็จ"
+                                >
+                                  {isLoadingReceipt ? (
+                                    <LoadingIcon className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <EyeIcon className="h-4 w-4" />
+                                  )}
+                                  {isLoadingReceipt ? 'กำลังโหลด...' : 'ใบเสร็จ'}
+                                </Button>
+                                {r.has_tax_invoice && (
+                                  <Button
+                                    variant="primary"
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                                      isLoadingTax
+                                        ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
+                                        : 'bg-sky-600 hover:bg-sky-700 text-white'
+                                    }`}
+                                    onClick={(e) => handleViewPdf(e, 'tax_invoice')}
+                                    disabled={isLoadingTax}
+                                    title="ดูใบกำกับภาษี"
+                                  >
+                                    {isLoadingTax ? (
+                                      <LoadingIcon className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <EyeIcon className="h-4 w-4" />
+                                    )}
+                                    {isLoadingTax ? 'กำลังโหลด...' : 'ใบกำกับภาษี'}
+                                  </Button>
+                                )}
+                              </>
+                            );
+                          })()}
                           <div className="inline-block text-left">
                             <Button
                               data-receipt-id={r.id}

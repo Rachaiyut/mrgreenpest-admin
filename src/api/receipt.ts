@@ -34,19 +34,21 @@ class ReceiptService extends AuthService {
     await this.http.delete(`${this.path}/${id}`);
   }
 
-  async getPdfBlob(id: string): Promise<Blob> {
+  async getPdfBlob(id: string, type?: 'receipt' | 'tax_invoice'): Promise<Blob> {
     const res = await this.http.get(`${this.path}/${id}/pdf`, {
       responseType: 'blob',
+      params: type ? { type } : undefined,
     });
     return res.data;
   }
 
-  async downloadPdf(id: string): Promise<void> {
-    const blob = await this.getPdfBlob(id);
+  async downloadPdf(id: string, type?: 'receipt' | 'tax_invoice'): Promise<void> {
+    const blob = await this.getPdfBlob(id, type);
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `receipt-${id}.pdf`);
+    const filename = type === 'tax_invoice' ? `tax-invoice-${id}.pdf` : `receipt-${id}.pdf`;
+    link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     link.remove();
