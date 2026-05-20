@@ -295,8 +295,13 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     });
     const customer = customers?.find((x) => x.id === invoice.customer_id);
     const customerName = (() => {
-      if (!customer) return '-';
-      return pickName(joinName(customer.first_name, customer.last_name), (customer as any).nickname, (customer as any).code) || '-';
+      if (customer) {
+        const lookup = pickName(joinName(customer.first_name, customer.last_name), (customer as any).nickname, (customer as any).code);
+        if (lookup) return lookup;
+      }
+      // Fallback to the snapshot stored on the invoice itself when customer isn't
+      // loaded in DataContext (e.g. archived/inactive customer).
+      return invoice.customer_name || '-';
     })();
     const issueDate = invoice.issued_at
       ? new Date(invoice.issued_at).toLocaleDateString('th-TH')
@@ -426,8 +431,12 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     });
     const customerName = (() => {
       const c = customers?.find((x) => x.id === invoice.customer_id);
-      if (!c) return '-';
-      return pickName(joinName(c.first_name, c.last_name), (c as any).nickname, (c as any).code) || '-';
+      if (c) {
+        const lookup = pickName(joinName(c.first_name, c.last_name), (c as any).nickname, (c as any).code);
+        if (lookup) return lookup;
+      }
+      // Fallback to invoice's snapshot when customer is missing in DataContext
+      return invoice.customer_name || '-';
     })();
 
     // ดึงบัญชีที่ admin เลือกไว้ตอน step 1 (admin-approve)
