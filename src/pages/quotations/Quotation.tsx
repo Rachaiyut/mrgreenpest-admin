@@ -103,7 +103,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       const query: any = {
         page,
         limit,
-        sort_by: 'code',
+        sort_by: 'created_at',
         sort_order: 'DESC',
       };
       if (searchQuery.trim()) query.search = searchQuery.trim();

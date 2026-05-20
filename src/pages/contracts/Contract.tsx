@@ -89,10 +89,6 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [cancellationReason, setCancellationReason] = useState('');
-  const [targetStatus, setTargetStatus] = useState<ContractStatus>(ContractStatus.DRAFT);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -117,7 +113,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       const query: any = {
         page,
         limit,
-        sort_by: 'code',
+        sort_by: 'created_at',
         sort_order: 'DESC',
       };
       if (searchQuery.trim()) query.search = searchQuery.trim();
@@ -263,53 +259,80 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
     setOpenDropdownId(null);
   };
 
-  const handleStatusClick = (contract: Contract) => {
-    setSelectedContract(contract);
-    setTargetStatus(
-      (contract.status as ContractStatus) || ContractStatus.DRAFT
-    );
-    setIsStatusModalOpen(true);
+  const handleStatusClick = async (contract: Contract) => {
     setOpenDropdownId(null);
-  };
+    const code = contract.code || contract.id;
+    const currentStatus = (contract.status as ContractStatus) || ContractStatus.DRAFT;
+    const statusOptions = Object.values(ContractStatus).reduce<Record<string, string>>(
+      (acc, status) => {
+        acc[status] = statusLabels[status];
+        return acc;
+      },
+      {},
+    );
 
-  const handleStatusConfirm = async () => {
-    if (selectedContract) {
-      try {
-        if (onUpdateContract) {
-          await onUpdateContract({ ...selectedContract, status: targetStatus });
-        } else {
-          // ถ้าไม่มี Props ส่งมา ให้เรียก API อัปเดตโดยตรง
-          await ContractApi.update(selectedContract.id, { ...selectedContract, status: targetStatus });
-        }
-        // อัปเดตสำเร็จ ให้ดึงข้อมูลมาแสดงใหม่
-        fetchContractsData();
-      } catch (error) {
-        console.error('Failed to update status:', error);
-      }
-    }
-    setIsStatusModalOpen(false);
-    setSelectedContract(null);
-  };
+    const result = await Swal.fire({
+      icon: 'question',
+      title: 'อัปเดตสถานะ',
+      html: `<p style="text-align:center; margin:0 0 8px;">กรุณาเลือกสถานะใหม่สำหรับใบสัญญา <strong>${code}</strong></p>`,
+      input: 'select',
+      inputLabel: 'สถานะ',
+      inputOptions: statusOptions,
+      inputValue: currentStatus,
+      showCancelButton: true,
+      confirmButtonText: 'บันทึก',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#16a34a',
+      inputValidator: (v) => (!v ? 'กรุณาเลือกสถานะ' : null),
+    });
+    if (!result.isConfirmed || !result.value) return;
 
-  const handleCancelConfirm = async () => {
-    if (!selectedContract || !cancellationReason.trim()) {
-      Swal.fire({ title: 'กรุณากรอกเหตุผล', text: 'กรุณากรอกเหตุผลการยกเลิกสัญญา', icon: 'warning', confirmButtonText: 'ตกลง' });
-      return;
-    }
     try {
-      const updatePayload = { status: ContractStatus.CANCELLED, cancellation_reason: cancellationReason.trim() };
+      const nextStatus = result.value as ContractStatus;
       if (onUpdateContract) {
-        await onUpdateContract({ ...selectedContract, ...updatePayload });
+        await onUpdateContract({ ...contract, status: nextStatus });
       } else {
-        await ContractApi.update(selectedContract.id, { ...selectedContract, ...updatePayload });
+        await ContractApi.update(contract.id, { ...contract, status: nextStatus });
       }
       fetchContractsData();
+      Swal.fire({ icon: 'success', title: 'อัปเดตสถานะแล้ว', timer: 1500, showConfirmButton: false });
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถอัปเดตสถานะได้', 'error');
+    }
+  };
+
+  const promptCancelContract = async (contract: Contract) => {
+    const code = contract.code || contract.id;
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'ยกเลิกสัญญา',
+      html: `<p style="text-align:center; margin:0 0 8px;">ยืนยันการยกเลิกสัญญา <strong>${code}</strong></p>`,
+      input: 'textarea',
+      inputLabel: 'เหตุผลการยกเลิก',
+      inputPlaceholder: 'กรุณากรอกเหตุผล เช่น ลูกค้าขอยกเลิก, หมดอายุ, เปลี่ยนเงื่อนไข...',
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันยกเลิก',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#dc2626',
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผลการยกเลิกสัญญา' : null),
+    });
+    if (!result.isConfirmed || !result.value) return;
+    try {
+      const updatePayload = { status: ContractStatus.CANCELLED, cancellation_reason: result.value.trim() };
+      if (onUpdateContract) {
+        await onUpdateContract({ ...contract, ...updatePayload });
+      } else {
+        await ContractApi.update(contract.id, { ...contract, ...updatePayload });
+      }
+      fetchContractsData();
+      Swal.fire({ icon: 'success', title: 'ยกเลิกสัญญาแล้ว', timer: 1500, showConfirmButton: false });
     } catch (error) {
       console.error('Failed to cancel contract:', error);
+      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถยกเลิกสัญญาได้', 'error');
     }
-    setIsCancelModalOpen(false);
-    setCancellationReason('');
-    setSelectedContract(null);
   };
 
   const handleSubmitContract = async (data: any) => {
@@ -745,7 +768,9 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
               สร้างใบแจ้งหนี้
             </button>
             <button
-              onClick={() => handleStatusClick(selectedContract)}
+              onClick={() => {
+                if (selectedContract) void handleStatusClick(selectedContract);
+              }}
               className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
             >
               <CheckCircleIcon className="w-4 h-4 text-slate-400" />
@@ -792,11 +817,10 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
             <hr className="my-1 border-slate-100" />
             <button
               onClick={() => {
-                if (selectedContract) {
-                  setCancellationReason('');
-                  setIsCancelModalOpen(true);
-                }
                 setOpenDropdownId(null);
+                if (selectedContract) {
+                  void promptCancelContract(selectedContract);
+                }
               }}
               className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
             >
@@ -840,72 +864,6 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
         confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
 
-      {/* Status Update Modal */}
-      <ConfirmationModal
-        isOpen={isStatusModalOpen}
-        onClose={() => setIsStatusModalOpen(false)}
-        onConfirm={handleStatusConfirm}
-        title="อัปเดตสถานะ"
-        message={
-          <div className="space-y-4 text-left">
-            <p>
-              กรุณาเลือกสถานะใหม่สำหรับใบสัญญา{' '}
-              <strong>{selectedContract?.code || selectedContract?.id}</strong>
-            </p>
-            <div className="mt-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                สถานะ
-              </label>
-              <DropdownSelect
-                value={targetStatus}
-                onChange={(val) =>
-                  setTargetStatus(val as ContractStatus)
-                }
-                className="w-full"
-                options={Object.values(ContractStatus).map((status) => ({
-                  value: status,
-                  label: statusLabels[status],
-                }))}
-              />
-            </div>
-          </div>
-        }
-        confirmButtonText="บันทึก"
-        confirmButtonClass="bg-primary hover:bg-primary/90"
-      />
-
-      {/* Cancellation Reason Modal */}
-      <ConfirmationModal
-        isOpen={isCancelModalOpen}
-        onClose={() => {
-          setIsCancelModalOpen(false);
-          setCancellationReason('');
-        }}
-        onConfirm={handleCancelConfirm}
-        title="ยกเลิกสัญญา"
-        message={
-          <div className="space-y-4 text-left">
-            <p>
-              ยืนยันการยกเลิกสัญญา{' '}
-              <strong>{selectedContract?.code || selectedContract?.id}</strong>
-            </p>
-            <div className="mt-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                เหตุผลการยกเลิก <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={cancellationReason}
-                onChange={(e) => setCancellationReason(e.target.value)}
-                placeholder="กรุณากรอกเหตุผล เช่น ลูกค้าขอยกเลิก, หมดอายุ, เปลี่ยนเงื่อนไข..."
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary resize-none"
-                rows={4}
-              />
-            </div>
-          </div>
-        }
-        confirmButtonText="ยืนยันยกเลิก"
-        confirmButtonClass="bg-red-600 hover:bg-red-700"
-      />
     </div>
     </div>
   );
