@@ -1720,7 +1720,7 @@ const Job: React.FC<JobProps> = ({
       (status as unknown as string) === 'IN_PROGRESS'
     ) {
       actions.push({
-        label: 'แก้ไข',
+        label: 'แก้ไขรายงานบริการ',
         icon: DocumentCheckIcon,
         onClick: () => {
           setReportReadOnly(false);

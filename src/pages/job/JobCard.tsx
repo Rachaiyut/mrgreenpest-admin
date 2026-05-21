@@ -79,7 +79,8 @@ const JobCard: React.FC<{
         (job.status as unknown as string).toUpperCase() === 'IN_PROGRESS' ||
         (job.status as unknown as string).toUpperCase() === 'INPROGRESS');
 
-    const showReportButton = showCheckOutButton && !job.service_report;
+    // แสดงปุ่มเสมอตอน in-progress — เปลี่ยน label "บันทึกรายงาน" / "แก้ไขรายงาน" ตามว่ามี report แล้วหรือยัง
+    const showReportButton = showCheckOutButton;
 
     let checkInTooltip = '';
     if (isAssignedToCurrentUser) {
@@ -420,7 +421,7 @@ const JobCard: React.FC<{
                 style={{ backgroundColor: job.service_report ? '#3b82f6' : '#f59e0b' }}
               >
                 {job.service_report ? <PencilIcon className="h-4 w-4" /> : <DocumentCheckIcon className="h-4 w-4" />}
-                {job.service_report ? 'แก้ไขรายงาน' : 'บันทึกรายงาน'}
+                {job.service_report ? 'แก้ไขรายงานบริการ' : 'บันทึกรายงานบริการ'}
               </button>
             )}
             {showCheckOutButton && (
