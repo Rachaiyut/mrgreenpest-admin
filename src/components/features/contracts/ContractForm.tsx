@@ -384,7 +384,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         {
           id: crypto.randomUUID(),
           term: 1,
-          description: 'งวดที่ 1 - ชำระเมื่อเซ็นสัญญา',
+          description: 'งวดที่ 1',
           percentage: 30,
           amount: 0,
           due_date: '',
@@ -393,7 +393,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         {
           id: crypto.randomUUID(),
           term: 2,
-          description: 'งวดที่ 2 - ชำระหลังบริการครั้งที่ 3',
+          description: 'งวดที่ 2',
           percentage: 35,
           amount: 0,
           due_date: '',
@@ -402,7 +402,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         {
           id: crypto.randomUUID(),
           term: 3,
-          description: 'งวดที่ 3 - ชำระหลังบริการครั้งสุดท้าย',
+          description: 'งวดที่ 3',
           percentage: 35,
           amount: 0,
           due_date: '',
