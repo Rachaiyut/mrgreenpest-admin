@@ -327,22 +327,43 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         if (t) scheduleByTerm.set(Number(t), s);
       });
 
-      return referenceSource.installments
+      const sorted = referenceSource.installments
         .slice()
-        .sort((a: any, b: any) => (a.term || a.installment_no || 0) - (b.term || b.installment_no || 0))
-        .map((inst: any) => {
-          const term = inst.term || inst.installment_no;
-          const schedule = scheduleByTerm.get(Number(term));
-          return {
-            id: schedule?.id || inst.id,
-            term,
-            description: inst.description || inst.notes || `งวดที่ ${term}`,
-            percentage: inst.percentage || 0,
-            amount: Number(inst.amount || 0),
-            is_pay_all: false,
-            disabled: true,
-          };
-        });
+        .sort((a: any, b: any) => (a.term || a.installment_no || 0) - (b.term || b.installment_no || 0));
+
+      // ตรวจหายอดทบจากงวด PARTIAL ก่อนหน้า เพื่อแสดงให้ user รู้ว่าเลขรวมไม่ตรงกับแผนเพราะอะไร
+      let carryFromPartial = 0;
+      return sorted.map((inst: any) => {
+        const term = inst.term || inst.installment_no;
+        const schedule = scheduleByTerm.get(Number(term));
+        const status = String(inst.status || '').toUpperCase();
+        const paidAmt = Number(inst.paid_amount || 0);
+        const instAmt = Number(inst.amount || 0);
+        const remaining = instAmt - paidAmt;
+
+        let description = inst.description || inst.notes || `งวดที่ ${term}`;
+        let displayAmount = instAmt;
+
+        const isPartial = paidAmt > 0 && remaining > 0 && status !== 'PAID';
+        if (isPartial) {
+          description = `${description} (จ่ายแล้ว ${paidAmt.toLocaleString()} — ส่วนที่เหลือ ${remaining.toLocaleString()} บาท ทบเข้างวดถัดไป)`;
+          carryFromPartial += remaining;
+        } else if (carryFromPartial > 0 && status !== 'PAID') {
+          displayAmount += carryFromPartial;
+          description = `${description} (รวมยอดค้างจากงวดก่อน ${carryFromPartial.toLocaleString()} บาท)`;
+          carryFromPartial = 0;
+        }
+
+        return {
+          id: schedule?.id || inst.id,
+          term,
+          description,
+          percentage: inst.percentage || 0,
+          amount: displayAmount,
+          is_pay_all: false,
+          disabled: true,
+        };
+      });
     }
 
     if (formData.contractId && invoiceSchedules.length > 0) {

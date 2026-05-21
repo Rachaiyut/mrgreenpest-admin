@@ -1281,12 +1281,14 @@ export const JobForm: React.FC<JobFormProps> = ({
               };
 
               // สร้าง list: ใช้ installments ถ้ามี ไม่งั้นใช้ invoices
+              // ยอดเงิน: prefer invoice.total (ยอดที่ออกบิลจริง รวม carry-over) > inst.amount (แผน)
+              // สถานะ: ใช้ invoice.status เป็นหลัก — invoice เป็น source of truth ของการชำระ
               const items = installments.length > 0
                 ? installments.map((inst: any, idx: number) => {
                     const term = inst.installment_no || inst.term || idx + 1;
                     const invoice = contractInvoices.find((inv: any) => inv.term === term);
                     const status = invoice ? String(invoice.status).toUpperCase() : 'NOT_ISSUED';
-                    return { term, invoice, status, amount: Number(inst.amount || invoice?.total || 0) };
+                    return { term, invoice, status, amount: Number(invoice?.total || inst.amount || 0) };
                   })
                 : [...contractInvoices]
                     .sort((a: any, b: any) => (a.term || 0) - (b.term || 0))
