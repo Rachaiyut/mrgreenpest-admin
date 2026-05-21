@@ -39,6 +39,11 @@ class InvoiceService extends AuthService {
     await this.http.delete(`${this.path}/${id}`);
   }
 
+  async cancel(id: string): Promise<Invoice> {
+    const res = await this.http.post<Invoice>(`${this.path}/${id}/cancel`, {});
+    return res.data;
+  }
+
   async exportPdf(id: string): Promise<Blob> {
     const res = await this.http.get(`${this.path}/${id}/pdf`, {
       responseType: 'blob',

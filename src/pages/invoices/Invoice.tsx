@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Swal from '@/src/utils/swal';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
@@ -23,7 +23,6 @@ import { CustomerApi } from '../../api/customer';
 import { Pagination } from '../../components/common/Pagination';
 import { Invoice } from '../../types';
 import { InvoiceStatus, InvoiceStatusLabel, InvoiceStatusColor } from '../../types/enums/invoice';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Button } from '../../components/common/FormControls';
 import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { useData } from '../../contexts/DataContext';
@@ -39,13 +38,11 @@ import { RecordPaymentModal } from '@/src/components/features/invoices/RecordPay
 interface InvoicesPageProps {
   onCreateInvoice?: (data: Omit<Invoice, 'id'>) => void | Promise<void>;
   onUpdateInvoice?: (updated: Invoice) => void | Promise<void>;
-  onDeleteInvoice?: (id: string) => void | Promise<void>;
 }
 
 const InvoicesPage: React.FC<InvoicesPageProps> = ({
   onCreateInvoice,
   onUpdateInvoice,
-  onDeleteInvoice,
 }) => {
   const { invoices, customers, fetchData } = useData();
 
@@ -68,19 +65,20 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [invoiceItemsPerPage, setInvoiceItemsPerPage] = useState(10);
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
+  const [debouncedInvoiceSearch, setDebouncedInvoiceSearch] = useState('');
   const [invoiceStatusFilter, setInvoiceStatusFilter] = useState<
     'ทั้งหมด' | InvoiceStatus
   >('ทั้งหมด');
   const [invoiceStartDate, setInvoiceStartDate] = useState('');
   const [invoiceEndDate, setInvoiceEndDate] = useState('');
+  // Server-side pagination state (เหมือน Contract page)
+  const [localInvoices, setLocalInvoices] = useState<Invoice[]>([]);
+  const [totalFromServer, setTotalFromServer] = useState(0);
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isAddInvoiceModalOpen, setIsAddInvoiceModalOpen] = useState(false);
   const [isInvoiceEditModalOpen, setIsInvoiceEditModalOpen] = useState(false);
-  const [isInvoiceDeleteModalOpen, setIsInvoiceDeleteModalOpen] =
-    useState(false);
-  const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
   const [invoiceInitialValues, setInvoiceInitialValues] = useState<
     Partial<Invoice> | undefined
   >(undefined);
@@ -94,6 +92,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
   const [invoiceDropdownPosition, setInvoiceDropdownPosition] = useState<{
     top: number;
     left: number;
+    flipUp?: boolean;
   } | null>(null);
   const invoiceDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -112,64 +111,58 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       .catch(() => setActiveAccounts([]));
   }, []);
 
+  // ใช้ localInvoices เป็นหลัก (server-paginated). DataContext.invoices ใช้สำหรับ stats เท่านั้น
   const invoiceData = invoices || [];
 
-  const filteredInvoices = useMemo(() => {
-    const q = invoiceSearchQuery.trim().toLowerCase();
-    const start = invoiceStartDate ? new Date(invoiceStartDate) : null;
-    const end = invoiceEndDate ? new Date(invoiceEndDate) : null;
-    if (end) end.setHours(23, 59, 59, 999);
+  // Debounce search เพื่อไม่ให้ยิง API ทุกตัวอักษร
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedInvoiceSearch(invoiceSearchQuery.trim());
+      setInvoicePage(1);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [invoiceSearchQuery]);
 
-    const custPhoneMap = new Map(
-      (customers || []).map((c) => [c.id, [c.primary_phone].filter(Boolean).join('')])
-    );
+  // Server-side fetch — ดึงเฉพาะหน้าปัจจุบัน + filters
+  const fetchInvoicesPage = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const query: Record<string, unknown> = {
+        page: invoicePage,
+        limit: invoiceItemsPerPage,
+        sort_by: 'created_at',
+        sort_order: 'DESC',
+      };
+      if (debouncedInvoiceSearch) query.search = debouncedInvoiceSearch;
+      if (invoiceStatusFilter !== 'ทั้งหมด') query.status = invoiceStatusFilter;
+      if (invoiceStartDate) query.start_date = invoiceStartDate;
+      if (invoiceEndDate) query.end_date = invoiceEndDate;
 
-    let result = invoiceData;
-
-    // 1. Search
-    if (q) {
-      result = result.filter((item) => {
-        const phone = custPhoneMap.get(item.customer_id) || '';
-        return (
-          item.id.toLowerCase().includes(q) ||
-          item.customer_name.toLowerCase().includes(q) ||
-          phone.includes(q)
-        );
-      });
+      const response = await InvoiceApi.getAll(query as unknown as Record<string, never>);
+      const res = response as unknown as { data?: Invoice[]; meta?: { total?: number } };
+      const items = res?.data || (response as unknown as Invoice[]) || [];
+      setLocalInvoices(Array.isArray(items) ? items : []);
+      setTotalFromServer(res?.meta?.total ?? (Array.isArray(items) ? items.length : 0));
+    } catch (error) {
+      console.error('Failed to fetch invoices:', error);
+      setLocalInvoices([]);
+      setTotalFromServer(0);
+    } finally {
+      setIsLoading(false);
     }
+  }, [invoicePage, invoiceItemsPerPage, debouncedInvoiceSearch, invoiceStatusFilter, invoiceStartDate, invoiceEndDate]);
 
-    // 2. Status Filter
-    if (invoiceStatusFilter !== 'ทั้งหมด') {
-      result = result.filter((i) => i.status === invoiceStatusFilter);
-    }
+  useEffect(() => {
+    fetchInvoicesPage();
+  }, [fetchInvoicesPage]);
 
-    // 3. Date Filter (using issuedAt)
-    if (start || end) {
-      result = result.filter((item) => {
-        const d = new Date(item.issued_at);
-        return (!start || d >= start) && (!end || d <= end);
-      });
-    }
+  // Reset to page 1 when filters change (search debounce already handles its own reset)
+  useEffect(() => {
+    setInvoicePage(1);
+  }, [invoiceStatusFilter, invoiceStartDate, invoiceEndDate]);
 
-    return result;
-  }, [
-    invoiceData,
-    invoiceSearchQuery,
-    invoiceStatusFilter,
-    invoiceStartDate,
-    invoiceEndDate,
-    customers,
-  ]);
-
-  const totalInvoiceItems = filteredInvoices.length;
-  const paginatedInvoices = useMemo(
-    () =>
-      filteredInvoices.slice(
-        (invoicePage - 1) * invoiceItemsPerPage,
-        invoicePage * invoiceItemsPerPage
-      ),
-    [filteredInvoices, invoicePage, invoiceItemsPerPage]
-  );
+  const totalInvoiceItems = totalFromServer;
+  const paginatedInvoices = localInvoices;
 
   const invoiceStats = useMemo(() => {
     const total = invoiceData.length;
@@ -230,11 +223,16 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       setOpenInvoiceDropdownId(null);
     } else {
       const rect = event.currentTarget.getBoundingClientRect();
+      const DROPDOWN_HEIGHT = 320; // ประมาณการ; flip ขึ้นถ้าไม่พอ
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const flipUp = spaceBelow < DROPDOWN_HEIGHT && rect.top > DROPDOWN_HEIGHT;
       setSelectedInvoice(invoice);
       setOpenInvoiceDropdownId(id);
       setInvoiceDropdownPosition({
-        top: rect.bottom + window.scrollY,
-        left: rect.right + window.scrollX,
+        // ใช้ viewport coords (position: fixed) — กัน overflow ของ table ตัด dropdown
+        top: flipUp ? rect.top - 8 : rect.bottom + 8,
+        left: rect.right,
+        flipUp,
       });
     }
   };
@@ -267,16 +265,38 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     }
   };
 
-  const handleDeleteInvoice = (invoice: Invoice) => {
-    setInvoiceToDelete(invoice);
-    setIsInvoiceDeleteModalOpen(true);
+  const handleDeleteInvoice = async (invoice: Invoice) => {
     setOpenInvoiceDropdownId(null);
-  };
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันการยกเลิกใบแจ้งหนี้',
+      text: `คุณต้องการยกเลิกใบแจ้งหนี้ ${invoice.code || invoice.id} ใช่หรือไม่?`,
+      showCancelButton: true,
+      confirmButtonText: 'ยกเลิกใบแจ้งหนี้',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#dc2626',
+    });
+    if (!result.isConfirmed) return;
 
-  const confirmDeleteInvoice = () => {
-    if (invoiceToDelete && onDeleteInvoice) onDeleteInvoice(invoiceToDelete.id);
-    setIsInvoiceDeleteModalOpen(false);
-    setInvoiceToDelete(null);
+    try {
+      await InvoiceApi.cancel(invoice.id);
+      await Promise.all([fetchData(['invoices']), fetchInvoicesPage()]);
+      Swal.fire({
+        icon: 'success',
+        title: 'ยกเลิกใบแจ้งหนี้เรียบร้อย',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+        || (err as Error).message
+        || 'ไม่สามารถยกเลิกใบแจ้งหนี้ได้ กรุณาลองอีกครั้ง';
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: message,
+      });
+    }
   };
 
   // ===== Approval flow handlers =====
@@ -936,12 +956,12 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
         <div
           ref={invoiceDropdownRef}
           style={{
-            position: 'absolute',
+            position: 'fixed',
             top: `${invoiceDropdownPosition.top}px`,
             left: `${invoiceDropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
+            transform: `translateX(-100%) ${invoiceDropdownPosition.flipUp ? 'translateY(-100%)' : ''}`,
           }}
-          className="origin-top-right mt-2 w-60 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-30 border border-slate-100 overflow-hidden whitespace-nowrap"
+          className="w-60 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-50 border border-slate-100 overflow-hidden whitespace-nowrap"
         >
           <div className="py-1">
             <button
@@ -1066,16 +1086,6 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
           await fetchData(['invoices']);
           setIsInvoiceEditModalOpen(false);
         }}
-      />
-
-      <ConfirmationModal
-        isOpen={isInvoiceDeleteModalOpen}
-        onClose={() => setIsInvoiceDeleteModalOpen(false)}
-        onConfirm={confirmDeleteInvoice}
-        title="ยืนยันการยกเลิกใบแจ้งหนี้"
-        message={`คุณต้องการยกเลิกใบแจ้งหนี้ ${invoiceToDelete?.code || invoiceToDelete?.id} ใช่หรือไม่?`}
-        confirmButtonText="ยกเลิกใบแจ้งหนี้"
-        confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
 
       <InvoiceModal

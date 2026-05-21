@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Swal from '@/src/utils/swal';
 import { Card } from '../../components/common/Card';
 import { formatThaiDate } from '../../utils/date';
@@ -73,11 +73,15 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
   const [receiptPage, setReceiptPage] = useState(1);
   const [receiptItemsPerPage, setReceiptItemsPerPage] = useState(10);
   const [receiptSearchQuery, setReceiptSearchQuery] = useState('');
+  const [debouncedReceiptSearch, setDebouncedReceiptSearch] = useState('');
   const [receiptPaymentMethodFilter, setReceiptPaymentMethodFilter] = useState<
     'ทั้งหมด' | string
   >('ทั้งหมด');
   const [receiptStartDate, setReceiptStartDate] = useState('');
   const [receiptEndDate, setReceiptEndDate] = useState('');
+  // Server-side pagination state (เหมือน Contract/Invoice page)
+  const [localReceipts, setLocalReceipts] = useState<Receipt[]>([]);
+  const [totalFromServer, setTotalFromServer] = useState(0);
 
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
@@ -136,64 +140,55 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
     [receiptData]
   );
 
-  const filteredReceipts = useMemo(() => {
-    const q = receiptSearchQuery.trim().toLowerCase();
-    const start = receiptStartDate ? new Date(receiptStartDate) : null;
-    const end = receiptEndDate ? new Date(receiptEndDate) : null;
-    if (end) end.setHours(23, 59, 59, 999);
+  // Debounce search เพื่อไม่ให้ยิง API ทุกตัวอักษร
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedReceiptSearch(receiptSearchQuery.trim());
+      setReceiptPage(1);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [receiptSearchQuery]);
 
-    const custPhoneMap = new Map(
-      (customers || []).map((c) => [c.id, [c.primary_phone].filter(Boolean).join('')])
-    );
+  // Server-side fetch — ดึงเฉพาะหน้าปัจจุบัน + filters
+  const fetchReceiptsPage = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const query: Record<string, unknown> = {
+        page: receiptPage,
+        limit: receiptItemsPerPage,
+        sort_by: 'created_at',
+        sort_order: 'DESC',
+      };
+      if (debouncedReceiptSearch) query.search = debouncedReceiptSearch;
+      if (receiptPaymentMethodFilter !== 'ทั้งหมด') query.payment_method = receiptPaymentMethodFilter;
+      if (receiptStartDate) query.start_date = receiptStartDate;
+      if (receiptEndDate) query.end_date = receiptEndDate;
 
-    let result = receiptData;
-
-    // 1. Search
-    if (q) {
-      result = result.filter((r) => {
-        const phone = custPhoneMap.get(r.customer_id) || '';
-        return (
-          r.id.toLowerCase().includes(q) ||
-          r.customer_name.toLowerCase().includes(q) ||
-          phone.includes(q)
-        );
-      });
+      const response = await ReceiptApi.getAll(query as unknown as Record<string, never>);
+      const res = response as unknown as { data?: Receipt[]; meta?: { total?: number } };
+      const items = res?.data || (response as unknown as Receipt[]) || [];
+      setLocalReceipts(Array.isArray(items) ? items : []);
+      setTotalFromServer(res?.meta?.total ?? (Array.isArray(items) ? items.length : 0));
+    } catch (error) {
+      console.error('Failed to fetch receipts:', error);
+      setLocalReceipts([]);
+      setTotalFromServer(0);
+    } finally {
+      setIsLoading(false);
     }
+  }, [receiptPage, receiptItemsPerPage, debouncedReceiptSearch, receiptPaymentMethodFilter, receiptStartDate, receiptEndDate]);
 
-    // 2. Payment Method Filter
-    if (receiptPaymentMethodFilter !== 'ทั้งหมด') {
-      result = result.filter(
-        (r) => r.payment_method === receiptPaymentMethodFilter
-      );
-    }
+  useEffect(() => {
+    fetchReceiptsPage();
+  }, [fetchReceiptsPage]);
 
-    // 3. Date Filter (using paidAt/receivedAt)
-    if (start || end) {
-      result = result.filter((item) => {
-        const d = new Date(item.received_at || item.paid_at);
-        return (!start || d >= start) && (!end || d <= end);
-      });
-    }
+  // Reset to page 1 when filters change (search debounce already handles its own reset)
+  useEffect(() => {
+    setReceiptPage(1);
+  }, [receiptPaymentMethodFilter, receiptStartDate, receiptEndDate]);
 
-    return result;
-  }, [
-    receiptData,
-    receiptSearchQuery,
-    receiptPaymentMethodFilter,
-    receiptStartDate,
-    receiptEndDate,
-    customers,
-  ]);
-
-  const totalReceiptItems = filteredReceipts.length;
-  const paginatedReceipts = useMemo(
-    () =>
-      filteredReceipts.slice(
-        (receiptPage - 1) * receiptItemsPerPage,
-        receiptPage * receiptItemsPerPage
-      ),
-    [filteredReceipts, receiptPage, receiptItemsPerPage]
-  );
+  const totalReceiptItems = totalFromServer;
+  const paginatedReceipts = localReceipts;
 
   const receiptStats = useMemo(() => {
     const total = receiptData.length;
