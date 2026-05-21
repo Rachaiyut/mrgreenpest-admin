@@ -327,30 +327,50 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         if (t) scheduleByTerm.set(Number(t), s);
       });
 
+      // หา invoice ของสัญญานี้ — เช็คทั้ง contract_id และ term เพื่อจับคู่ใบบิลจริงกับงวดในแผน
+      const contractIdNow = (initialValues as unknown as Record<string, unknown>)?.contract_id || referenceSource.id;
+      const invoiceByTerm = new Map<number, any>();
+      (invoices || []).forEach((inv: any) => {
+        if (String(inv.contract_id) !== String(contractIdNow)) return;
+        const t = Number(inv.term || 0);
+        if (t > 0) invoiceByTerm.set(t, inv);
+      });
+
       const sorted = referenceSource.installments
         .slice()
         .sort((a: any, b: any) => (a.term || a.installment_no || 0) - (b.term || b.installment_no || 0));
 
-      // ตรวจหายอดทบจากงวด PARTIAL ก่อนหน้า เพื่อแสดงให้ user รู้ว่าเลขรวมไม่ตรงกับแผนเพราะอะไร
+      // ทบจากงวดก่อนหน้าที่เป็น PARTIAL (paid < total ของใบจริง) — แสดงให้รู้ว่าเลขรวมไม่ตรงกับแผนเพราะอะไร
       let carryFromPartial = 0;
       return sorted.map((inst: any) => {
-        const term = inst.term || inst.installment_no;
-        const schedule = scheduleByTerm.get(Number(term));
-        const status = String(inst.status || '').toUpperCase();
-        const paidAmt = Number(inst.paid_amount || 0);
-        const instAmt = Number(inst.amount || 0);
-        const remaining = instAmt - paidAmt;
+        const term = Number(inst.term || inst.installment_no);
+        const schedule = scheduleByTerm.get(term);
+        const invoice = invoiceByTerm.get(term);
+        const planAmt = Number(inst.amount || 0);
 
         let description = inst.description || inst.notes || `งวดที่ ${term}`;
-        let displayAmount = instAmt;
+        let displayAmount = invoice ? Number(invoice.total || planAmt) : planAmt;
 
-        const isPartial = paidAmt > 0 && remaining > 0 && status !== 'PAID';
-        if (isPartial) {
-          description = `${description} (จ่ายแล้ว ${paidAmt.toLocaleString()} — ส่วนที่เหลือ ${remaining.toLocaleString()} บาท ทบเข้างวดถัดไป)`;
-          carryFromPartial += remaining;
-        } else if (carryFromPartial > 0 && status !== 'PAID') {
-          displayAmount += carryFromPartial;
-          description = `${description} (รวมยอดค้างจากงวดก่อน ${carryFromPartial.toLocaleString()} บาท)`;
+        if (invoice) {
+          const invTotal = Number(invoice.total || 0);
+          const invPaid = Number(invoice.paid_amount || 0);
+          const invStatus = String(invoice.status || '').toUpperCase();
+          const remaining = invTotal - invPaid;
+          const isPartial = invPaid > 0 && remaining > 0.01 && invStatus !== 'PAID';
+
+          if (isPartial) {
+            description = `${description} (จ่ายแล้ว ${invPaid.toLocaleString()} — ส่วนที่เหลือ ${remaining.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท ทบเข้างวดถัดไป)`;
+            carryFromPartial += remaining;
+          } else if (invTotal > planAmt + 0.01) {
+            // ใบบิลจริง > แผน → มี carry-over baked in
+            const carry = invTotal - planAmt;
+            description = `${description} (รวมยอดค้างจากงวดก่อน ${carry.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท)`;
+            carryFromPartial = 0;
+          }
+        } else if (carryFromPartial > 0) {
+          // ไม่มีใบบิล แต่งวดก่อนหน้า partial → คาดว่าจะทบเข้างวดนี้
+          displayAmount = planAmt + carryFromPartial;
+          description = `${description} (รวมยอดค้างจากงวดก่อน ${carryFromPartial.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท)`;
           carryFromPartial = 0;
         }
 
