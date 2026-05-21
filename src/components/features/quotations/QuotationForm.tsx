@@ -20,23 +20,16 @@ import {
 import { SearchableSelect } from '../../common/SearchableSelect';
 import { SearchableMultiSelect } from '../../common/SearchableMultiSelect';
 import InstallmentSection, { InstallmentItem } from '../../common/InstallmentSection';
-import ItemsSection from '../../common/ItemsSection';
 import WorkAreasSection from '../../common/WorkAreasSection';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import {
-  PlusIcon,
   DocumentTextIcon,
   HomeIcon,
-  MapIcon,
   ClipboardDocumentListIcon,
-  CalendarIcon,
   MapPinIcon,
-  NewFieldOpsIcon,
-  CreditCardIcon,
   LoadingIcon,
 } from '../../../assets/icons/Icons';
 import { useData } from '../../../contexts/DataContext';
-import { Status } from '../../../types/entity/core.interface';
 import { Assessment } from '../../../types/entity/assessment.interface';
 import { AssessmentApi } from '../../../api/assessment';
 import { CategoryApi } from '../../../api/category';
@@ -82,7 +75,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   mode,
   initialValues,
   onSubmit,
-  onCancel,
   assessmentId,
 }) => {
   const { products } = useData();
@@ -175,18 +167,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
   // 🌟 ตัวแปรหลักที่จะใช้
   const activeData = fetchedQuotation || initialValues;
-
-  // Service Type Options derived from categories
-  const serviceTypeOptions = useMemo(() => {
-    const sourceCategories = fetchedCategories;
-    return sourceCategories
-      .filter((c: any) => c.type === 'SERVICE')
-      .map((c: any) => ({
-        value: c.name,
-        label: c.name,
-        id: c.id,
-      }));
-  }, [fetchedCategories]);
 
   // Customer info
   const [selectedCustomerId, setSelectedCustomerId] = useState(initialValues?.customer_id || '');
@@ -1382,14 +1362,14 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       ...initialValues,
       assessment_id: selectedAssessmentId || undefined,
       customer_id: selectedCustomerId,
-      customer_name: [selectedCustomer.first_name, selectedCustomer.last_name].filter(Boolean).join(' ').trim(),
+      customer_name: [selectedCustomer?.first_name, selectedCustomer?.last_name].filter(Boolean).join(' ').trim(),
       created_at: quotationDate,
       expires_at: expiresAt,
       status: initialValues?.status || QuotationStatus.DRAFT,
       total: netTotal,
       
       revision: mode === 'revise' ? (initialValues?.revision || 0) + 1 : initialValues?.revision || 1,
-      google_map_link: selectedCustomer.google_map_link || '',
+      google_map_link: selectedCustomer?.google_map_link || '',
       payment_terms: paymentTerms,
       service_location: serviceLocation || undefined,
       notes: notes,
@@ -1559,28 +1539,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           errors={areaErrors}
           errorMessage={formErrors.areas}
         />
-
-        {!selectedAssessmentId && selectedCustomerId && selectedPackageId && (
-          <ItemsSection
-            items={items.map((item) => ({
-              ...item,
-              product_id: item.productId,
-            }))}
-            onItemsChange={(updated) =>
-              setItems(
-                updated.map((item) => ({
-                  ...item,
-                  productId: item.product_id || '',
-                }))
-              )
-            }
-            productOptions={productOptions}
-            onProductSelect={handleProductSelect}
-            isReadOnly={isReadOnly}
-            disableProductSelect={usePackagePricing}
-            hideAddRemove={usePackagePricing}
-          />
-        )}
 
         {/* เอกสารแนบ */}
         {!isReadOnly && (
