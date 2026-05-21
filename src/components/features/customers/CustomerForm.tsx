@@ -152,6 +152,17 @@ type FlatCustomerFormData = Partial<Customer> & {
   googleMapLink?: string;
   taxId?: string;
   emaรl?: string;
+  // Service location (สถานที่บริการ)
+  serviceSameAsBilling?: boolean;
+  'service-street'?: string;
+  'service-soi'?: string;
+  'service-road'?: string;
+  'service-subdistrict'?: string;
+  'service-district'?: string;
+  'service-province'?: string;
+  'service-postalcode'?: string;
+  'service-country'?: string;
+  serviceGoogleMapLink?: string;
 };
 
 const SectionHeader = ({
@@ -242,6 +253,86 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     if (errors['address-postalcode']) setErrors((prev) => { const next = { ...prev }; delete next['address-postalcode']; return next; });
   };
 
+  // Service address (สถานที่บริการ) — geo cascading data
+  const selectedServiceProvince = useMemo(
+    () => provinces.find((p) => p.name_th === formData['service-province']),
+    [formData['service-province']]
+  );
+
+  const serviceDistrictNames = useMemo(
+    () => selectedServiceProvince?.districts.map((d) => d.name_th) || [],
+    [selectedServiceProvince]
+  );
+
+  const selectedServiceDistrict = useMemo(
+    () => selectedServiceProvince?.districts.find((d) => d.name_th === formData['service-district']),
+    [selectedServiceProvince, formData['service-district']]
+  );
+
+  const serviceSubdistrictNames = useMemo(
+    () => selectedServiceDistrict?.subdistricts.map((s) => s.name_th) || [],
+    [selectedServiceDistrict]
+  );
+
+  const handleServiceProvinceChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      'service-province': value,
+      'service-district': '',
+      'service-subdistrict': '',
+      'service-postalcode': '',
+    }));
+    if (errors['service-province']) setErrors((prev) => { const next = { ...prev }; delete next['service-province']; return next; });
+  };
+
+  const handleServiceDistrictChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      'service-district': value,
+      'service-subdistrict': '',
+      'service-postalcode': '',
+    }));
+    if (errors['service-district']) setErrors((prev) => { const next = { ...prev }; delete next['service-district']; return next; });
+  };
+
+  const handleServiceSubdistrictChange = (value: string) => {
+    const subdistrict = selectedServiceDistrict?.subdistricts.find((s) => s.name_th === value);
+    setFormData((prev) => ({
+      ...prev,
+      'service-subdistrict': value,
+      'service-postalcode': subdistrict ? String(subdistrict.postal_code) : prev['service-postalcode'] || '',
+    }));
+    if (errors['service-subdistrict']) setErrors((prev) => { const next = { ...prev }; delete next['service-subdistrict']; return next; });
+    if (errors['service-postalcode']) setErrors((prev) => { const next = { ...prev }; delete next['service-postalcode']; return next; });
+  };
+
+  const handleServiceSameAsBillingChange = (checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      serviceSameAsBilling: checked,
+      ...(checked
+        ? {
+            'service-street': '',
+            'service-soi': '',
+            'service-road': '',
+            'service-province': '',
+            'service-district': '',
+            'service-subdistrict': '',
+            'service-postalcode': '',
+            'service-country': '',
+            serviceGoogleMapLink: '',
+          }
+        : {}),
+    }));
+    if (checked) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        ['service-street', 'service-province', 'service-district', 'service-subdistrict', 'service-postalcode', 'serviceGoogleMapLink'].forEach((k) => delete next[k]);
+        return next;
+      });
+    }
+  };
+
   useEffect(() => {
     if (mode === 'edit' && initialValues) {
       const phones: string[] = [];
@@ -275,11 +366,22 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         taxId: initialValues.tax_id,
         primaryPhone: initialValues.primary_phone || '',
         mobilePhone: initialValues.mobile_phone || '',
+        serviceSameAsBilling: initialValues.service_same_as_billing !== false,
+        'service-street': initialValues.service_address_house_no || '',
+        'service-soi': initialValues.service_address_soi || '',
+        'service-road': initialValues.service_address_road || '',
+        'service-subdistrict': initialValues.service_sub_district || '',
+        'service-district': initialValues.service_district || '',
+        'service-province': initialValues.service_province || '',
+        'service-postalcode': initialValues.service_postal_code || '',
+        'service-country': initialValues.service_country || '',
+        serviceGoogleMapLink: initialValues.service_google_map_link || '',
       });
     } else if (mode === 'create') {
       setFormData({
         type: CustomerType.INDIVIDUAL,
         'address-country': 'ประเทศไทย',
+        serviceSameAsBilling: true,
       });
       setAdditionalPhones([]);
     }
@@ -346,6 +448,16 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     if (!formData['address-postalcode']?.trim()) newErrors['address-postalcode'] = 'กรุณากรอกรหัสไปรษณีย์';
     if (!formData.googleMapLink?.trim()) newErrors.googleMapLink = 'กรุณากรอกลิงก์แผนที่';
 
+    // Service address fields apply to นิติบุคคล only — required when not "same as billing"
+    if (formData.type === CustomerType.CORPORATE && !formData.serviceSameAsBilling) {
+      if (!formData['service-street']?.trim()) newErrors['service-street'] = 'กรุณากรอกบ้านเลขที่ของสถานที่บริการ';
+      if (!formData['service-province']?.trim()) newErrors['service-province'] = 'กรุณาเลือกจังหวัด';
+      if (!formData['service-district']?.trim()) newErrors['service-district'] = 'กรุณาเลือกเขต/อำเภอ';
+      if (!formData['service-subdistrict']?.trim()) newErrors['service-subdistrict'] = 'กรุณาเลือกแขวง/ตำบล';
+      if (!formData['service-postalcode']?.trim()) newErrors['service-postalcode'] = 'กรุณากรอกรหัสไปรษณีย์';
+      if (!formData.serviceGoogleMapLink?.trim()) newErrors.serviceGoogleMapLink = 'กรุณากรอกลิงก์แผนที่ของสถานที่บริการ';
+    }
+
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
       setTimeout(() => {
@@ -400,6 +512,20 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       service_area: formData['address-zone'] || '',
       service_group: formData['address-group'] || '',
     };
+
+    // Service address (สถานที่บริการ) — เฉพาะนิติบุคคล; บุคคลธรรมดาบังคับ same_as_billing = true
+    const isCorporate = formData.type === CustomerType.CORPORATE;
+    const useBillingForService = !isCorporate || !!formData.serviceSameAsBilling;
+    payloadData.service_same_as_billing = useBillingForService;
+    payloadData.service_address_house_no = useBillingForService ? null : (formData['service-street'] || null);
+    payloadData.service_address_soi = useBillingForService ? null : (formData['service-soi'] || null);
+    payloadData.service_address_road = useBillingForService ? null : (formData['service-road'] || null);
+    payloadData.service_sub_district = useBillingForService ? null : (formData['service-subdistrict'] || null);
+    payloadData.service_district = useBillingForService ? null : (formData['service-district'] || null);
+    payloadData.service_province = useBillingForService ? null : (formData['service-province'] || null);
+    payloadData.service_postal_code = useBillingForService ? null : (formData['service-postalcode'] || null);
+    payloadData.service_country = useBillingForService ? null : (formData['service-country'] || null);
+    payloadData.service_google_map_link = useBillingForService ? null : (formData.serviceGoogleMapLink || null);
 
     // หากองค์กรมีข้อมูลผู้ติดต่อเพิ่มเติม
     if (formData.type === CustomerType.CORPORATE) {
@@ -641,8 +767,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       {/* 📌 SECTION 3: ข้อมูลที่อยู่ */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
         <SectionHeader
-          title="ที่อยู่"
-          description="รายละเอียดสถานที่ตั้งของลูกค้า"
+          title={formData.type === CustomerType.CORPORATE ? 'ที่อยู่ผู้ว่าจ้าง' : 'ที่อยู่'}
+          description={formData.type === CustomerType.CORPORATE ? 'ที่อยู่ของผู้ว่าจ้าง / นิติบุคคล (สำหรับออกใบกำกับภาษี)' : 'รายละเอียดสถานที่ตั้งของลูกค้า'}
           icon={
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -711,6 +837,106 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 📌 SECTION 3.5: สถานที่บริการ — แสดงเฉพาะนิติบุคคล */}
+      {formData.type === CustomerType.CORPORATE && (
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <SectionHeader
+          title="สถานที่บริการ"
+          description="ที่อยู่ที่ใช้ในการให้บริการจริง (หากต่างจากที่อยู่ผู้ว่าจ้าง)"
+          icon={
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+          }
+        />
+
+        <label className="inline-flex items-center gap-2 mb-4 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={!!formData.serviceSameAsBilling}
+            onChange={(e) => handleServiceSameAsBillingChange(e.target.checked)}
+            className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+          />
+          <span className="text-sm text-slate-700">สถานที่บริการเดียวกับที่อยู่ผู้ว่าจ้าง</span>
+        </label>
+
+        {!formData.serviceSameAsBilling && (
+          <div className="space-y-5">
+            <FormField label="บ้านเลขที่ / อาคาร / หมู่บ้าน*" htmlFor="service-street">
+              <Textarea id="service-street" name="service-street" rows={2} value={formData['service-street'] || ''} onChange={handleChange} />
+              {errors['service-street'] && <p className="text-red-500 text-xs mt-1">{errors['service-street']}</p>}
+            </FormField>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <FormField label="ซอย" htmlFor="service-soi">
+                <Input id="service-soi" name="service-soi" type="text" value={formData['service-soi'] || ''} onChange={handleChange} />
+              </FormField>
+              <FormField label="ถนน" htmlFor="service-road">
+                <Input id="service-road" name="service-road" type="text" value={formData['service-road'] || ''} onChange={handleChange} />
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <FormField label="จังหวัด*" htmlFor="service-province">
+                <SearchableSelect
+                  id="service-province"
+                  value={formData['service-province'] || ''}
+                  options={provinceNames}
+                  onChange={handleServiceProvinceChange}
+                  placeholder="พิมพ์เพื่อค้นหาจังหวัด..."
+                />
+                {errors['service-province'] && <p className="text-red-500 text-xs mt-1">{errors['service-province']}</p>}
+              </FormField>
+              <FormField label="เขต/อำเภอ*" htmlFor="service-district">
+                <SearchableSelect
+                  id="service-district"
+                  value={formData['service-district'] || ''}
+                  options={serviceDistrictNames}
+                  onChange={handleServiceDistrictChange}
+                  placeholder="เลือกจังหวัดก่อน"
+                  disabled={!formData['service-province']}
+                />
+                {errors['service-district'] && <p className="text-red-500 text-xs mt-1">{errors['service-district']}</p>}
+              </FormField>
+              <FormField label="แขวง/ตำบล*" htmlFor="service-subdistrict">
+                <SearchableSelect
+                  id="service-subdistrict"
+                  value={formData['service-subdistrict'] || ''}
+                  options={serviceSubdistrictNames}
+                  onChange={handleServiceSubdistrictChange}
+                  placeholder="เลือกเขต/อำเภอก่อน"
+                  disabled={!formData['service-district']}
+                />
+                {errors['service-subdistrict'] && <p className="text-red-500 text-xs mt-1">{errors['service-subdistrict']}</p>}
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <FormField label="รหัสไปรษณีย์*" htmlFor="service-postalcode">
+                <Input id="service-postalcode" name="service-postalcode" type="text" value={formData['service-postalcode'] || ''} onChange={handleChange} className="font-mono" readOnly />
+                {errors['service-postalcode'] && <p className="text-red-500 text-xs mt-1">{errors['service-postalcode']}</p>}
+              </FormField>
+              <FormField label="ประเทศ" htmlFor="service-country">
+                <Input id="service-country" name="service-country" type="text" value={formData['service-country'] || ''} onChange={handleChange} />
+              </FormField>
+            </div>
+
+            <FormField label="ลิงก์แผนที่ (Google Map)*" htmlFor="serviceGoogleMapLink">
+              <Input
+                id="serviceGoogleMapLink"
+                name="serviceGoogleMapLink"
+                type="url"
+                value={formData.serviceGoogleMapLink || ''}
+                onChange={handleChange}
+                placeholder="https://maps.app.goo.gl/..."
+              />
+              {errors.serviceGoogleMapLink && <p className="text-red-500 text-xs mt-1">{errors.serviceGoogleMapLink}</p>}
+            </FormField>
+          </div>
+        )}
+      </div>
+      )}
 
       {/* 📌 SECTION 4: พื้นที่บริการและพิกัด */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">

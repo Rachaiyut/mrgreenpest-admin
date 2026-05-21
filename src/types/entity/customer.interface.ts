@@ -34,6 +34,16 @@ export interface Customer extends IBase {
   service_area: string;
   service_group: string;
   google_map_link?: string;
+  service_address_house_no?: string;
+  service_address_soi?: string;
+  service_address_road?: string;
+  service_sub_district?: string;
+  service_district?: string;
+  service_province?: string;
+  service_postal_code?: string;
+  service_country?: string;
+  service_google_map_link?: string;
+  service_same_as_billing?: boolean;
   contact_person?: string;
   contact_person_phone?: string;
   line_user_id?: string;
