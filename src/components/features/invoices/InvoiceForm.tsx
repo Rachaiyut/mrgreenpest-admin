@@ -425,6 +425,11 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           is_pay_all: inst.is_pay_all || false,
           disabled: isOlderInvoiced,
         };
+      }).sort((a, b) => {
+        // PAY_ALL/CARRY ไว้ท้ายสุด, ที่เหลือเรียงตามเลขงวด
+        if (a.is_pay_all) return 1;
+        if (b.is_pay_all) return -1;
+        return Number(a.term || 9999) - Number(b.term || 9999);
       });
     }
 
