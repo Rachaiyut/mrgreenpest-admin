@@ -293,6 +293,17 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
+    const paidAmountNum = Number((invoice as unknown as Record<string, number>).paid_amount || 0);
+    const paidAmount = paidAmountNum.toLocaleString('th-TH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const diff = paidAmountNum - Number(invoice.total || 0);
+    const paidLabel = diff > 0
+      ? `${paidAmount} บาท (เกิน ${diff.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท)`
+      : diff < 0
+        ? `${paidAmount} บาท (ขาด ${Math.abs(diff).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท)`
+        : `${paidAmount} บาท`;
     // Prefer the customer embedded on the invoice (always present in list response)
     // before falling back to the DataContext lookup. This guarantees customer.type
     // is available so the tax-invoice section can render for individuals.
@@ -320,6 +331,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       { label: 'วันที่ออก', value: issueDate },
       { label: 'ครบกำหนด', value: dueDate },
       { label: 'ยอดรวม', value: `${amount} บาท`, accent: 'money' },
+      { label: 'จำนวนเงินที่จ่ายมา', value: paidLabel, accent: 'money' },
     ]);
 
     const accountOptionsHtml = activeAccounts
@@ -431,6 +443,17 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
+    const paidNum = Number((invoice as unknown as Record<string, number>).paid_amount || 0);
+    const paidStr = paidNum.toLocaleString('th-TH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const diffApprove = paidNum - Number(invoice.total || 0);
+    const paidLabelApprove = diffApprove > 0
+      ? `${paidStr} บาท (เกิน ${diffApprove.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท)`
+      : diffApprove < 0
+        ? `${paidStr} บาท (ขาด ${Math.abs(diffApprove).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท)`
+        : `${paidStr} บาท`;
     const customerName = (() => {
       const c = invoice.customer || customers?.find((x) => x.id === invoice.customer_id);
       if (c) {
@@ -494,6 +517,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             { label: 'เลขที่ใบแจ้งหนี้', value: invoice.code || null },
             { label: 'ลูกค้า', value: customerName },
             { label: 'ยอดรวม', value: `${amountStr} บาท`, accent: 'money' },
+            { label: 'จำนวนเงินที่จ่ายมา', value: paidLabelApprove, accent: 'money' },
           ])}
           <div style="margin-top:14px; padding:10px 12px; background:#f8fafc; border-radius:6px; border:1px solid #e2e8f0;">
             <div style="font-size:13px; color:#64748b; margin-bottom:4px;">บัญชีรับเข้าที่บันทึกไว้</div>
