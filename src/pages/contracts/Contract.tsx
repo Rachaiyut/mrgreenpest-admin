@@ -381,7 +381,10 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
           </p>
         </div>
         <Button
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={() => {
+            setSelectedContract(null);
+            setIsCreateModalOpen(true);
+          }}
           className="shadow-md shadow-primary/20"
         >
           <PlusIcon className="w-5 h-5 mr-2" />
@@ -843,7 +846,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
             ? 'edit'
             : 'create'
         }
-        initialValues={selectedContract}
+        initialValues={isCreateModalOpen ? null : selectedContract}
         onSubmit={handleSubmitContract}
       />
     
