@@ -1359,8 +1359,9 @@ export const JobForm: React.FC<JobFormProps> = ({
                       </div>
                     ) : null}
 
-                    {/* In edit mode areas are read-only — only reference/invoice/operation-details/notes
-                        are editable. Use readOnly so users can still expand/collapse to view details. */}
+                    {/* Area details: editable unless locked by a contract reference.
+                        Contract-referenced jobs lock area details (must match contract terms).
+                        Assessment-referenced or fresh jobs allow editing in any mode. */}
                     <div className="grid grid-cols-1 gap-4">
                       {workAreas.map((area, index) => (
                         <div key={area.id || index}>
@@ -1378,7 +1379,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                               handleAreaChange(index, { package_id: pkgId });
                             }}
                             isEditing={mode === 'edit' && String(jobToEdit?.api_status || '').toUpperCase() !== 'UNASSIGNED'}
-                            readOnly={mode === 'edit' || !!selectedReference}
+                            readOnly={selectedReference?.startsWith('cnt-')}
                           />
                         </div>
                       ))}
@@ -1396,7 +1397,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                       )}
                     </div>
 
-                    {mode !== 'edit' && (
+                    {!selectedReference?.startsWith('cnt-') && (
                       <div className="flex justify-center mt-4">
                         <button type="button" onClick={handleAddArea} className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium">
                           <PlusIcon className="h-5 w-5" />เพิ่มพื้นที่ให้บริการ
