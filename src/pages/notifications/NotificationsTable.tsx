@@ -66,23 +66,11 @@ interface NotificationsTableProps {
   isExpiredRow?: (row: NotificationRow) => boolean;
 }
 
-const daysBetween = (target: string | Date | null | undefined): number | null => {
-  if (!target) return null;
-  const end = new Date(target);
-  end.setHours(0, 0, 0, 0);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diffMs = end.getTime() - today.getTime();
-  return Math.round(diffMs / (1000 * 60 * 60 * 24));
-};
-
 export const isContractExpired = (row: NotificationRow) =>
   row.contractDaysRemaining !== null && row.contractDaysRemaining < 0;
 
-export const isVisitOverdue = (row: NotificationRow) => {
-  const d = daysBetween(row.nextServiceDate);
-  return d !== null && d < 0;
-};
+export const isVisitOverdue = (row: NotificationRow) =>
+  row.contractDaysRemaining !== null && row.contractDaysRemaining < 0;
 
 const renderNextServiceDisplay = (row: NotificationRow) => {
   const display = row.nextServiceDisplay ?? row.nextServiceDate;
