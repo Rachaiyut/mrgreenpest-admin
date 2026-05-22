@@ -913,17 +913,20 @@ const IssueSummaryPage: React.FC = () => {
                     const warehouse = warehouseMap.get(summary.warehouse_id);
 
                     const stockCount = summary.items?.length || 0;
-                    const expenseCount = summary.expense_items?.length || 0;
+                    // ตัด INCOME (refund records) ออก — นับเฉพาะค่าใช้จ่ายจริง
+                    const realExpenses = (summary.expense_items || []).filter(
+                      (e: UserExpense) => String((e as any).type || 'EXPENSE').toUpperCase() !== 'INCOME',
+                    );
+                    const expenseCount = realExpenses.length;
 
                     // รวมจำนวนสินค้าที่เบิก (quantity) แทนการคำนวณมูลค่า
                     const totalGoodsQuantity =
                       summary.items?.reduce((sum, item) => sum + Number(item.quantity || 0), 0) || 0;
 
-                    const totalExpenseAmount =
-                      summary.expense_items?.reduce(
-                        (sum: number, exp: UserExpense) => sum + Number(exp.amount || 0),
-                        0,
-                      ) || 0;
+                    const totalExpenseAmount = realExpenses.reduce(
+                      (sum: number, exp: UserExpense) => sum + Number(exp.amount || 0),
+                      0,
+                    );
 
                     // ถ้า row นี้แยกตาม category → แสดงเฉพาะฝั่งที่กรอก
                     const showStockOnly = row.category === 'STOCK';

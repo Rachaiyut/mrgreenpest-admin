@@ -199,11 +199,16 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
     if (r.isConfirmed && r.value) await runApprove('REJECTED', category, r.value.trim());
   };
 
-  const expenseItems = (summary.expense_items || summary.expense_item || []) as Array<{
+  // ตัด INCOME (refund record ที่ระบบสร้างขึ้นตอนยกเลิก) ออก — แสดงเฉพาะค่าใช้จ่ายจริง
+  const rawExpenseEntries = (summary.expense_items || summary.expense_item || []) as Array<{
     id?: string;
     description?: string;
     amount?: number | string;
+    type?: string;
   }>;
+  const expenseItems = rawExpenseEntries.filter(
+    (e) => String(e.type || 'EXPENSE').toUpperCase() !== 'INCOME',
+  );
   const totalExpenseAmount = expenseItems.reduce(
     (sum, e) => sum + Number(e.amount || 0),
     0,
