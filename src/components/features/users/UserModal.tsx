@@ -99,13 +99,17 @@ export const UserModal: React.FC<UserModalProps> = ({
       if (mode === 'create' || mode === 'edit') onClose();
     } catch (err) {
       console.error('User modal submit failed', err);
+      const apiMessage =
+        (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+        || (err as Error)?.message;
       Swal.fire({
         icon: 'error',
         title: 'เกิดข้อผิดพลาด',
         text:
-          mode === 'create'
+          apiMessage
+          || (mode === 'create'
             ? 'เกิดข้อผิดพลาดในการสร้างผู้ใช้งาน'
-            : 'เกิดข้อผิดพลาดในการแก้ไขผู้ใช้งาน',
+            : 'เกิดข้อผิดพลาดในการแก้ไขผู้ใช้งาน'),
       });
     } finally {
       setIsSubmitting(false);

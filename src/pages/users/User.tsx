@@ -188,7 +188,7 @@ const Users: React.FC<UsersProps> = ({
   const handleCreateUser = async (data: any): Promise<User> => {
     try {
       const newUser = await UserApi.create(data);
-      fetchUsers();
+      await fetchUsers();
       return newUser;
     } catch (error) {
       console.error('Failed to create user:', error);
