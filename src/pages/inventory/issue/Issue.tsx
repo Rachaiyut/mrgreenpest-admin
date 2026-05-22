@@ -422,10 +422,12 @@ const Issue: FC = () => {
             `${Number(v || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`;
           const escape = (s: string) =>
             s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
+          // ถ้ามีบัญชีเดียว → เลือกอัตโนมัติเป็น default (admin ไม่ต้องเลือกเอง)
+          const autoSelectId = accounts.length === 1 ? accounts[0].id : '';
           const optionsHtml = accounts
             .map(
               (a) =>
-                `<option value="${a.id}" data-bal="${Number(a.current_balance || 0)}" data-name="${escape(a.account_name)}" data-bank="${escape(a.bank_name)}" data-num="${escape(a.account_number)}">${escape(a.account_name)} (${escape(a.bank_name)})</option>`,
+                `<option value="${a.id}"${a.id === autoSelectId ? ' selected' : ''} data-bal="${Number(a.current_balance || 0)}" data-name="${escape(a.account_name)}" data-bank="${escape(a.bank_name)}" data-num="${escape(a.account_number)}">${escape(a.account_name)} (${escape(a.bank_name)})</option>`,
             )
             .join('');
           const r = await Swal.fire({
@@ -565,6 +567,8 @@ const Issue: FC = () => {
                 `;
               };
               sel.addEventListener('change', update);
+              // ถ้ามีบัญชี default (กรณีเดียว) → แสดงสรุปการตัดเงินทันที
+              if (sel.value) update();
             },
             preConfirm: () => {
               const sel = (document.getElementById('swal-account-select') as HTMLSelectElement | null)?.value;
