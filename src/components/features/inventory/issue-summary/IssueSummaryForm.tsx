@@ -284,15 +284,16 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
           setSelectedCustomerIds([]);
         }
 
-        if (summary.items && summary.items.length > 0) {
-          setItems(summary.items.map((item) => ({ ...item })));
-          setEnableGoods(true);
+        const hasItems = !!summary.items && summary.items.length > 0;
+        if (hasItems) {
+          setItems(summary.items!.map((item) => ({ ...item })));
         } else {
           setItems([]);
         }
 
         const expenseData = (summary as unknown as Record<string, unknown>).expense_items || (summary as unknown as Record<string, unknown>).expenses || [];
-        if (Array.isArray(expenseData) && expenseData.length > 0) {
+        const hasExpenses = Array.isArray(expenseData) && expenseData.length > 0;
+        if (hasExpenses) {
           setExpenseItems(
             (expenseData as Array<Record<string, unknown>>).map((e) => ({
               id: (e.id as string) || crypto.randomUUID(),
@@ -300,9 +301,18 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
               amount: (e.amount as number) || 0,
             })),
           );
-          setEnableExpense(true);
         } else {
           setExpenseItems([]);
+        }
+
+        // เปิด/ปิด section ให้ตรงกับสิ่งที่ผู้ใช้บันทึกไว้จริง
+        // ถ้าไม่มีทั้ง items และ expenses → fallback เปิดทั้งสอง (ใบเปล่า)
+        if (!hasItems && !hasExpenses) {
+          setEnableGoods(true);
+          setEnableExpense(true);
+        } else {
+          setEnableGoods(hasItems);
+          setEnableExpense(hasExpenses);
         }
       } else {
         // --- CREATE mode: reset to defaults ---
