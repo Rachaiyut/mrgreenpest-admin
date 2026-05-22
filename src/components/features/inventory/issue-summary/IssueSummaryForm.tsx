@@ -369,8 +369,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   );
 
   const isOverLimit = useMemo(() => {
-    // ใช้ remaining (เงินคงเหลือที่ยังเบิกได้) เป็นเกณฑ์ ไม่ใช่ balance (ที่เป็นยอดเบิกสะสม)
-    if (walletInfo && typeof walletInfo.remaining === 'number') return totalExpenses > walletInfo.remaining;
+    if (walletInfo && typeof walletInfo.balance === 'number') return totalExpenses > walletInfo.balance;
     if (!selectedRequester || typeof selectedRequester.creditLimit !== 'number') return false;
     return totalExpenses > selectedRequester.creditLimit;
   }, [totalExpenses, selectedRequester, walletInfo]);
@@ -903,7 +902,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   </div>
                   <div className="flex items-end justify-between mb-2">
                     <span className="text-sm font-medium text-slate-500">คงเหลือปัจจุบัน</span>
-                    <span className="text-base font-semibold text-slate-700">{walletInfo.remaining.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
+                    <span className="text-base font-semibold text-slate-700">{walletInfo.balance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
                   </div>
                   {totalExpenses > 0 && (
                     <div className="flex items-end justify-between mb-2">
@@ -915,10 +914,10 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                     <span className="text-sm font-bold text-slate-600">คงเหลือสุทธิ (หลังเบิก)</span>
                     <span
                       className={`text-xl font-black ${
-                        walletInfo.remaining - totalExpenses < 0 ? 'text-red-600' : 'text-emerald-600'
+                        walletInfo.balance - totalExpenses < 0 ? 'text-red-600' : 'text-emerald-600'
                       }`}
                     >
-                      {(walletInfo.remaining - totalExpenses).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+                      {(walletInfo.balance - totalExpenses).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 mb-1 overflow-hidden">
@@ -928,7 +927,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                           walletInfo.expense_limit > 0
                             ? Math.min(
                                 100,
-                                ((walletInfo.balance + totalExpenses) / walletInfo.expense_limit) * 100,
+                                ((walletInfo.expense_limit - walletInfo.balance + totalExpenses) / walletInfo.expense_limit) * 100,
                               )
                             : 100
                         }%`,
