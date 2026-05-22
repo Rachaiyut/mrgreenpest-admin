@@ -602,11 +602,37 @@ const IssueSummaryPage: React.FC = () => {
     }
   };
 
-  const handleDelete = (summaryId: string) => {
-    if (confirm('ยืนยันการลบใบเบิก?')) {
-      onDeleteStockIssueSummary(summaryId);
-    }
+  const handleDelete = async (summaryId: string) => {
     setOpenDropdownId(null);
+    const summary = stockIssueSummaries.find((s) => s.id === summaryId);
+    const code = (summary as any)?.code ? `${(summary as any).code} ` : '';
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันการยกเลิกใบเบิก',
+      text: `คุณต้องการยกเลิกใบเบิก ${code}ใช่หรือไม่?`,
+      showCancelButton: true,
+      confirmButtonText: 'ยกเลิกใบเบิก',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#dc2626',
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      // เปลี่ยนสถานะเป็น CANCELLED แทนการลบ record (keep audit trail)
+      await StockIssueSummaryApi.updateStatus(summaryId, 'CANCELLED');
+      await fetchList();
+      Swal.fire({
+        icon: 'success',
+        title: 'ยกเลิกใบเบิกเรียบร้อย',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+        || (err as Error)?.message
+        || 'ไม่สามารถยกเลิกใบเบิกได้';
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: message });
+    }
   };
 
   // Effect to close dropdown when modal opens
