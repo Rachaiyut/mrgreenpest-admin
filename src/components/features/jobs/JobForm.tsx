@@ -467,28 +467,27 @@ export const JobForm: React.FC<JobFormProps> = ({
 
   const isAssessment = selectedReference.startsWith('asm-');
 
+  // ใบประเมินที่อ้างอิงได้: เฉพาะ DRAFT (แบบร่าง)
   const availableAssessments = useMemo(() => {
-    if (fetchedAssessments.length > 0) {
-      return fetchedAssessments.filter((a) => a.status === AsessmentStatus.DRAFT || a.status === AsessmentStatus.COMPLETE || a.status === AsessmentStatus.APPOINTMENT);
-    }
+    const isUsable = (a: { status?: string }) => a.status === AsessmentStatus.DRAFT;
+    if (fetchedAssessments.length > 0) return fetchedAssessments.filter(isUsable);
     if (selectedCustomerId) {
       const customer = (selectedCustomerData?.id === selectedCustomerId ? selectedCustomerData : undefined) || customers.find((c) => c.id === selectedCustomerId);
-      if (customer?.assessments) {
-        return customer.assessments.filter((a) => a.status === AsessmentStatus.DRAFT || a.status === AsessmentStatus.COMPLETE || a.status === AsessmentStatus.APPOINTMENT);
-      }
+      if (customer?.assessments) return customer.assessments.filter(isUsable);
     }
     return [];
   }, [customers, selectedCustomerId, selectedCustomerData, fetchedAssessments]);
 
+  // สัญญาที่อ้างอิงได้: PENDING (รอดำเนินการ — ยังไม่เซ็น) + ACTIVE (อยู่ในสัญญา)
   const availableContracts = useMemo(() => {
-    if (fetchedContracts.length > 0) {
-      return fetchedContracts.filter((a) => (a.status as string) === AsessmentStatus.DRAFT || (a.status as string) === AsessmentStatus.COMPLETE || (a.status as string) === 'ACTIVE');
-    }
+    const isUsable = (a: { status?: string }) => {
+      const s = String(a.status || '');
+      return s === 'PENDING' || s === 'ACTIVE';
+    };
+    if (fetchedContracts.length > 0) return fetchedContracts.filter(isUsable);
     if (selectedCustomerId) {
       const customer = (selectedCustomerData?.id === selectedCustomerId ? selectedCustomerData : undefined) || customers.find((c) => c.id === selectedCustomerId);
-      if (customer?.contracts) {
-        return customer.contracts.filter((a) => (a.status as string) === AsessmentStatus.DRAFT || (a.status as string) === AsessmentStatus.COMPLETE || (a.status as string) === 'ACTIVE');
-      }
+      if (customer?.contracts) return customer.contracts.filter(isUsable);
     }
     return [];
   }, [customers, selectedCustomerId, selectedCustomerData, fetchedContracts]);
