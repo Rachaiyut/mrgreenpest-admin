@@ -693,7 +693,7 @@ export const JobForm: React.FC<JobFormProps> = ({
         const system = assessment.assessment_areas[0].service_system;
         if (system) setServiceSystem(system);
 
-        const areas = assessment.assessment_areas.map((area, index) => {
+        const areas = (assessment.assessment_areas as Record<string, unknown>[]).map((area: Record<string, unknown>, index: number) => {
           let exactPackageId = assessment.package_id;
           if (area.package_price_id) {
              const matchedPkg = packages.find(p => p.package_prices?.some(price => String(price.id) === String(area.package_price_id)));
@@ -871,7 +871,7 @@ export const JobForm: React.FC<JobFormProps> = ({
     };
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!validateStep()) return;
     
@@ -1254,10 +1254,6 @@ export const JobForm: React.FC<JobFormProps> = ({
                 .sort((a: any, b: any) => (a.installment_no || a.term || 0) - (b.installment_no || b.term || 0));
 
               if (installments.length === 0 && contractInvoices.length === 0) return null;
-
-              const totalOutstanding = contractInvoices
-                .filter((inv: any) => ['PENDING', 'PARTIAL', 'OVERDUE', 'SENT'].includes(String(inv.status).toUpperCase()))
-                .reduce((sum: number, inv: Invoice) => sum + (Number(inv.total) - Number((inv as unknown as Record<string, number>).paid_amount || 0)), 0);
 
               const getStatusConfig = (status: string) => {
                 const borderMap: Record<string, string> = {
