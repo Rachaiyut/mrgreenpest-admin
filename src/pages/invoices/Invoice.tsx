@@ -1065,26 +1065,43 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
         mode='create'
         initialValues={invoiceInitialValues}
         onSubmit={async (data) => {
-          if (onCreateInvoice) {
-            await onCreateInvoice(data);
+          try {
+            if (onCreateInvoice) {
+              await onCreateInvoice(data);
+            } else {
+              await InvoiceApi.create(data);
+            }
+            await Promise.all([fetchData(['invoices']), fetchInvoicesPage()]);
             setIsAddInvoiceModalOpen(false);
+          } catch (err) {
+            const message = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+              || (err as Error).message
+              || 'ไม่สามารถสร้างใบแจ้งหนี้ได้';
+            Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: message });
           }
         }}
       />
-      
+
       <InvoiceModal
         isOpen={isInvoiceEditModalOpen}
         onClose={() => setIsInvoiceEditModalOpen(false)}
         mode="edit"
         initialValues={selectedInvoice}
         onSubmit={async (data) => {
-          if (onUpdateInvoice) {
-            await onUpdateInvoice({ ...selectedInvoice, ...data });
-          } else if (selectedInvoice) {
-            await InvoiceApi.update(selectedInvoice.id, { ...selectedInvoice, ...data } as Partial<Invoice>);
+          try {
+            if (onUpdateInvoice) {
+              await onUpdateInvoice({ ...selectedInvoice, ...data });
+            } else if (selectedInvoice) {
+              await InvoiceApi.update(selectedInvoice.id, { ...selectedInvoice, ...data } as Partial<Invoice>);
+            }
+            await Promise.all([fetchData(['invoices']), fetchInvoicesPage()]);
+            setIsInvoiceEditModalOpen(false);
+          } catch (err) {
+            const message = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+              || (err as Error).message
+              || 'ไม่สามารถบันทึกใบแจ้งหนี้ได้';
+            Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: message });
           }
-          await fetchData(['invoices']);
-          setIsInvoiceEditModalOpen(false);
         }}
       />
 
