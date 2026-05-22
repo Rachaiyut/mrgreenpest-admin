@@ -28,6 +28,7 @@ export enum WithdrawalLifecycle {
  * CANCELLED ถูกตั้งเมื่อใบเบิกถูกยกเลิก
  */
 export enum WithdrawalLineStatus {
+  DRAFT = 'DRAFT',
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
