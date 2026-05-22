@@ -40,6 +40,7 @@ export const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
   const [page, setPage] = useState(1);
   const [selectedJob, setSelectedJob] = useState<FieldJob | null>(null);
   const [loadingReportId, setLoadingReportId] = useState<string | null>(null);
+  const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const fetchJobs = useCallback(async (pageNum: number, append = false) => {
@@ -100,6 +101,42 @@ export const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
       fetchJobs(nextPage, true);
     }
   }, [loadingMore, hasMore, page, fetchJobs]);
+
+  const handleViewPdf = async (job: Job) => {
+    const report = (job as unknown as Record<string, unknown>).service_report as Record<string, unknown> | undefined;
+    if (!report?.id) return;
+    setLoadingPdfId(job.id);
+    try {
+      const blob = await ServiceReportApi.getServiceReportPdfById(report.id as string);
+      // ตั้งชื่อไฟล์ตามแพตเทิร์น quotation: <code>_<ชื่อ>_<นามสกุล>.pdf
+      const safe = (s: string) => s.replace(/[\\/:*?"<>|]/g, '').trim().replace(/\s+/g, '_');
+      const firstName = customer?.first_name?.trim() || '';
+      const lastName = customer?.last_name && customer.last_name !== '-' ? customer.last_name.trim() : '';
+      const parts: string[] = [];
+      if (firstName) parts.push(safe(firstName));
+      if (lastName) parts.push(safe(lastName));
+      if (parts.length === 0) parts.push('ลูกค้า');
+      const code = ((job as unknown as Record<string, unknown>).code as string | undefined) || (report.id as string);
+      const filename = [safe(code), ...parts].filter(Boolean).join('_') + '.pdf';
+
+      const namedFile = new File([blob], filename, { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(namedFile);
+      const win = window.open(url, '_blank');
+      if (!win) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+      setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+    } catch (error) {
+      console.error('Error viewing service report PDF:', error);
+    } finally {
+      setLoadingPdfId(null);
+    }
+  };
 
   const handleViewReport = async (job: Job) => {
     const report = (job as unknown as Record<string, unknown>).service_report as Record<string, unknown> | undefined;
@@ -181,7 +218,7 @@ export const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
                   <th className="px-3 py-2.5 whitespace-nowrap">วันสิ้นสุด</th>
                   <th className="px-3 py-2.5 whitespace-nowrap">ช่างเทคนิค</th>
                   <th className="px-3 py-2.5">หมายเหตุ</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap text-right">รายงาน</th>
+                  <th className="px-3 py-2.5 whitespace-nowrap text-center">รายงาน</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
@@ -193,7 +230,8 @@ export const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
                   const techName = job.primary_technician
                     ? `${job.primary_technician.first_name || ''} ${job.primary_technician.last_name || ''}`.trim()
                     : null;
-                  const isLoadingThis = loadingReportId === job.id;
+                  const isLoadingReport = loadingReportId === job.id;
+                  const isLoadingPdf = loadingPdfId === job.id;
 
                   return (
                     <tr key={job.id} className="hover:bg-slate-50/60 transition-colors">
@@ -217,23 +255,51 @@ export const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
                           {job.remark || '—'}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 whitespace-nowrap text-right">
+                      <td className="px-3 py-2.5 whitespace-nowrap text-center">
                         {hasReport ? (
-                          <button
-                            type="button"
-                            onClick={() => handleViewReport(job)}
-                            disabled={!!loadingReportId}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-primary rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
-                          >
-                            {isLoadingThis ? (
-                              <LoadingIcon className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                            )}
-                            ดูรายงาน
-                          </button>
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleViewReport(job)}
+                              disabled={isLoadingReport}
+                              title="ดูรายงาน"
+                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                isLoadingReport
+                                  ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
+                                  : 'bg-primary hover:bg-primary/90 text-white'
+                              }`}
+                            >
+                              {isLoadingReport ? (
+                                <LoadingIcon className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              )}
+                              ดูรายงาน
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleViewPdf(job)}
+                              disabled={isLoadingPdf}
+                              title="ดู PDF"
+                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                isLoadingPdf
+                                  ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
+                                  : 'bg-green-600 hover:bg-green-700 text-white'
+                              }`}
+                            >
+                              {isLoadingPdf ? (
+                                <LoadingIcon className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              )}
+                              ดู PDF
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-xs text-slate-400">ไม่มีรายงาน</span>
                         )}
