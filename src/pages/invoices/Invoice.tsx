@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Swal from '@/src/utils/swal';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
@@ -95,6 +96,19 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     flipUp?: boolean;
   } | null>(null);
   const invoiceDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Open create-invoice modal automatically when navigated with ?action=create (from Dashboard)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const handledCreateParamRef = useRef(false);
+  useEffect(() => {
+    if (handledCreateParamRef.current) return;
+    if (searchParams.get('action') !== 'create') return;
+    handledCreateParamRef.current = true;
+    setIsAddInvoiceModalOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete('action');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // ===== New approval-flow state =====
   const { hasPermission } = usePermissions();

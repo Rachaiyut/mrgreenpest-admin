@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Swal from '@/src/utils/swal';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { useData } from '../../contexts/DataContext';
@@ -125,6 +126,19 @@ const Customers: React.FC = () => {
     setModalMode('create');
     setIsCustomerModalOpen(true);
   };
+
+  // Open create modal automatically when navigated with ?action=create (from Dashboard)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const handledCreateParamRef = useRef(false);
+  useEffect(() => {
+    if (handledCreateParamRef.current) return;
+    if (searchParams.get('action') !== 'create') return;
+    handledCreateParamRef.current = true;
+    handleCreateClick();
+    const next = new URLSearchParams(searchParams);
+    next.delete('action');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const handleReactivate = async (customer: Customer) => {
     setOpenDropdownId(null);

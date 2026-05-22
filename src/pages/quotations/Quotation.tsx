@@ -4,7 +4,7 @@ import { useNotificationFocus } from '@/src/hooks/useNotificationFocus';
 import { renderApprovalDetails, joinName, pickName } from '@/src/utils/approvalSwal';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Swal from '@/src/utils/swal';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { TruncateText } from '../../components/common/TruncateText';
@@ -245,6 +245,19 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     setSelectedAssessmentId(null);
     setIsModalOpen(true);
   };
+
+  // Open create modal automatically when navigated with ?action=create (from Dashboard)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const handledCreateParamRef = useRef(false);
+  useEffect(() => {
+    if (handledCreateParamRef.current) return;
+    if (searchParams.get('action') !== 'create') return;
+    handledCreateParamRef.current = true;
+    handleCreate();
+    const next = new URLSearchParams(searchParams);
+    next.delete('action');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const handleViewDetails = () => {
     if (selectedQuotation) {

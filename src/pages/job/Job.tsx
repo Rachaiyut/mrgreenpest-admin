@@ -735,7 +735,10 @@ const Job: React.FC<JobProps> = ({
   const handledOpenParamRef = useRef(false);
   useEffect(() => {
     if (handledOpenParamRef.current) return;
-    if (searchParams.get('openCreateModal') !== '1') return;
+    const shouldOpen =
+      searchParams.get('openCreateModal') === '1' ||
+      searchParams.get('action') === 'create';
+    if (!shouldOpen) return;
     handledOpenParamRef.current = true;
 
     const customerId = searchParams.get('customerId') || undefined;
@@ -748,6 +751,7 @@ const Job: React.FC<JobProps> = ({
 
     const next = new URLSearchParams(searchParams);
     next.delete('openCreateModal');
+    next.delete('action');
     next.delete('customerId');
     next.delete('contractId');
     setSearchParams(next, { replace: true });
