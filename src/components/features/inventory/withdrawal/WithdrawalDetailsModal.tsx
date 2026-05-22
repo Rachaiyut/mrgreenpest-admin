@@ -81,7 +81,6 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
     [withdrawal?.expenses]
   );
 
-  const grandTotal = totalGoodsAmount + totalExpenseAmount;
 
   if (!isOpen || !withdrawal) return null;
 
@@ -92,16 +91,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
       title={`รายละเอียดใบเบิก: ${withdrawal.code || withdrawal.id || 'N/A'}`}
       size="4xl"
       footer={
-        <div className="flex w-full justify-between items-center">
-          <p className="text-lg font-semibold text-slate-800">
-            ยอดรวมทั้งหมด:{' '}
-            <span className="text-primary">
-              {grandTotal.toLocaleString('th-TH', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}{' '}บาท
-            </span>
-          </p>
+        <div className="flex w-full justify-end items-center">
           <Button variant="primary" type="button" onClick={onClose}>
             ปิด
           </Button>
