@@ -30,7 +30,7 @@ const fmtBaht = (v: number) =>
 const STATUS_META: Record<CashWithdrawalRequestStatus, { label: string; badge: string }> = {
   PENDING: { label: 'รออนุมัติ', badge: 'bg-amber-100 text-amber-700' },
   APPROVED: { label: 'อนุมัติแล้ว', badge: 'bg-emerald-100 text-emerald-700' },
-  REJECTED: { label: 'ปฏิเสธ', badge: 'bg-red-100 text-red-700' },
+  REJECTED: { label: 'ไม่อนุมัติ', badge: 'bg-red-100 text-red-700' },
 };
 
 type Props = {
@@ -41,6 +41,8 @@ type Props = {
   onExternalCreateClose?: () => void;
   /** ซ่อน column "บัญชีที่ตัด" — default แสดง (ใช้กับเมนู รายรับรายจ่าย ที่ไม่อยากแสดง) */
   hideSourceAccount?: boolean;
+  /** ถูกเรียกหลังสร้าง/อนุมัติ/ปฏิเสธสำเร็จ — ให้ parent refresh count อื่น ๆ */
+  onMutated?: () => void;
 };
 
 export const CashWithdrawalRequestList: FC<Props> = ({
@@ -48,6 +50,7 @@ export const CashWithdrawalRequestList: FC<Props> = ({
   externalCreateOpen,
   onExternalCreateClose,
   hideSourceAccount = false,
+  onMutated,
 }) => {
   const { hasPermission } = usePermissions();
   const canApprove = hasPermission('APPROVE_CASH_WITHDRAWAL_REQUEST');
@@ -207,6 +210,7 @@ export const CashWithdrawalRequestList: FC<Props> = ({
         showConfirmButton: false,
       });
       fetchList();
+      onMutated?.();
     } catch (err) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถอนุมัติได้', 'error');
@@ -238,6 +242,7 @@ export const CashWithdrawalRequestList: FC<Props> = ({
       await CashWithdrawalRequestApi.reject(req.id, result.value.trim());
       Swal.fire({ icon: 'success', title: 'ปฏิเสธคำขอแล้ว', timer: 1500, showConfirmButton: false });
       fetchList();
+      onMutated?.();
     } catch (err) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถปฏิเสธได้', 'error');
@@ -248,8 +253,8 @@ export const CashWithdrawalRequestList: FC<Props> = ({
     <>
       {/* Toolbar */}
       <Card className="!p-4 flex-shrink-0">
-        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-          <div className="relative w-full sm:w-72">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative w-full sm:w-72 flex-shrink-0">
             <Input
               type="search"
               placeholder="ค้นหาเลขที่ / หมายเหตุ"
@@ -261,7 +266,7 @@ export const CashWithdrawalRequestList: FC<Props> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <div className="w-full sm:w-48">
+          <div className="w-full sm:w-48 flex-shrink-0">
             <DropdownSelect
               value={status}
               onChange={(v) => setStatus(v as CashWithdrawalRequestStatus | '')}
@@ -271,11 +276,11 @@ export const CashWithdrawalRequestList: FC<Props> = ({
                 { value: '', label: 'ทุกสถานะ' },
                 { value: 'PENDING', label: 'รออนุมัติ' },
                 { value: 'APPROVED', label: 'อนุมัติแล้ว' },
-                { value: 'REJECTED', label: 'ปฏิเสธ' },
+                { value: 'REJECTED', label: 'ไม่อนุมัติ' },
               ]}
             />
           </div>
-          {toolbarExtra && <div className="sm:ml-auto">{toolbarExtra}</div>}
+          {toolbarExtra && <div className="w-full xl:w-auto xl:ml-auto">{toolbarExtra}</div>}
         </div>
       </Card>
 
@@ -369,7 +374,10 @@ export const CashWithdrawalRequestList: FC<Props> = ({
       <CreateCashWithdrawalRequestModal
         isOpen={createOpen}
         onClose={closeCreate}
-        onSubmitted={fetchList}
+        onSubmitted={() => {
+          fetchList();
+          onMutated?.();
+        }}
       />
       <CreateCashWithdrawalRequestModal
         isOpen={!!detailRequest}

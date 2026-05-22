@@ -21,6 +21,7 @@ import { formatThaiDateTime } from '../../utils/date';
 import { CreateCashWithdrawalRequestModal } from '../../components/features/cash-withdrawal-request/CreateCashWithdrawalRequestModal';
 import { ApproveCashWithdrawalRequestModal } from '../../components/features/cash-withdrawal-request/ApproveCashWithdrawalRequestModal';
 import { CashTabBar } from '../../components/features/accounts/CashTabBar';
+import BuddhistDatePicker from '../../components/common/BuddhistDatePicker';
 
 const isSuperadminRoleName = (name?: string): boolean => {
   if (!name) return false;
@@ -41,7 +42,7 @@ const fmtBaht = (v: number) =>
 const STATUS_META: Record<CashWithdrawalRequestStatus, { label: string; badge: string }> = {
   PENDING: { label: 'รออนุมัติ', badge: 'bg-amber-100 text-amber-700' },
   APPROVED: { label: 'อนุมัติแล้ว', badge: 'bg-emerald-100 text-emerald-700' },
-  REJECTED: { label: 'ปฏิเสธ', badge: 'bg-red-100 text-red-700' },
+  REJECTED: { label: 'ไม่อนุมัติ', badge: 'bg-red-100 text-red-700' },
 };
 
 const CashWithdrawalRequestPage: FC = () => {
@@ -57,6 +58,20 @@ const CashWithdrawalRequestPage: FC = () => {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<CashWithdrawalRequestStatus | ''>('');
 
+  // Default: เดือนปัจจุบัน (วันที่ 1 → วันสุดท้ายของเดือน)
+  const monthRange = useMemo(() => {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { start: fmt(first), end: fmt(last) };
+  }, []);
+  const [startDate, setStartDate] = useState<string>(monthRange.start);
+  const [endDate, setEndDate] = useState<string>(monthRange.end);
+  const toISO = (d: Date | null) =>
+    d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
+
   const [createOpen, setCreateOpen] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
   const [selected, setSelected] = useState<CashWithdrawalRequest | null>(null);
@@ -69,6 +84,8 @@ const CashWithdrawalRequestPage: FC = () => {
         limit,
         ...(search.trim() ? { search: search.trim() } : {}),
         ...(status ? { status } : {}),
+        ...(startDate ? { start_date: startDate } : {}),
+        ...(endDate ? { end_date: endDate } : {}),
       });
       setItems(res?.data || []);
       setTotal(res?.meta?.total ?? (res?.data?.length || 0));
@@ -77,7 +94,7 @@ const CashWithdrawalRequestPage: FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, search, status]);
+  }, [page, limit, search, status, startDate, endDate]);
 
   useEffect(() => {
     const t = setTimeout(fetchList, 250);
@@ -86,7 +103,7 @@ const CashWithdrawalRequestPage: FC = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [search, status]);
+  }, [search, status, startDate, endDate]);
 
   const stats = useMemo(() => {
     let pending = 0;
@@ -161,8 +178,8 @@ const CashWithdrawalRequestPage: FC = () => {
 
         {/* Toolbar */}
         <Card className="!p-4 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-            <div className="relative w-full sm:w-72">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative w-full sm:w-72 flex-shrink-0">
               <Input
                 type="search"
                 placeholder="ค้นหาเลขที่ / หมายเหตุ"
@@ -174,7 +191,7 @@ const CashWithdrawalRequestPage: FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <div className="w-full sm:w-48">
+            <div className="w-full sm:w-44 flex-shrink-0">
               <DropdownSelect
                 value={status}
                 onChange={(v) => setStatus(v as CashWithdrawalRequestStatus | '')}
@@ -184,8 +201,31 @@ const CashWithdrawalRequestPage: FC = () => {
                   { value: '', label: 'ทุกสถานะ' },
                   { value: 'PENDING', label: 'รออนุมัติ' },
                   { value: 'APPROVED', label: 'อนุมัติแล้ว' },
-                  { value: 'REJECTED', label: 'ปฏิเสธ' },
+                  { value: 'REJECTED', label: 'ไม่อนุมัติ' },
                 ]}
+              />
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
+              <BuddhistDatePicker
+                selected={startDate ? new Date(startDate) : null}
+                onChange={(d: Date | null) => setStartDate(toISO(d))}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="วันที่เริ่มต้น"
+                isClearable
+                wrapperClassName="flex-1 sm:w-36 min-w-0"
+                className="block w-full rounded-md border border-slate-300 py-2 pr-3 text-sm shadow-sm focus:ring-2 focus:ring-primary focus:border-primary bg-white h-10"
+              />
+              <span className="text-slate-400 shrink-0">—</span>
+              <BuddhistDatePicker
+                selected={endDate ? new Date(endDate) : null}
+                onChange={(d: Date | null) => setEndDate(toISO(d))}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="วันที่สิ้นสุด"
+                isClearable
+                wrapperClassName="flex-1 sm:w-36 min-w-0"
+                className="block w-full rounded-md border border-slate-300 py-2 pr-3 text-sm shadow-sm focus:ring-2 focus:ring-primary focus:border-primary bg-white h-10"
               />
             </div>
           </div>
@@ -235,7 +275,7 @@ const CashWithdrawalRequestPage: FC = () => {
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
                           {req.sourceAccount
-                            ? `${req.sourceAccount.account_number} (${req.sourceAccount.account_name})`
+                            ? `${req.sourceAccount.bank_name || ''} ${req.sourceAccount.account_number} (${req.sourceAccount.account_name})`.trim()
                             : <span className="text-slate-300">—</span>}
                         </td>
                         <td className="px-4 py-3 text-sm text-right font-bold tabular-nums">

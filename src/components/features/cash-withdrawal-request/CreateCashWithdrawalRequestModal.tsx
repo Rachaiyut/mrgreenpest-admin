@@ -16,7 +16,7 @@ import {
 const STATUS_META: Record<string, { label: string; badge: string }> = {
   PENDING: { label: 'รออนุมัติ', badge: 'bg-amber-100 text-amber-700' },
   APPROVED: { label: 'อนุมัติแล้ว', badge: 'bg-emerald-100 text-emerald-700' },
-  REJECTED: { label: 'ปฏิเสธ', badge: 'bg-red-100 text-red-700' },
+  REJECTED: { label: 'ไม่อนุมัติ', badge: 'bg-red-100 text-red-700' },
 };
 
 export type CashWithdrawalRequestModalMode = 'create' | 'view';
@@ -172,8 +172,8 @@ export const CreateCashWithdrawalRequestModal: FC<Props> = ({
               <p className="text-xs text-slate-500">บัญชีที่ตัด</p>
               <p className="text-sm font-semibold text-slate-800">
                 {request.sourceAccount
-                  ? `${request.sourceAccount.account_number} (${request.sourceAccount.account_name})`
-                  : <span className="text-slate-400">— ยังไม่ได้อนุมัติ</span>}
+                  ? `${request.sourceAccount.bank_name || ''} ${request.sourceAccount.account_number} (${request.sourceAccount.account_name})`.trim()
+                  : <span className="text-slate-400">ยังไม่ได้อนุมัติ</span>}
               </p>
             </div>
             {request.reject_reason && (

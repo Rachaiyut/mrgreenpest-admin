@@ -8,16 +8,18 @@ type Props = {
   active: CashTab;
   onChange: (tab: CashTab) => void;
   className?: string;
+  /** เปลี่ยนค่าเพื่อบังคับ refetch จำนวนใบรออนุมัติ (ใช้หลังสร้าง/อนุมัติ/ปฏิเสธ) */
+  refreshKey?: number;
 };
 
-export const CashTabBar: FC<Props> = ({ active, onChange, className }) => {
+export const CashTabBar: FC<Props> = ({ active, onChange, className, refreshKey = 0 }) => {
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     CashWithdrawalRequestApi.getAll({ status: 'PENDING', limit: 1, page: 1 })
       .then((res) => setPendingCount(res?.meta?.total ?? 0))
       .catch(() => setPendingCount(0));
-  }, [active]);
+  }, [active, refreshKey]);
 
   const baseBtn =
     'px-3 sm:px-4 h-10 text-xs sm:text-sm font-semibold rounded-md transition-all whitespace-nowrap flex items-center';

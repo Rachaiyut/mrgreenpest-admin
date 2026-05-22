@@ -39,6 +39,8 @@ export interface CashWithdrawalRequest {
 
 export interface CashWithdrawalRequestFilterQuery extends IBaseQuery {
   status?: CashWithdrawalRequestStatus;
+  start_date?: string;
+  end_date?: string;
 }
 
 export interface CreateCashWithdrawalRequestPayload {

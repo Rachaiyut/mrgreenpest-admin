@@ -44,7 +44,7 @@ export const ApproveCashWithdrawalRequestModal: FC<Props> = ({
     () =>
       accounts.map((a) => ({
         value: a.id,
-        label: `${a.account_number} (${a.account_name}) — ${fmtBaht(Number(a.current_balance || 0))} บาท`,
+        label: `${a.bank_name || ''} ${a.account_number} (${a.account_name}) — ${fmtBaht(Number(a.current_balance || 0))} บาท`.trim(),
       })),
     [accounts],
   );
