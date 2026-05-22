@@ -60,11 +60,16 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
       ? warehouseMap.get(withdrawal.to_warehouse_id)
       : null;
 
+  // ราคาที่ใช้คำนวณมูลค่าใบเบิก = ราคาทุน (cost_price) เป็นหลัก
+  // เพราะใบเบิกเป็นการลดมูลค่าสต๊อก ไม่ใช่การขาย — fallback ไป price ถ้าไม่มี
+  const getUnitValue = (product?: { price?: number; cost_price?: number }) =>
+    Number(product?.cost_price || product?.price || 0);
+
   const totalGoodsAmount = useMemo(
     () =>
       (withdrawal?.items || []).reduce((sum, item) => {
         const product = productMap.get(item.product_id);
-        return sum + (product ? product.price * item.quantity : 0);
+        return sum + getUnitValue(product) * item.quantity;
       }, 0),
     [withdrawal?.items, productMap]
   );
@@ -254,7 +259,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
                 {(withdrawal.items || []).length > 0 ? (
                   (withdrawal.items || []).map((item, index) => {
                     const product = productMap.get(item.product_id);
-                    const total = product ? product.price * item.quantity : 0;
+                    const total = getUnitValue(product) * item.quantity;
                     return (
                       <tr key={`${withdrawal.id}-${item.product_id}`}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
