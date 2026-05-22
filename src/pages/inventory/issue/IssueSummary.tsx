@@ -317,7 +317,13 @@ const IssueSummaryPage: React.FC = () => {
   }, [users, extraUsers, uniqueCreators, userMap]);
 
   const filteredSummaries = useMemo(() => {
+    // เรียงจากใหม่ → เก่า; ถ้ามี code ใช้ code เป็นหลัก (natural sort), ไม่งั้น fallback created_at DESC
     let filtered = [...stockIssueSummaries].sort((a, b) => {
+      const codeA = String((a as any).code || '');
+      const codeB = String((b as any).code || '');
+      if (codeA && codeB) {
+        return codeB.localeCompare(codeA, undefined, { numeric: true });
+      }
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
 
