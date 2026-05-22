@@ -4,11 +4,17 @@ import { UserExpense } from '@/src/types/entity/user-expense.interface';
 import { AuthService } from './auth';
 
 interface UserWallet {
-  id: string;
+  id?: string;
   user_id: string;
+  /** ยอดเบิกสะสม (used) = sum(INCOME) - sum(EXPENSE) */
   balance: number;
   expense_limit: number;
-  total_expenses: number;
+  total_expenses?: number;
+  total_income?: number;
+  total_expense?: number;
+  /** เงินคงเหลือที่ยังเบิกได้ = expense_limit - balance */
+  remaining?: number;
+  transactions?: unknown[];
 }
 
 class UserService extends AuthService {

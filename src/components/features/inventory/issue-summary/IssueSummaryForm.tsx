@@ -117,7 +117,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   const [referenceType, setReferenceType] = useState<'JOB'>('JOB');
   const [jobId, setJobId] = useState<string>('');
 
-  const [walletInfo, setWalletInfo] = useState<{ balance: number; expense_limit: number } | null>(null);
+  const [walletInfo, setWalletInfo] = useState<{ balance: number; expense_limit: number; remaining: number; transactions?: unknown[] } | null>(null);
   const [fetchedRequester, setFetchedRequester] = useState<UserType | null>(null);
 
   const [fetchedJobs, setFetchedJobs] = useState<JobType[]>([]);
@@ -343,7 +343,16 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   useEffect(() => {
     if (requesterId) {
       UserApi.getById(requesterId).then(setFetchedRequester).catch(() => setFetchedRequester(null));
-      UserApi.getWallet(requesterId).then(setWalletInfo).catch(() => setWalletInfo(null));
+      UserApi.getWallet(requesterId)
+        .then((w) =>
+          setWalletInfo({
+            balance: Number(w.balance || 0),
+            expense_limit: Number(w.expense_limit || 0),
+            remaining: Number(w.remaining ?? (Number(w.expense_limit || 0) - Number(w.balance || 0))),
+            transactions: w.transactions,
+          }),
+        )
+        .catch(() => setWalletInfo(null));
     } else {
       setFetchedRequester(null);
       setWalletInfo(null);
@@ -360,7 +369,8 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   );
 
   const isOverLimit = useMemo(() => {
-    if (walletInfo && typeof walletInfo.balance === 'number') return totalExpenses > walletInfo.balance;
+    // ใช้ remaining (เงินคงเหลือที่ยังเบิกได้) เป็นเกณฑ์ ไม่ใช่ balance (ที่เป็นยอดเบิกสะสม)
+    if (walletInfo && typeof walletInfo.remaining === 'number') return totalExpenses > walletInfo.remaining;
     if (!selectedRequester || typeof selectedRequester.creditLimit !== 'number') return false;
     return totalExpenses > selectedRequester.creditLimit;
   }, [totalExpenses, selectedRequester, walletInfo]);
@@ -893,7 +903,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   </div>
                   <div className="flex items-end justify-between mb-2">
                     <span className="text-sm font-medium text-slate-500">คงเหลือปัจจุบัน</span>
-                    <span className="text-base font-semibold text-slate-700">{walletInfo.balance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
+                    <span className="text-base font-semibold text-slate-700">{walletInfo.remaining.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
                   </div>
                   {totalExpenses > 0 && (
                     <div className="flex items-end justify-between mb-2">
@@ -905,10 +915,10 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                     <span className="text-sm font-bold text-slate-600">คงเหลือสุทธิ (หลังเบิก)</span>
                     <span
                       className={`text-xl font-black ${
-                        walletInfo.balance - totalExpenses < 0 ? 'text-red-600' : 'text-emerald-600'
+                        walletInfo.remaining - totalExpenses < 0 ? 'text-red-600' : 'text-emerald-600'
                       }`}
                     >
-                      {(walletInfo.balance - totalExpenses).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+                      {(walletInfo.remaining - totalExpenses).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 mb-1 overflow-hidden">
@@ -918,7 +928,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                           walletInfo.expense_limit > 0
                             ? Math.min(
                                 100,
-                                ((walletInfo.expense_limit - walletInfo.balance + totalExpenses) / walletInfo.expense_limit) * 100,
+                                ((walletInfo.balance + totalExpenses) / walletInfo.expense_limit) * 100,
                               )
                             : 100
                         }%`,

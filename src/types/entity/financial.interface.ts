@@ -124,6 +124,13 @@ export interface WalletTransaction {
 
 export interface UserWallet {
   user_id: string;
+  expense_limit: number;
+  total_income: number;
+  total_expense: number;
+  /** ยอดเบิกสะสม (ใช้งบไปแล้ว) — sum(INCOME) - sum(EXPENSE) */
+  balance: number;
+  /** เงินคงเหลือที่ยังเบิกได้ = expense_limit - balance */
+  remaining: number;
   transactions: WalletTransaction[];
 }
 
