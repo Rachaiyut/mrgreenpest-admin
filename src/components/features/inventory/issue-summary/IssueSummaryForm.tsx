@@ -491,8 +491,14 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
       // Determine status
       let finalStatus: string;
       if (isEditMode) {
-        // Edit mode: use the status dropdown value
-        finalStatus = currentStatus;
+        // Edit DRAFT + กดปุ่ม "บันทึกและตัดสต็อก" (handleSubmit) → ส่ง commit
+        //   over limit → PENDING (รออนุมัติ), ปกติ → COMPLETED (ตัดสต็อกทันที)
+        // Edit อื่น ๆ → คง status เดิม
+        if (currentStatus === 'DRAFT') {
+          finalStatus = isOverLimit ? 'PENDING' : 'COMPLETED';
+        } else {
+          finalStatus = currentStatus;
+        }
       } else {
         // Create mode: PENDING if expense over wallet limit, else COMPLETED
         finalStatus = isOverLimit ? 'PENDING' : 'COMPLETED';
