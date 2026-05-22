@@ -92,7 +92,7 @@ export const IssueSummaryModal: React.FC<IssueSummaryModalProps> = ({
               <LoadingIcon className="w-4 h-4" />
               กำลังบันทึก...
             </span>
-          ) : isEditMode ? 'บันทึกการแก้ไข' : 'บันทึกและตัดสต็อก'}
+          ) : (isEditMode && summary?.status !== 'DRAFT') ? 'บันทึกการแก้ไข' : 'บันทึกและตัดสต็อก'}
         </Button>
       </div>
     </div>

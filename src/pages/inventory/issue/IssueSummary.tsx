@@ -682,7 +682,8 @@ const IssueSummaryPage: React.FC = () => {
         hoverBg: 'hover:bg-slate-50',
         onClick: () => handleViewDetails(summary),
       },
-      ...(!isTechRole && isDraft
+      // ฉบับร่าง — หัวหน้าช่าง/ช่าง แก้/ยกเลิกได้ ส่วน "เปลี่ยนสถานะ" สงวนให้คนที่ไม่ใช่ tech
+      ...(isDraft
         ? [
             {
               label: 'แก้ไข',
@@ -691,15 +692,19 @@ const IssueSummaryPage: React.FC = () => {
               hoverBg: 'hover:bg-blue-50',
               onClick: () => handleEditSummary(summary),
             },
+            ...(!isTechRole
+              ? [
+                  {
+                    label: 'เปลี่ยนสถานะ',
+                    icon: CheckCircleIcon,
+                    color: 'text-slate-700',
+                    hoverBg: 'hover:bg-slate-50',
+                    onClick: () => handleStatusClick(summary),
+                  },
+                ]
+              : []),
             {
-              label: 'เปลี่ยนสถานะ',
-              icon: CheckCircleIcon,
-              color: 'text-slate-700',
-              hoverBg: 'hover:bg-slate-50',
-              onClick: () => handleStatusClick(summary),
-            },
-            {
-              label: 'ลบ',
+              label: 'ยกเลิก',
               icon: TrashIcon,
               color: 'text-red-600',
               hoverBg: 'hover:bg-red-50',

@@ -65,11 +65,15 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
     [users]
   );
 
+  // ราคาต่อหน่วย — ใช้ cost_price ก่อน (ราคาทุน = มูลค่าสต๊อกที่ถูกหัก) → fallback ไป price
+  const getUnitValue = (product?: { price?: number; cost_price?: number }) =>
+    Number(product?.cost_price || product?.price || 0);
+
   const totalAmount = useMemo(() => {
     if (!summary?.items) return 0;
     return summary.items.reduce((sum, item) => {
       const product = productMap.get(item.product_id);
-      return sum + (product ? product.price * item.quantity : 0);
+      return sum + getUnitValue(product) * item.quantity;
     }, 0);
   }, [summary?.items, productMap]);
 
@@ -332,7 +336,7 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
                 <tbody className="divide-y divide-slate-200 bg-white">
                   {summary.items.map((item, index) => {
                     const product = productMap.get(item.product_id);
-                    const price = product?.price || 0;
+                    const price = getUnitValue(product);
                     const itemTotal = price * item.quantity;
                     return (
                       <tr key={item.id || index} className="hover:bg-slate-50 [&>td]:px-3 [&>td]:py-2 [&>td]:text-slate-800">
@@ -477,7 +481,12 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
           )}
 
           <div className="flex justify-end">
-            <Button type="button" variant="secondary" onClick={onClose}>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={onClose}
+              className="!bg-emerald-600 hover:!bg-emerald-700"
+            >
               ปิด
             </Button>
           </div>
