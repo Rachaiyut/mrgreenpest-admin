@@ -311,8 +311,11 @@ const Issue: FC = () => {
   }, [users, extraUsers, withdrawals, userMap]);
 
   const filteredIssues = useMemo(() => {
+    // เรียงตาม code DESC (ใหม่ที่สุดอยู่บน) — backend ส่งมาเรียงแบบนี้อยู่แล้ว
     let filtered = [...withdrawals].sort((a, b) => {
-      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      const codeA = String(a.code || '');
+      const codeB = String(b.code || '');
+      return codeB.localeCompare(codeA, undefined, { numeric: true });
     });
 
     if (creatorFilter !== 'all') {
