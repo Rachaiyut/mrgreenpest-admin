@@ -378,11 +378,12 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
     [expenseItems],
   );
 
-  // ตอนแก้ DRAFT — wallet.balance ที่ backend ส่งมา "หัก" ยอดของ DRAFT นี้ไปแล้ว
-  // ต้องบวกกลับเข้าไปก่อนคำนวณ "คงเหลือสุทธิ" เพื่อไม่ให้นับซ้ำ
+  // ตอนแก้ใบเบิก — wallet.balance ที่ backend ส่งมา "หัก" ยอด expense ของใบนี้ไปแล้ว
+  // (เพราะ backend สร้าง user-expense records ทุกครั้ง ไม่ว่า status จะเป็น DRAFT/PENDING/COMPLETED)
+  // ต้องบวกกลับเข้าไปก่อนคำนวณ "คงเหลือสุทธิ" เพื่อไม่ให้นับซ้ำ (ยกเว้น CANCELLED ที่ refund แล้ว)
   const savedDraftExpenseTotal = useMemo(() => {
     if (!isEditMode || !summary) return 0;
-    if (summary.status !== 'DRAFT') return 0;
+    if (summary.status === 'CANCELLED') return 0;
     const expData =
       (summary as unknown as Record<string, unknown>).expense_items
       || (summary as unknown as Record<string, unknown>).expenses
