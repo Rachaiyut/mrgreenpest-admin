@@ -368,11 +368,33 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
     [expenseItems],
   );
 
+  // ตอนแก้ DRAFT — wallet.balance ที่ backend ส่งมา "หัก" ยอดของ DRAFT นี้ไปแล้ว
+  // ต้องบวกกลับเข้าไปก่อนคำนวณ "คงเหลือสุทธิ" เพื่อไม่ให้นับซ้ำ
+  const savedDraftExpenseTotal = useMemo(() => {
+    if (!isEditMode || !summary) return 0;
+    if (summary.status !== 'DRAFT') return 0;
+    const expData =
+      (summary as unknown as Record<string, unknown>).expense_items
+      || (summary as unknown as Record<string, unknown>).expenses
+      || [];
+    if (!Array.isArray(expData)) return 0;
+    return (expData as Array<{ amount?: number | string }>).reduce(
+      (sum, e) => sum + Number(e.amount || 0),
+      0,
+    );
+  }, [isEditMode, summary]);
+
+  // คงเหลือที่ "ถ้า DRAFT นี้ไม่เคยถูกบันทึก" — ใช้แสดงในการ์ดให้ user เห็นยอดจริง
+  const effectiveBalance = useMemo(() => {
+    if (!walletInfo) return 0;
+    return walletInfo.balance + savedDraftExpenseTotal;
+  }, [walletInfo, savedDraftExpenseTotal]);
+
   const isOverLimit = useMemo(() => {
-    if (walletInfo && typeof walletInfo.balance === 'number') return totalExpenses > walletInfo.balance;
+    if (walletInfo && typeof walletInfo.balance === 'number') return totalExpenses > effectiveBalance;
     if (!selectedRequester || typeof selectedRequester.creditLimit !== 'number') return false;
     return totalExpenses > selectedRequester.creditLimit;
-  }, [totalExpenses, selectedRequester, walletInfo]);
+  }, [totalExpenses, selectedRequester, walletInfo, effectiveBalance]);
 
   const isAnyItemOverStock = useMemo(() => {
     if (!warehouseId) return false;
@@ -527,6 +549,8 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
 
       if (jobId) payload.job_id = jobId;
       if (selectedCustomerIds.length > 0) payload.customer_id = selectedCustomerIds[0];
+      // ลบ field ที่ค่าว่าง — backend DTO validate UUID format ถึงแม้จะ optional
+      if (!payload.warehouse_id) delete payload.warehouse_id;
 
       await onSubmit(payload);
       onCancel();
@@ -538,7 +562,8 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   };
 
   const handleSaveDraft = async () => {
-    if (!warehouseId)
+    // ต้องเลือกรถบริการเฉพาะกรณีเบิกสินค้า — ถ้าเบิกแค่ค่าใช้จ่าย ไม่บังคับ (สอดคล้องกับ handleSubmit)
+    if (enableGoods && !warehouseId)
       return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกรถบริการก่อนบันทึกฉบับร่าง' });
     setIsSubmitting(true);
     try {
@@ -548,7 +573,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
 
       const payload: any = {
         ...(isEditMode && summary ? summary : {}),
-        warehouse_id: warehouseId,
+        warehouse_id: warehouseId || undefined,
         issue_date: issueDate
           ? `${issueDate.getFullYear()}-${String(issueDate.getMonth() + 1).padStart(2, '0')}-${String(issueDate.getDate()).padStart(2, '0')}`
           : undefined,
@@ -564,6 +589,8 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
           amount: Number(item.amount),
         })),
       };
+      // ลบ field ที่ค่าว่าง — backend DTO บางตัวจะ validate format เช่น UUID ทันที
+      if (!payload.warehouse_id) delete payload.warehouse_id;
 
       if (jobId) payload.job_id = jobId;
       if (selectedCustomerIds.length > 0) payload.customer_id = selectedCustomerIds[0];
@@ -908,7 +935,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   </div>
                   <div className="flex items-end justify-between mb-2">
                     <span className="text-sm font-medium text-slate-500">คงเหลือปัจจุบัน</span>
-                    <span className="text-base font-semibold text-slate-700">{walletInfo.balance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
+                    <span className="text-base font-semibold text-slate-700">{effectiveBalance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
                   </div>
                   {totalExpenses > 0 && (
                     <div className="flex items-end justify-between mb-2">
@@ -920,10 +947,10 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                     <span className="text-sm font-bold text-slate-600">คงเหลือสุทธิ (หลังเบิก)</span>
                     <span
                       className={`text-xl font-black ${
-                        walletInfo.balance - totalExpenses < 0 ? 'text-red-600' : 'text-emerald-600'
+                        effectiveBalance - totalExpenses < 0 ? 'text-red-600' : 'text-emerald-600'
                       }`}
                     >
-                      {(walletInfo.balance - totalExpenses).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+                      {(effectiveBalance - totalExpenses).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 mb-1 overflow-hidden">
@@ -933,7 +960,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                           walletInfo.expense_limit > 0
                             ? Math.min(
                                 100,
-                                ((walletInfo.expense_limit - walletInfo.balance + totalExpenses) / walletInfo.expense_limit) * 100,
+                                ((walletInfo.expense_limit - effectiveBalance + totalExpenses) / walletInfo.expense_limit) * 100,
                               )
                             : 100
                         }%`,
