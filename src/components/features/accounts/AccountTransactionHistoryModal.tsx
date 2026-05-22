@@ -18,6 +18,7 @@ import {
   CurrencyDollarIcon,
 } from '../../../assets/icons/Icons';
 import { formatThaiDateTime } from '../../../utils/date';
+import BuddhistDatePicker from '../../common/BuddhistDatePicker';
 
 interface Props {
   isOpen: boolean;
@@ -86,6 +87,20 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
   const [typeFilter, setTypeFilter] = useState<'all' | AccountTransactionType>('all');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Default ช่วงวันที่ = เดือนปัจจุบัน
+  const monthRange = useMemo(() => {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { start: fmt(first), end: fmt(last) };
+  }, []);
+  const [startDate, setStartDate] = useState<string>(monthRange.start);
+  const [endDate, setEndDate] = useState<string>(monthRange.end);
+  const toISO = (d: Date | null) =>
+    d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
+
   const fetchTx = useCallback(async () => {
     if (!account || !isOpen) return;
     setIsLoading(true);
@@ -97,6 +112,8 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
         sort_by: 'created_at',
         sort_order: 'DESC',
         ...(typeFilter !== 'all' ? { type: typeFilter } : {}),
+        ...(startDate ? { start_date: startDate } : {}),
+        ...(endDate ? { end_date: endDate } : {}),
       });
       setTransactions(res.data || []);
       setTotal(res.meta?.total ?? (res.data?.length ?? 0));
@@ -105,29 +122,62 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
     } finally {
       setIsLoading(false);
     }
-  }, [account, isOpen, page, limit, typeFilter]);
+  }, [account, isOpen, page, limit, typeFilter, startDate, endDate]);
 
   useEffect(() => {
     if (isOpen) {
       setPage(1);
       setTypeFilter('all');
+      setStartDate(monthRange.start);
+      setEndDate(monthRange.end);
     }
-  }, [isOpen, account?.id]);
+  }, [isOpen, account?.id, monthRange.start, monthRange.end]);
 
   useEffect(() => {
     fetchTx();
   }, [fetchTx]);
 
-  const summary = useMemo(() => {
-    let deposit = 0;
-    let withdraw = 0;
-    for (const t of transactions) {
-      const amt = Number(t.amount || 0);
-      if (t.type === 'DEPOSIT') deposit += amt;
-      else if (t.type === 'WITHDRAW') withdraw += amt;
+  // Reset page เมื่อ filter เปลี่ยน
+  useEffect(() => {
+    setPage(1);
+  }, [startDate, endDate]);
+
+  // 3.2 — ยอดเงินคำนวณตามช่วงเดือนเลย (ไม่ใช่แค่หน้าปัจจุบัน) → fetch อีก call ด้วย limit ใหญ่
+  const [summaryTotals, setSummaryTotals] = useState({ deposit: 0, withdraw: 0 });
+  useEffect(() => {
+    if (!account || !isOpen) {
+      setSummaryTotals({ deposit: 0, withdraw: 0 });
+      return;
     }
-    return { deposit, withdraw };
-  }, [transactions]);
+    let cancelled = false;
+    AccountApi.getTransactions({
+      account_id: account.id,
+      page: 1,
+      limit: 10000,
+      ...(typeFilter !== 'all' ? { type: typeFilter } : {}),
+      ...(startDate ? { start_date: startDate } : {}),
+      ...(endDate ? { end_date: endDate } : {}),
+    })
+      .then((res) => {
+        if (cancelled) return;
+        let deposit = 0;
+        let withdraw = 0;
+        (res.data || []).forEach((t) => {
+          const amt = Number(t.amount || 0);
+          if (t.type === 'DEPOSIT') deposit += amt;
+          else if (t.type === 'WITHDRAW') withdraw += amt;
+        });
+        setSummaryTotals({ deposit, withdraw });
+      })
+      .catch(() => {
+        if (!cancelled) setSummaryTotals({ deposit: 0, withdraw: 0 });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [account, isOpen, typeFilter, startDate, endDate]);
+
+  const summary = summaryTotals;
 
   if (!account) return null;
 
@@ -176,7 +226,7 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-medium text-emerald-700 uppercase tracking-wide">
-                เงินเข้า (ในหน้านี้)
+                เงินเข้า (ตามช่วงเดือน)
               </p>
               <p className="text-base font-bold text-emerald-700 tabular-nums leading-tight whitespace-nowrap truncate">
                 +{fmtMoney(summary.deposit)}
@@ -192,7 +242,7 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-medium text-red-700 uppercase tracking-wide">
-                เงินออก (ในหน้านี้)
+                เงินออก (ตามช่วงเดือน)
               </p>
               <p className="text-base font-bold text-red-700 tabular-nums leading-tight whitespace-nowrap truncate">
                 -{fmtMoney(summary.withdraw)}
@@ -215,10 +265,31 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
             { value: 'all', label: 'ทุกประเภทรายการ' },
             { value: 'DEPOSIT', label: 'เงินเข้า' },
             { value: 'WITHDRAW', label: 'เงินออก' },
-            { value: 'TRANSFER', label: 'โอน' },
-            { value: 'ADJUSTMENT', label: 'ปรับปรุงยอด' },
           ]}
         />
+        <div className="flex items-center gap-2 min-w-0">
+          <BuddhistDatePicker
+            selected={startDate ? new Date(startDate) : null}
+            onChange={(d: Date | null) => setStartDate(toISO(d))}
+            dateFormat="dd/MM/yyyy"
+            locale="th"
+            placeholderText="วันเริ่มต้น"
+            isClearable
+            wrapperClassName="w-36"
+            className="block w-full rounded-md border border-slate-300 py-1.5 pr-3 text-sm shadow-sm focus:ring-2 focus:ring-primary focus:border-primary bg-white"
+          />
+          <span className="text-slate-400 shrink-0">-</span>
+          <BuddhistDatePicker
+            selected={endDate ? new Date(endDate) : null}
+            onChange={(d: Date | null) => setEndDate(toISO(d))}
+            dateFormat="dd/MM/yyyy"
+            locale="th"
+            placeholderText="วันสิ้นสุด"
+            isClearable
+            wrapperClassName="w-36"
+            className="block w-full rounded-md border border-slate-300 py-1.5 pr-3 text-sm shadow-sm focus:ring-2 focus:ring-primary focus:border-primary bg-white"
+          />
+        </div>
         <span className="ml-auto text-sm text-slate-500">
           ทั้งหมด{' '}
           <span className="font-semibold text-slate-700 tabular-nums">
@@ -238,7 +309,6 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
                 <th className="px-5 py-3.5">วันที่และเวลา</th>
                 <th className="px-5 py-3.5">ประเภท</th>
                 <th className="px-5 py-3.5">รายละเอียด</th>
-                <th className="px-5 py-3.5">อ้างอิง</th>
                 <th className="px-5 py-3.5 text-right">จำนวนเงิน</th>
                 <th className="px-5 py-3.5 text-right">ยอดคงเหลือ</th>
               </tr>
@@ -246,7 +316,7 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
             <tbody className="bg-white divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="py-16">
+                  <td colSpan={6} className="py-16">
                     <div className="flex flex-col items-center text-slate-500">
                       <LoadingIcon className="w-10 h-10 animate-spin mb-3 text-primary" />
                       <p className="text-sm font-medium">กำลังโหลด...</p>
@@ -255,7 +325,7 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
                 </tr>
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-16">
+                  <td colSpan={6} className="py-16">
                     <div className="flex flex-col items-center text-slate-400">
                       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 mb-3">
                         <DocumentCheckIcon className="h-8 w-8 opacity-60" />
@@ -285,9 +355,6 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
                       </td>
                       <td className="px-5 py-4 text-sm text-slate-700 text-left">
                         {t.description || <span className="text-slate-300">-</span>}
-                      </td>
-                      <td className="px-5 py-4 font-mono text-xs text-slate-500">
-                        {t.reference_code || <span className="text-slate-300">-</span>}
                       </td>
                       <td
                         className={`px-5 py-4 text-base font-bold tabular-nums text-right whitespace-nowrap ${meta.amountClass}`}

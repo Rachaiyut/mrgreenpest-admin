@@ -57,8 +57,17 @@ const AccountTransactions: FC = () => {
   const [total, setTotal] = useState(0);
 
   const [type, setType] = useState<string>('');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
+  // Default: เดือนปัจจุบัน (วันที่ 1 → วันสุดท้ายของเดือน)
+  const monthRange = useMemo(() => {
+    const now = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { start: fmt(first), end: fmt(last) };
+  }, []);
+  const [startDate, setStartDate] = useState<string>(monthRange.start);
+  const [endDate, setEndDate] = useState<string>(monthRange.end);
   const [search, setSearch] = useState('');
 
   const [page, setPage] = useState(1);
@@ -80,6 +89,7 @@ const AccountTransactions: FC = () => {
   const [requestOpen, setRequestOpen] = useState(false);
 
   const [activeTab, setActiveTab] = useState<CashTab>('transactions');
+  const [cashTabRefreshKey, setCashTabRefreshKey] = useState(0);
 
   // Dropdown menu state per row
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -197,17 +207,60 @@ const AccountTransactions: FC = () => {
     [accounts],
   );
 
-  // Stats for top cards
-  const stats = useMemo(() => {
-    let income = 0;
-    let expense = 0;
-    transactions.forEach((t) => {
-      const amt = Number(t.amount || 0);
-      if (t.type === 'DEPOSIT') income += amt;
-      else if (t.type === 'WITHDRAW') expense += amt;
-    });
-    return { income, expense, net: income - expense };
-  }, [transactions]);
+  // Stats for top cards — รวมยอดทั้งช่วงเดือน (ไม่จำกัด pagination)
+  const [statsTotals, setStatsTotals] = useState<{ income: number; expense: number; net: number }>({
+    income: 0,
+    expense: 0,
+    net: 0,
+  });
+  useEffect(() => {
+    if (!mappingLoaded || hasNoMapping) {
+      setStatsTotals({ income: 0, expense: 0, net: 0 });
+      return;
+    }
+    let cancelled = false;
+    AccountApi.getTransactions({
+      page: 1,
+      limit: 10000,
+      ...(effectiveAccountId ? { account_id: effectiveAccountId } : {}),
+      ...(type ? { type: type as AccountTransactionType } : {}),
+      ...(startDate ? { start_date: startDate } : {}),
+      ...(endDate ? { end_date: endDate } : {}),
+      ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+    })
+      .then((res) => {
+        if (cancelled) return;
+        let income = 0;
+        let expense = 0;
+        (res?.data || []).forEach((t) => {
+          const amt = Number(t.amount || 0);
+          if (t.type === 'DEPOSIT') income += amt;
+          else if (t.type === 'WITHDRAW') expense += amt;
+        });
+        setStatsTotals({ income, expense, net: income - expense });
+      })
+      .catch(() => {
+        if (!cancelled) setStatsTotals({ income: 0, expense: 0, net: 0 });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mappingLoaded, hasNoMapping, effectiveAccountId, type, startDate, endDate, debouncedSearch]);
+
+  const stats = statsTotals;
+
+  // ฟอร์แมตช่วงวันที่ไว้แสดงใต้การ์ด stats
+  const rangeLabel = useMemo(() => {
+    const fmt = (iso: string) => {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear() + 543}`;
+    };
+    if (startDate && endDate) return `${fmt(startDate)} – ${fmt(endDate)}`;
+    if (startDate) return `ตั้งแต่ ${fmt(startDate)}`;
+    if (endDate) return `ถึง ${fmt(endDate)}`;
+    return 'ทั้งหมด';
+  }, [startDate, endDate]);
 
   return (
     <div className="flex-1 flex flex-col">
@@ -263,9 +316,14 @@ const AccountTransactions: FC = () => {
         {activeTab === 'requests' ? (
           <CashWithdrawalRequestList
             toolbarExtra={
-              <CashTabBar active={activeTab} onChange={setActiveTab} />
+              <CashTabBar
+                active={activeTab}
+                onChange={setActiveTab}
+                refreshKey={cashTabRefreshKey}
+              />
             }
             hideSourceAccount
+            onMutated={() => setCashTabRefreshKey((k) => k + 1)}
           />
         ) : (
           <>
@@ -277,8 +335,9 @@ const AccountTransactions: FC = () => {
                 <ArrowTrendingUpIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm text-emerald-600 font-medium whitespace-nowrap">รายรับ (หน้านี้)</p>
+                <p className="text-xs sm:text-sm text-emerald-600 font-medium whitespace-nowrap">รายรับ</p>
                 <p className="text-2xl font-bold text-emerald-800">+{fmtMoney(stats.income)}</p>
+                <p className="text-[10px] text-emerald-600/70 mt-0.5">{rangeLabel}</p>
               </div>
             </div>
           </Card>
@@ -288,39 +347,23 @@ const AccountTransactions: FC = () => {
                 <ArrowTrendingUpIcon className="h-5 w-5 text-white rotate-180" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm text-red-600 font-medium whitespace-nowrap">รายจ่าย (หน้านี้)</p>
+                <p className="text-xs sm:text-sm text-red-600 font-medium whitespace-nowrap">รายจ่าย</p>
                 <p className="text-2xl font-bold text-red-800">-{fmtMoney(stats.expense)}</p>
+                <p className="text-[10px] text-red-600/70 mt-0.5">{rangeLabel}</p>
               </div>
             </div>
           </Card>
-          <Card
-            className={`!p-4 bg-gradient-to-br ${
-              stats.net >= 0
-                ? 'from-blue-50 to-blue-100 border-blue-200'
-                : 'from-amber-50 to-amber-100 border-amber-200'
-            }`}
-          >
+          <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
             <div className="flex items-center gap-3">
-              <div
-                className={`p-2 rounded-lg ${stats.net >= 0 ? 'bg-blue-500' : 'bg-amber-500'}`}
-              >
+              <div className="p-2 bg-blue-500 rounded-lg">
                 <WalletIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p
-                  className={`text-xs sm:text-sm font-medium whitespace-nowrap ${
-                    stats.net >= 0 ? 'text-blue-600' : 'text-amber-600'
-                  }`}
-                >
-                  ผลต่าง (หน้านี้)
-                </p>
-                <p
-                  className={`text-2xl font-bold ${
-                    stats.net >= 0 ? 'text-blue-800' : 'text-amber-800'
-                  }`}
-                >
+                <p className="text-xs sm:text-sm text-blue-600 font-medium whitespace-nowrap">คงเหลือ</p>
+                <p className="text-2xl font-bold text-blue-800">
                   {stats.net >= 0 ? '+' : ''}{fmtMoney(stats.net)}
                 </p>
+                <p className="text-[10px] text-blue-600/70 mt-0.5">{rangeLabel}</p>
               </div>
             </div>
           </Card>
@@ -328,7 +371,7 @@ const AccountTransactions: FC = () => {
 
         {/* Toolbar */}
         <Card className="!p-4 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="relative w-full sm:w-72 flex-shrink-0">
               <Input
                 type="search"
@@ -351,12 +394,10 @@ const AccountTransactions: FC = () => {
                   { value: '', label: 'ทุกประเภท' },
                   { value: 'DEPOSIT', label: 'เงินเข้า' },
                   { value: 'WITHDRAW', label: 'เงินออก' },
-                  { value: 'ADJUSTMENT', label: 'ปรับยอด' },
-                  { value: 'TRANSFER', label: 'โอน' },
                 ]}
               />
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
               <BuddhistDatePicker
                 selected={startDate ? new Date(startDate) : null}
                 onChange={(d: Date | null) => setStartDate(toISO(d))}
@@ -364,10 +405,10 @@ const AccountTransactions: FC = () => {
                 locale="th"
                 placeholderText="วันเริ่มต้น"
                 isClearable
-                wrapperClassName="flex-1 sm:w-40"
+                wrapperClassName="flex-1 sm:w-36 min-w-0"
                 className="block w-full rounded-md border border-slate-300 py-2 pr-3 text-sm shadow-sm focus:ring-2 focus:ring-primary focus:border-primary bg-white h-10"
               />
-              <span className="text-slate-400">-</span>
+              <span className="text-slate-400 shrink-0">-</span>
               <BuddhistDatePicker
                 selected={endDate ? new Date(endDate) : null}
                 onChange={(d: Date | null) => setEndDate(toISO(d))}
@@ -375,14 +416,15 @@ const AccountTransactions: FC = () => {
                 locale="th"
                 placeholderText="วันสิ้นสุด"
                 isClearable
-                wrapperClassName="flex-1 sm:w-40"
+                wrapperClassName="flex-1 sm:w-36 min-w-0"
                 className="block w-full rounded-md border border-slate-300 py-2 pr-3 text-sm shadow-sm focus:ring-2 focus:ring-primary focus:border-primary bg-white h-10"
               />
             </div>
             <CashTabBar
               active={activeTab}
               onChange={setActiveTab}
-              className="sm:ml-auto"
+              refreshKey={cashTabRefreshKey}
+              className="w-full sm:w-auto xl:ml-auto"
             />
           </div>
         </Card>
