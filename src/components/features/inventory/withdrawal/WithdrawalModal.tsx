@@ -37,6 +37,7 @@ import {
 import {
   WarehouseType as InventoryWarehouseType,
   WithdrawalLifecycle,
+  WithdrawalLineStatus,
 } from '@/src/types/enums/inventory';
 import { UserApi } from '../../../../api/user';
 import { WarehouseApi } from '../../../../api/warehouse';
@@ -83,6 +84,42 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
   // Section toggles
   const [enableGoods, setEnableGoods] = useState(true);
   const [enableExpense, setEnableExpense] = useState(true);
+
+  // Lock sections ที่ "ตัดสินใจแล้ว" (อนุมัติ/ไม่อนุมัติ/ยกเลิก) — แอดมินแก้ได้เฉพาะส่วนที่ยังรออนุมัติ
+  const isLineLocked = (status: WithdrawalLineStatus | null | undefined) =>
+    status === WithdrawalLineStatus.APPROVED ||
+    status === WithdrawalLineStatus.COMPLETED ||
+    status === WithdrawalLineStatus.REJECTED ||
+    status === WithdrawalLineStatus.CANCELLED;
+
+  const lockedLabel = (status: WithdrawalLineStatus | null | undefined) => {
+    if (status === WithdrawalLineStatus.APPROVED || status === WithdrawalLineStatus.COMPLETED) return 'อนุมัติแล้ว — แก้ไม่ได้';
+    if (status === WithdrawalLineStatus.REJECTED) return 'ไม่อนุมัติ — แก้ไม่ได้';
+    if (status === WithdrawalLineStatus.CANCELLED) return 'ยกเลิกแล้ว — แก้ไม่ได้';
+    return '';
+  };
+
+  const stockLocked = useMemo(
+    () =>
+      (initialValues?.items || []).length > 0 &&
+      (initialValues?.items || []).every((i) => isLineLocked(i.status)),
+    [initialValues],
+  );
+  const expenseLocked = useMemo(
+    () =>
+      (initialValues?.expenses || []).length > 0 &&
+      (initialValues?.expenses || []).every((e) => isLineLocked(e.status)),
+    [initialValues],
+  );
+
+  const stockLockedLabel = useMemo(
+    () => (stockLocked ? lockedLabel((initialValues?.items || [])[0]?.status) : ''),
+    [stockLocked, initialValues],
+  );
+  const expenseLockedLabel = useMemo(
+    () => (expenseLocked ? lockedLabel((initialValues?.expenses || [])[0]?.status) : ''),
+    [expenseLocked, initialValues],
+  );
 
   // Form state
   const [goodsItems, setGoodsItems] = useState<LineItem[]>([]);
@@ -605,7 +642,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
               >
                 ยกเลิก
               </Button>
-              {mode === 'create' && (
+              {(mode === 'create' || (mode === 'edit' && initialValues?.lifecycle === WithdrawalLifecycle.DRAFT)) && (
                 <Button
                   variant="secondary"
                   type="button"
@@ -630,7 +667,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     <LoadingIcon className="w-4 h-4" />
                     กำลังบันทึก...
                   </span>
-                ) : mode === 'edit'
+                ) : mode === 'edit' && initialValues?.lifecycle !== WithdrawalLifecycle.DRAFT
                   ? 'บันทึกการแก้ไข'
                   : isAnyItemOverLimit || isOverLimit
                     ? 'ส่งเพื่อขออนุมัติ'
@@ -671,10 +708,11 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-[60]">
               <h3 className="text-lg font-bold text-slate-800 mb-3">ประเภทการเบิก <span className="text-red-500">*</span></h3>
               <div className="flex items-center gap-6 flex-wrap">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
+                <label className={`flex items-center gap-2 select-none ${stockLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                   <input
                     type="checkbox"
                     checked={enableGoods}
+                    disabled={stockLocked}
                     onChange={(e) => {
                       if (!e.target.checked && !enableExpense) return;
                       if (!e.target.checked) {
@@ -685,29 +723,32 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                       }
                       setEnableGoods(e.target.checked);
                     }}
-                    className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
+                    className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary disabled:opacity-50"
                   />
                   <span className="text-base font-semibold text-slate-700">รายการสินค้า</span>
+                  {stockLocked && <span className="text-xs text-slate-500 font-medium">({stockLockedLabel})</span>}
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer select-none">
+                <label className={`flex items-center gap-2 select-none ${expenseLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                   <input
                     type="checkbox"
                     checked={enableExpense}
+                    disabled={expenseLocked}
                     onChange={(e) => {
                       if (!e.target.checked && !enableGoods) return;
                       if (!e.target.checked) setExpenseItems([]);
                       setEnableExpense(e.target.checked);
                     }}
-                    className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
+                    className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary disabled:opacity-50"
                   />
                   <span className="text-base font-semibold text-slate-700">การเงินและค่าใช้จ่าย</span>
+                  {expenseLocked && <span className="text-xs text-slate-500 font-medium">({expenseLockedLabel})</span>}
                 </label>
               </div>
             </div>
 
             {/* Card 1: การเคลื่อนย้ายสินค้า — แสดงเฉพาะตอนเลือก "รายการสินค้า" */}
             {enableGoods && (
-              <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm relative z-50">
+              <div className={`bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm relative z-50 ${stockLocked ? 'pointer-events-none opacity-60' : ''}`}>
                 <div className="flex items-center gap-2 mb-4">
                   <div className="p-2.5 bg-blue-50 rounded-lg text-blue-600">
                     <TruckIcon className="w-6 h-6" />
@@ -803,7 +844,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
 
             {/* Card 3: Items */}
             {enableGoods && (
-              <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col min-h-[250px] relative z-20">
+              <div className={`bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col min-h-[250px] relative z-20 ${stockLocked ? 'pointer-events-none opacity-60' : ''}`}>
                 <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                   <div className="flex items-center gap-2">
                     <div className="p-2.5 bg-indigo-50 rounded-lg text-indigo-600">
@@ -1016,7 +1057,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             {/* Card 4: Finance */}
             {enableExpense && (
               <div
-                className="p-4 sm:p-6 rounded-xl border shadow-sm transition-all relative z-10 bg-white border-slate-200"
+                className={`p-4 sm:p-6 rounded-xl border shadow-sm transition-all relative z-10 bg-white border-slate-200 ${expenseLocked ? 'pointer-events-none opacity-60' : ''}`}
               >
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 border-b border-slate-100 pb-3">
                   <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">

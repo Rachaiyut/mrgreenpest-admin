@@ -820,6 +820,14 @@ const Issue: FC = () => {
           { kind: 'header', label: 'สินค้า / สารเคมี' },
           {
             kind: 'item',
+            label: 'แก้ไขข้อมูล',
+            icon: PencilIcon,
+            color: 'text-blue-600',
+            hoverBg: 'hover:bg-blue-50',
+            onClick: () => handleEditWithdrawal(withdrawal),
+          },
+          {
+            kind: 'item',
             label: 'อนุมัติ',
             icon: DocumentCheckIcon,
             color: 'text-green-600',
@@ -841,6 +849,14 @@ const Issue: FC = () => {
         actions.push(
           { kind: 'divider' },
           { kind: 'header', label: 'ค่าใช้จ่าย' },
+          {
+            kind: 'item',
+            label: 'แก้ไขข้อมูล',
+            icon: PencilIcon,
+            color: 'text-blue-600',
+            hoverBg: 'hover:bg-blue-50',
+            onClick: () => handleEditWithdrawal(withdrawal),
+          },
           {
             kind: 'item',
             label: 'อนุมัติ',
