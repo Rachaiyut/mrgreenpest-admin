@@ -465,6 +465,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
   }, [enableExpense, isOpen, loggedInUser.id, mode]);
 
   // Wallet + fetched requester
+  // — กระเป๋าเงินใช้ของ "ผู้รับเงิน" ถ้ามี (เป็นคนรับจ่ายจริง) ไม่งั้น fallback ไปผู้เบิก
   useEffect(() => {
     if (requesterId) {
       UserApi.getById(requesterId)
@@ -473,12 +474,17 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
           const found = users.find((u) => String(u.id) === String(requesterId));
           if (found) setFetchedRequester(found);
         });
-      UserApi.getWallet(requesterId).then(setWalletInfo).catch(() => setWalletInfo(null));
     } else {
       setFetchedRequester(null);
+    }
+
+    const walletUserId = recipientId || requesterId;
+    if (walletUserId) {
+      UserApi.getWallet(walletUserId).then(setWalletInfo).catch(() => setWalletInfo(null));
+    } else {
       setWalletInfo(null);
     }
-  }, [requesterId, users]);
+  }, [requesterId, recipientId, users]);
 
   // ==========================================
   // Item / expense handlers
