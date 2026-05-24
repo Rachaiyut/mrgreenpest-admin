@@ -2032,7 +2032,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           />
         </div>
 
-        {/* Payment Info Section */}
+        {/* Payment Info Section — แสดงเฉพาะตอนงานมี invoice ผูกอยู่ */}
+        {job.invoice && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="bg-slate-50/50 px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-100 flex justify-between items-center">
             <h3 className="font-semibold text-slate-800 flex items-center gap-2.5">
@@ -2287,6 +2288,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             </div>
           </div>
         </div>
+        )}
 
         {/* Reference Document Section */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
