@@ -153,6 +153,25 @@ export const JobForm: React.FC<JobFormProps> = ({
     })
   );
 
+  // พนักงาน Part Time — กรอกชื่อเองได้เลย (ไม่อิงรายชื่อใน system)
+  const [partTimeNameInput, setPartTimeNameInput] = useState('');
+  const [partTimeNames, setPartTimeNames] = useState<string[]>([]);
+
+  const handleAddPartTimeName = () => {
+    const name = partTimeNameInput.trim();
+    if (!name) return;
+    if (partTimeNames.includes(name)) {
+      setPartTimeNameInput('');
+      return;
+    }
+    setPartTimeNames((prev) => [...prev, name]);
+    setPartTimeNameInput('');
+  };
+
+  const handleRemovePartTimeName = (name: string) => {
+    setPartTimeNames((prev) => prev.filter((n) => n !== name));
+  };
+
   const hasInitializedRef = useRef<string | null>(null);
 
 
@@ -243,6 +262,17 @@ export const JobForm: React.FC<JobFormProps> = ({
         setLeadTechnicianId(leadId);
         setSecondaryTechnicianId(secondaryLeadId);
         setSelectedTechnicianIds(memberIds);
+
+        // Hydrate part time employee names (free-text list)
+        const partTimeRaw = jobToEdit.part_time_employees;
+        if (Array.isArray(partTimeRaw)) {
+          const names = partTimeRaw
+            .map((p: any) => (typeof p === 'string' ? p : p?.name || ''))
+            .filter((n: string) => !!n);
+          setPartTimeNames(names);
+        } else {
+          setPartTimeNames([]);
+        }
 
         const targetAssessmentId = actualAssessmentId;
         // 🌟 ดึงข้อมูลพื้นที่ ครอบคลุมทุกการใช้ชื่อ Key ของ Backend
@@ -868,6 +898,7 @@ export const JobForm: React.FC<JobFormProps> = ({
         check_in: null!,
         check_out: null!,
       })),
+      part_time_employees: partTimeNames,
     };
   };
 
@@ -989,6 +1020,7 @@ export const JobForm: React.FC<JobFormProps> = ({
       prev.includes(techId) ? prev.filter((id) => id !== techId) : [...prev, techId]
     );
   };
+
 
 
   const handleAreaChange = (index: number, updatedArea: Partial<any>) => {
@@ -1479,7 +1511,7 @@ export const JobForm: React.FC<JobFormProps> = ({
               </div>
             </div>
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2"><div className="p-2 bg-slate-100 rounded-lg text-slate-600"><UserIcon className="w-5 h-5" /></div>ลูกทีม (Members)</h3>
+              <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2"><div className="p-2 bg-slate-100 rounded-lg text-slate-600"><UserIcon className="w-5 h-5" /></div>ลูกทีม</h3>
               <div className="mb-6">
                 <Input 
                   placeholder="ค้นหาช่างเพิ่มเติม..." 
@@ -1506,6 +1538,78 @@ export const JobForm: React.FC<JobFormProps> = ({
                 ))}
               </div>
               {additionalTechnicians.length === 0 && (<div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200"><p className="text-slate-400">ไม่พบรายชื่อช่างอื่นๆ</p></div>)}
+            </div>
+
+            {/* พนักงาน Part Time — กรอกชื่อเอง */}
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-800 mb-1 flex items-center gap-2">
+                <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
+                  <UserIcon className="w-5 h-5" />
+                </div>
+                พนักงาน Part Time
+              </h3>
+              <p className="text-sm text-slate-500 mb-6 pl-12">กรอกชื่อพนักงานชั่วคราวที่ร่วมงานนี้ (ถ้ามี) — กด Enter หรือปุ่ม "+" เพื่อเพิ่ม</p>
+
+              <div className="flex gap-2 mb-4">
+                <Input
+                  placeholder="กรอกชื่อพนักงาน เช่น สมชาย ใจดี"
+                  value={partTimeNameInput}
+                  onChange={(e) => setPartTimeNameInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddPartTimeName();
+                    }
+                  }}
+                  className={`flex-1 transition-all ${isDisableTeamEdit ? '' : 'bg-slate-50 border-slate-200 focus:bg-white'}`}
+                  disabled={isDisableTeamEdit}
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddPartTimeName}
+                  variant="primary"
+                  disabled={isDisableTeamEdit || !partTimeNameInput.trim()}
+                  className="px-4 !h-10 bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1.5"
+                >
+                  <PlusIcon className="w-4 h-4" />
+                  เพิ่ม
+                </Button>
+              </div>
+
+              {partTimeNames.length > 0 ? (
+                <div className="rounded-xl border border-slate-200 overflow-hidden divide-y divide-slate-100 bg-white">
+                  {partTimeNames.map((name, idx) => (
+                    <div
+                      key={name}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-amber-50/40 transition-colors"
+                    >
+                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-700 text-xs font-bold tabular-nums">
+                        {idx + 1}
+                      </span>
+                      <div className="p-1.5 rounded-md bg-amber-50 text-amber-600">
+                        <UserIcon className="w-4 h-4" />
+                      </div>
+                      <span className="flex-1 text-sm font-medium text-slate-700">{name}</span>
+                      {!isDisableTeamEdit && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePartTimeName(name)}
+                          className="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          title="ลบ"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  <p className="text-slate-400">ยังไม่มีรายชื่อพนักงาน Part Time</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

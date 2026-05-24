@@ -289,6 +289,7 @@ const Job: React.FC<JobProps> = ({
               created_by: job.created_by,
               invoice_id: job.invoice_id,
               invoice: job.invoice,
+              part_time_employees: job.part_time_employees || [],
             } as unknown as FieldJob;
           })
       );
@@ -354,6 +355,7 @@ const Job: React.FC<JobProps> = ({
             created_by: job.created_by,
             invoice_id: job.invoice_id,
             invoice: job.invoice,
+            part_time_employees: job.part_time_employees || [],
             google_map_link: customer.google_map_link || job.google_map_link || '',
             zone: customer.service_area || job.zone || '',
             group: customer.service_group || job.group || '',
@@ -455,6 +457,7 @@ const Job: React.FC<JobProps> = ({
             operation_details: job.operation_details,
             rejection_reason: job.rejection_reason,
             created_by: job.created_by,
+            part_time_employees: job.part_time_employees || [],
           } as unknown as FieldJob;
         }),
       );

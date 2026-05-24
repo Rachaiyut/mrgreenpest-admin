@@ -166,6 +166,7 @@ export interface FieldJob {
   end_time: string;
   actual_start_time?: string;
   actual_end_time?: string;
+  part_time_employees?: Array<{ id?: string; name: string } | string>;
   technicians: User[];
   api_status?: string;
   vehicle_id: string;
