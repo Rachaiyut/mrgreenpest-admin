@@ -136,7 +136,9 @@ type FlatCustomerFormData = Partial<Customer> & {
   contactPersonPhone?: string;
   gender?: string;
   primaryPhone?: string;
+  primaryPhoneName?: string;
   mobilePhone?: string;
+  mobilePhoneName?: string;
   'address-street'?: string;
   'address-soi'?: string;
   'address-road'?: string;
@@ -196,6 +198,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   });
 
   const [additionalPhones, setAdditionalPhones] = useState<string[]>([]);
+  const [additionalPhoneNames, setAdditionalPhoneNames] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Geo cascading data
@@ -336,12 +339,14 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   useEffect(() => {
     if (mode === 'edit' && initialValues) {
       const phones: string[] = [];
-      if (initialValues.phone_3) phones.push(initialValues.phone_3);
-      if (initialValues.phone_4) phones.push(initialValues.phone_4);
-      if (initialValues.phone_5) phones.push(initialValues.phone_5);
-      if (initialValues.phone_6) phones.push(initialValues.phone_6);
+      const phoneNames: string[] = [];
+      if (initialValues.phone_3) { phones.push(initialValues.phone_3); phoneNames.push(initialValues.phone_3_name || ''); }
+      if (initialValues.phone_4) { phones.push(initialValues.phone_4); phoneNames.push(initialValues.phone_4_name || ''); }
+      if (initialValues.phone_5) { phones.push(initialValues.phone_5); phoneNames.push(initialValues.phone_5_name || ''); }
+      if (initialValues.phone_6) { phones.push(initialValues.phone_6); phoneNames.push(initialValues.phone_6_name || ''); }
 
       setAdditionalPhones(phones);
+      setAdditionalPhoneNames(phoneNames);
 
       setFormData({
         ...initialValues,
@@ -350,6 +355,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         gender: initialValues.gendder || '',
         contactPerson: initialValues.contact_person || '',
         contactPersonPhone: initialValues.contact_person_phone || '',
+        primaryPhoneName: initialValues.primary_phone_name || '',
+        mobilePhoneName: initialValues.mobile_phone_name || '',
         'address-street': initialValues.address_house_no,
         'address-soi': initialValues.address_soi || '',
         'address-road': initialValues.address_road || '',
@@ -384,6 +391,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         serviceSameAsBilling: true,
       });
       setAdditionalPhones([]);
+      setAdditionalPhoneNames([]);
     }
     setErrors({});
   }, [mode, initialValues]);
@@ -416,11 +424,19 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   const handleAddAdditionalPhone = () => {
     if (additionalPhones.length < 4) {
       setAdditionalPhones([...additionalPhones, '']);
+      setAdditionalPhoneNames([...additionalPhoneNames, '']);
     }
   };
 
   const handleRemoveAdditionalPhone = (index: number) => {
     setAdditionalPhones(additionalPhones.filter((_, i) => i !== index));
+    setAdditionalPhoneNames(additionalPhoneNames.filter((_, i) => i !== index));
+  };
+
+  const handleAdditionalPhoneNameChange = (index: number, value: string) => {
+    const next = [...additionalPhoneNames];
+    next[index] = value;
+    setAdditionalPhoneNames(next);
   };
 
   // 🟢 ฟังก์ชันกรองเฉพาะตัวเลข และจำกัด 10 หลัก (สำหรับเบอร์สำรอง)
@@ -491,11 +507,17 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       email: formData.email || undefined,
       phone: formData.primaryPhone || '',
       primary_phone: formData.primaryPhone || '',
+      primary_phone_name: formData.primaryPhoneName || undefined,
       mobile_phone: formData.mobilePhone || '',
+      mobile_phone_name: formData.mobilePhoneName || undefined,
       phone_3: additionalPhones[0] || undefined,
+      phone_3_name: additionalPhoneNames[0] || undefined,
       phone_4: additionalPhones[1] || undefined,
+      phone_4_name: additionalPhoneNames[1] || undefined,
       phone_5: additionalPhones[2] || undefined,
+      phone_5_name: additionalPhoneNames[2] || undefined,
       phone_6: additionalPhones[3] || undefined,
+      phone_6_name: additionalPhoneNames[3] || undefined,
       address_house_no: formData['address-street'] || '',
       address_soi: formData['address-soi'] || '',
       address_road: formData['address-road'] || '',
@@ -637,22 +659,21 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                   <Input name="taxId" type="text" value={formData.taxId || ''} onChange={handleChange} className="font-mono" />
                 </FormField>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <FormField label="ชื่อผู้ติดต่อ " htmlFor="contactPerson">
-                  <Input id="contactPerson" name="contactPerson" type="text" value={formData.contactPerson || ''} onChange={handleChange} />
-                </FormField>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <FormField label="เบอร์โทรผู้ติดต่อ" htmlFor="contactPersonPhone">
-                  <Input 
-                    id="contactPersonPhone" 
-                    name="contactPersonPhone" 
-                    type="tel" 
-                    value={formData.contactPersonPhone || ''} 
-                    onChange={(e) => handlePhoneChange(e, 'contactPersonPhone')} 
-                    pattern="[0-9]{9,10}" 
-                    maxLength={10} 
+                  <Input
+                    id="contactPersonPhone"
+                    name="contactPersonPhone"
+                    type="tel"
+                    value={formData.contactPersonPhone || ''}
+                    onChange={(e) => handlePhoneChange(e, 'contactPersonPhone')}
+                    pattern="[0-9]{9,10}"
+                    maxLength={10}
                     placeholder="08xxxxxxxx"
-                    className="font-mono"
                   />
+                </FormField>
+                <FormField label="ชื่อผู้ติดต่อ" htmlFor="contactPerson">
+                  <Input id="contactPerson" name="contactPerson" type="text" value={formData.contactPerson || ''} onChange={handleChange} />
                 </FormField>
               </div>
             </>
@@ -672,7 +693,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           }
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
           <FormField label="เบอร์โทรศัพท์ (หลัก)*" htmlFor="primaryPhone">
             <Input
               name="primaryPhone"
@@ -680,20 +701,36 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               value={formData.primaryPhone || ''}
               onChange={(e) => handlePhoneChange(e, 'primaryPhone')}
               maxLength={20}
-              className="font-mono"
               placeholder="08xxxxxxxx"
             />
             {errors.primaryPhone && <p className="text-red-500 text-xs mt-1">{errors.primaryPhone}</p>}
           </FormField>
+          <FormField label="ชื่อผู้ติดต่อ (เบอร์หลัก)" htmlFor="primaryPhoneName">
+            <Input
+              name="primaryPhoneName"
+              type="text"
+              value={formData.primaryPhoneName || ''}
+              onChange={handleChange}
+              placeholder="เช่น คุณสมชาย (ฝ่ายจัดซื้อ)"
+            />
+          </FormField>
           <FormField label="เบอร์มือถือ" htmlFor="mobilePhone">
-            <Input 
-              name="mobilePhone" 
-              type="text" 
-              value={formData.mobilePhone || ''} 
-              onChange={(e) => handlePhoneChange(e, 'mobilePhone')} 
-              maxLength={20} 
-              className="font-mono" 
+            <Input
+              name="mobilePhone"
+              type="text"
+              value={formData.mobilePhone || ''}
+              onChange={(e) => handlePhoneChange(e, 'mobilePhone')}
+              maxLength={20}
               placeholder="08xxxxxxxx"
+            />
+          </FormField>
+          <FormField label="ชื่อผู้ติดต่อ (เบอร์มือถือ)" htmlFor="mobilePhoneName">
+            <Input
+              name="mobilePhoneName"
+              type="text"
+              value={formData.mobilePhoneName || ''}
+              onChange={handleChange}
+              placeholder="เช่น คุณสมหญิง"
             />
           </FormField>
           <FormField label="อีเมล" htmlFor="email">
@@ -739,14 +776,21 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
             <div className="space-y-3">
               {additionalPhones.map((phone, index) => (
                 <div key={index} className="flex items-center gap-3">
-                  <div className="flex-1 relative">
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Input
                       type="text"
                       value={phone}
                       onChange={(e) => handleAdditionalPhoneChange(index, e.target.value)}
                       placeholder="กรอกเบอร์โทรศัพท์สำรอง..."
                       maxLength={20}
-                      className="w-full pl-10 font-mono bg-white" 
+                      className="w-full bg-white"
+                    />
+                    <Input
+                      type="text"
+                      value={additionalPhoneNames[index] || ''}
+                      onChange={(e) => handleAdditionalPhoneNameChange(index, e.target.value)}
+                      placeholder="ชื่อผู้ติดต่อ (ถ้ามี)"
+                      className="w-full bg-white"
                     />
                   </div>
                   <button

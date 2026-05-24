@@ -334,15 +334,22 @@ const JobCard: React.FC<{
         {/* Info */}
         <div className="px-4 pb-3 space-y-2">
           {(() => {
-            const c = job.customer;
+            const c = job.customer as (typeof job.customer & {
+              primary_phone_name?: string;
+              mobile_phone_name?: string;
+              phone_3_name?: string;
+              phone_4_name?: string;
+              phone_5_name?: string;
+              phone_6_name?: string;
+            }) | undefined;
             if (!c) return null;
-            const phoneEntries: { label: string; value: string }[] = [
-              { label: 'เบอร์หลัก', value: (c.primary_phone || '').trim() },
-              { label: 'มือถือ', value: (c.mobile_phone || '').trim() },
-              { label: 'สำรอง 1', value: (c.phone_3 || '').trim() },
-              { label: 'สำรอง 2', value: (c.phone_4 || '').trim() },
-              { label: 'สำรอง 3', value: (c.phone_5 || '').trim() },
-              { label: 'สำรอง 4', value: (c.phone_6 || '').trim() },
+            const phoneEntries: { label: string; value: string; contact: string }[] = [
+              { label: 'เบอร์หลัก', value: (c.primary_phone || '').trim(), contact: (c.primary_phone_name || '').trim() },
+              { label: 'มือถือ', value: (c.mobile_phone || '').trim(), contact: (c.mobile_phone_name || '').trim() },
+              { label: 'สำรอง 1', value: (c.phone_3 || '').trim(), contact: (c.phone_3_name || '').trim() },
+              { label: 'สำรอง 2', value: (c.phone_4 || '').trim(), contact: (c.phone_4_name || '').trim() },
+              { label: 'สำรอง 3', value: (c.phone_5 || '').trim(), contact: (c.phone_5_name || '').trim() },
+              { label: 'สำรอง 4', value: (c.phone_6 || '').trim(), contact: (c.phone_6_name || '').trim() },
             ].filter((e) => !!e.value);
             // กรองเบอร์ซ้ำ (เก็บ entry แรกที่เจอ)
             const seen = new Set<string>();
@@ -357,7 +364,7 @@ const JobCard: React.FC<{
                 <PhoneIcon className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
                 <div className="flex flex-col gap-0.5 text-slate-600">
                   {uniqueEntries.map((e, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
+                    <div key={idx} className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs text-slate-400 font-medium min-w-[52px]">
                         {e.label}
                       </span>
@@ -368,6 +375,9 @@ const JobCard: React.FC<{
                       >
                         {e.value}
                       </a>
+                      {e.contact && (
+                        <span className="text-xs text-slate-500 italic">({e.contact})</span>
+                      )}
                     </div>
                   ))}
                 </div>

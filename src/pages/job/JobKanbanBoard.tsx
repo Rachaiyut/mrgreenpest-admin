@@ -83,7 +83,7 @@ const JobKanbanBoard: React.FC<JobKanbanBoardProps> = ({
           columns.map((col) => (
             <div
               key={col.id}
-              className="bg-slate-100/80 rounded-xl p-4 border border-slate-200 shadow-sm w-80 flex-shrink-0 flex flex-col"
+              className="bg-slate-100/80 rounded-xl p-4 border border-slate-200 shadow-sm w-96 flex-shrink-0 flex flex-col"
             >
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/60 shrink-0">
                 <div className="flex items-center gap-2 min-w-0">

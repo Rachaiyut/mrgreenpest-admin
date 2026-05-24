@@ -16,11 +16,17 @@ export interface Customer extends IBase {
   nickname: string;
   tax_id?: string;
   primary_phone: string;
+  primary_phone_name?: string;
   mobile_phone: string;
+  mobile_phone_name?: string;
   phone_3?: string;
+  phone_3_name?: string;
   phone_4?: string;
+  phone_4_name?: string;
   phone_5?: string;
+  phone_5_name?: string;
   phone_6?: string;
+  phone_6_name?: string;
   email: string;
   address_house_no: string;
   address_soi?: string;
