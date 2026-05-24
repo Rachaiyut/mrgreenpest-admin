@@ -5,8 +5,11 @@ export interface DashboardJobItem {
   status: string;
   appointment_date: string;
   start_date: string;
+  end_date?: string | null;
   actual_start_time?: string | null;
+  actual_end_time?: string | null;
   start_time?: string | null;
+  end_time?: string | null;
   remark?: string | null;
   customer_id?: string;
   service_system?: string | null;

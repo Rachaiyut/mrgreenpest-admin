@@ -558,11 +558,20 @@ const Dashboard: React.FC<DashboardProps> = () => {
                   </thead>
                   <tbody>
                     {todayJobs.slice(0, 8).map((job: DashboardJobItem, idx: number) => {
-                      const time = job.actual_start_time
-                        ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
+                      const fmtTime = (v?: string | null) =>
+                        v
+                          ? new Date(v).toLocaleTimeString('th-TH', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : null;
+                      // เวลานัด: start - end (จาก start_date/end_date หรือ start_time/end_time)
+                      const startLabel = fmtTime(job.start_date || job.start_time);
+                      const endLabel = fmtTime(job.end_date || job.end_time);
+                      const time = startLabel
+                        ? endLabel
+                          ? `${startLabel} - ${endLabel}`
+                          : startLabel
                         : '-';
                       return (
                         <tr
@@ -577,7 +586,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
                           </td>
                           <td className="px-3 py-2.5 text-slate-500 truncate max-w-[280px] hidden md:table-cell border border-slate-200">
                             {job.service_system || ''}
-                            {job.address ? ` • ${job.address}` : ''}
+                            {job.address ? ` ${job.address}` : ''}
                           </td>
                           <td className="px-3 py-2.5 tabular-nums text-slate-700 border border-slate-200">{time}</td>
                           <td className="px-3 py-2.5 border border-slate-200">
@@ -918,13 +927,13 @@ const LongTermAgingSection: React.FC<{
 }> = ({ aging, onNavigate }) => {
   const buckets = [
     {
-      key: 'bucket_91_180',
-      label: 'ค้าง 3-6 เดือน',
-      sublabel: '91-180 วัน',
-      color: '#fb923c',
-      bg: 'bg-amber-50 border-amber-200',
-      text: 'text-amber-700',
-      data: aging.bucket_91_180,
+      key: 'bucket_365_plus',
+      label: 'ค้างเกิน 1 ปี',
+      sublabel: 'มากกว่า 365 วัน',
+      color: '#dc2626',
+      bg: 'bg-rose-50 border-rose-200',
+      text: 'text-rose-700',
+      data: aging.bucket_365_plus,
     },
     {
       key: 'bucket_181_365',
@@ -936,13 +945,13 @@ const LongTermAgingSection: React.FC<{
       data: aging.bucket_181_365,
     },
     {
-      key: 'bucket_365_plus',
-      label: 'ค้างเกิน 1 ปี',
-      sublabel: 'มากกว่า 365 วัน',
-      color: '#dc2626',
-      bg: 'bg-rose-50 border-rose-200',
-      text: 'text-rose-700',
-      data: aging.bucket_365_plus,
+      key: 'bucket_91_180',
+      label: 'ค้าง 3-6 เดือน',
+      sublabel: '91-180 วัน',
+      color: '#fb923c',
+      bg: 'bg-amber-50 border-amber-200',
+      text: 'text-amber-700',
+      data: aging.bucket_91_180,
     },
   ];
 
