@@ -333,12 +333,47 @@ const JobCard: React.FC<{
 
         {/* Info */}
         <div className="px-4 pb-3 space-y-2">
-          {job.customer?.primary_phone && (
-            <div className="flex items-center gap-2.5 text-sm">
-              <PhoneIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-              <span className="text-slate-600">{job.customer.primary_phone}</span>
-            </div>
-          )}
+          {(() => {
+            const c = job.customer;
+            if (!c) return null;
+            const phoneEntries: { label: string; value: string }[] = [
+              { label: 'เบอร์หลัก', value: (c.primary_phone || '').trim() },
+              { label: 'มือถือ', value: (c.mobile_phone || '').trim() },
+              { label: 'สำรอง 1', value: (c.phone_3 || '').trim() },
+              { label: 'สำรอง 2', value: (c.phone_4 || '').trim() },
+              { label: 'สำรอง 3', value: (c.phone_5 || '').trim() },
+              { label: 'สำรอง 4', value: (c.phone_6 || '').trim() },
+            ].filter((e) => !!e.value);
+            // กรองเบอร์ซ้ำ (เก็บ entry แรกที่เจอ)
+            const seen = new Set<string>();
+            const uniqueEntries = phoneEntries.filter((e) => {
+              if (seen.has(e.value)) return false;
+              seen.add(e.value);
+              return true;
+            });
+            if (uniqueEntries.length === 0) return null;
+            return (
+              <div className="flex items-start gap-2.5 text-sm">
+                <PhoneIcon className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-0.5 text-slate-600">
+                  {uniqueEntries.map((e, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400 font-medium min-w-[52px]">
+                        {e.label}
+                      </span>
+                      <a
+                        href={`tel:${e.value.replace(/\s+/g, '')}`}
+                        onClick={(ev) => ev.stopPropagation()}
+                        className="hover:text-primary hover:underline transition-colors"
+                      >
+                        {e.value}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
           <div className="flex items-start gap-2.5 text-sm">
             <MapPinIcon className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
             <span className="text-slate-600 line-clamp-2 leading-snug">
