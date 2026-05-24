@@ -245,7 +245,7 @@ const ArAgingPage: React.FC = () => {
       {/* Toolbar */}
       <Card className="!p-4 flex-shrink-0 print:hidden">
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
-          <div className="relative w-full sm:flex-1 sm:min-w-[280px]">
+          <div className="relative w-full sm:w-[360px] flex-shrink-0">
             <input
               type="search"
               placeholder="ค้นหาชื่อลูกค้า, รหัสลูกค้า, หรือเลขที่ใบแจ้งหนี้"
@@ -284,6 +284,9 @@ const ArAgingPage: React.FC = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">
+                    ลำดับ
+                  </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider sticky left-0 bg-slate-50 z-10 shadow-sm">
                     เลขที่ใบแจ้งหนี้
                   </th>
@@ -323,11 +326,14 @@ const ArAgingPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {paginatedItems.map((item) => (
+                {paginatedItems.map((item, idx) => (
                   <tr
                     key={item.id}
                     className="hover:bg-slate-50 transition-colors"
                   >
+                    <td className="px-4 py-3 text-sm text-slate-500 text-center tabular-nums">
+                      {(currentPage - 1) * itemsPerPage + idx + 1}
+                    </td>
                     <td className="px-4 py-3 text-sm font-medium text-blue-600 hover:underline cursor-pointer sticky left-0 bg-white shadow-sm">
                       {item.code}
                     </td>

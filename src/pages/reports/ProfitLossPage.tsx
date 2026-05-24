@@ -198,7 +198,7 @@ const ProfitLossPage: React.FC = () => {
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ช่องทาง</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">จำนวน</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ยอดเงิน (บาท)</th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">ยอดเงิน (บาท)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
@@ -206,7 +206,7 @@ const ProfitLossPage: React.FC = () => {
                     <tr key={idx} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 text-sm text-slate-900 font-medium">{paymentLabel(item.method)}</td>
                       <td className="px-4 py-3 text-sm text-center text-slate-600">{item.count}</td>
-                      <td className="px-4 py-3 text-sm text-center text-green-700 font-semibold">{fmt(item.total)}</td>
+                      <td className="px-4 py-3 text-sm text-right tabular-nums text-green-700 font-semibold">{fmt(item.total)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -216,7 +216,7 @@ const ProfitLossPage: React.FC = () => {
                     <td className="px-4 py-3 text-center text-slate-600">
                       {incomeByMethod.reduce((s, i) => s + i.count, 0)}
                     </td>
-                    <td className="px-4 py-3 text-center text-green-800">{fmt(data?.income.total || 0)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-green-800">{fmt(data?.income.total || 0)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -263,7 +263,7 @@ const ProfitLossPage: React.FC = () => {
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">หมวดหมู่</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">จำนวน</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ยอดเงิน (บาท)</th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">ยอดเงิน (บาท)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
@@ -271,14 +271,14 @@ const ProfitLossPage: React.FC = () => {
                     <tr key={idx} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 text-sm text-slate-900 font-medium">{item.category}</td>
                       <td className="px-4 py-3 text-sm text-center text-slate-600">{item.count}</td>
-                      <td className="px-4 py-3 text-sm text-center text-red-600 font-semibold">{fmt(item.total)}</td>
+                      <td className="px-4 py-3 text-sm text-right tabular-nums text-red-600 font-semibold">{fmt(item.total)}</td>
                     </tr>
                   ))}
                   {data && data.expenses.withdrawal > 0 && (
                     <tr className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 text-sm text-slate-900 font-medium">ค่าใช้จ่ายจากการเบิกสินค้า</td>
                       <td className="px-4 py-3 text-sm text-center text-slate-600">-</td>
-                      <td className="px-4 py-3 text-sm text-center text-red-600 font-semibold">{fmt(data.expenses.withdrawal)}</td>
+                      <td className="px-4 py-3 text-sm text-right tabular-nums text-red-600 font-semibold">{fmt(data.expenses.withdrawal)}</td>
                     </tr>
                   )}
                 </tbody>
@@ -287,7 +287,7 @@ const ProfitLossPage: React.FC = () => {
                     <tr>
                       <td className="px-4 py-3 text-left text-slate-900">รวมค่าใช้จ่าย</td>
                       <td className="px-4 py-3 text-center text-slate-600"></td>
-                      <td className="px-4 py-3 text-center text-red-800">{fmt(data.expenses.total)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-red-800">{fmt(data.expenses.total)}</td>
                     </tr>
                   </tfoot>
                 )}
@@ -309,31 +309,6 @@ const ProfitLossPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Net Profit Summary */}
-      {data && (
-        <div className={`rounded-xl p-6 border ${data.netProfit >= 0 ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-200'}`}>
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-              <p className="text-sm font-medium text-slate-600">สรุปผลประกอบการ ประจำเดือน{thaiMonths[month - 1]} {year}</p>
-              <div className="flex items-baseline gap-3 mt-2">
-                <span className="text-sm text-slate-500">รายได้</span>
-                <span className="text-lg font-semibold text-green-700">{fmt(data.income.total)}</span>
-                <span className="text-slate-400">-</span>
-                <span className="text-sm text-slate-500">ค่าใช้จ่าย</span>
-                <span className="text-lg font-semibold text-red-600">{fmt(data.expenses.total)}</span>
-                <span className="text-slate-400">=</span>
-              </div>
-            </div>
-            <div className="text-center md:text-right">
-              <p className="text-sm text-slate-500">{data.netProfit >= 0 ? 'กำไรสุทธิ' : 'ขาดทุนสุทธิ'}</p>
-              <p className={`text-3xl font-bold ${data.netProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                {fmt(Math.abs(data.netProfit))}
-              </p>
-              <p className="text-sm text-slate-500 mt-1">อัตรากำไร {data.profitMargin}%</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
     </div>
   );

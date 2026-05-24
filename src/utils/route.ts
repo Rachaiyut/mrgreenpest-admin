@@ -4,7 +4,7 @@ export const PATH_PREFIX_MAP: Record<string, Page> = {
   '/quotations': 'ใบเสนอราคา',
   '/billing': 'ใบแจ้งหนี้',
   '/reports/tax-invoice-income': 'รายได้ออกใบกำกับ(รายเดือน)',
-  '/reports/daily-cash': 'บัญชีเงินสดรายวัน',
+  '/reports/daily-cash': 'การเดินบัญชี',
   '/receipts': 'ใบกำกับภาษี/ใบเสร็จรับเงิน',
   '/customers': 'ลูกค้า',
 };

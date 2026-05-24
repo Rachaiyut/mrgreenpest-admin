@@ -486,7 +486,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         component: ProfitLossPage,
       },
       {
-        name: 'บัญชีเงินสดรายวัน',
+        name: 'การเดินบัญชี',
         path: 'reports/daily-cash',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: DailyCashPage,

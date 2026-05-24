@@ -110,10 +110,99 @@ const ContractExpirationPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Summary Cards */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="bg-white p-5 rounded-xl shadow-sm border border-slate-200/80 animate-pulse"
+            >
+              <div className="h-4 bg-slate-200 rounded w-1/2 mb-3" />
+              <div className="h-8 bg-slate-200 rounded w-1/3 mb-2" />
+              <div className="h-4 bg-slate-200 rounded w-2/3" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        summary && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* หมดภายใน 30 วัน — เร่งด่วนสุด (แดง) */}
+            <div className="p-5 rounded-xl shadow-sm border border-red-200 bg-gradient-to-br from-red-50 to-rose-100">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-3 h-3 rounded-full bg-red-500" />
+                <span className="text-sm font-medium text-red-700">
+                  หมดภายใน 30 วัน
+                </span>
+              </div>
+              <p className="text-2xl font-bold text-red-700">
+                {summary.expire_30.count}{' '}
+                <span className="text-sm font-normal text-red-600/70">
+                  สัญญา
+                </span>
+              </p>
+              <p className="text-sm text-red-700/80 mt-1">
+                มูลค่ารวม{' '}
+                <span className="font-semibold text-red-800">
+                  {formatNumber(summary.expire_30.value)}
+                </span>{' '}
+                บาท
+              </p>
+            </div>
+
+            {/* หมดภายใน 31-60 วัน — เตือน (ส้ม) */}
+            <div className="p-5 rounded-xl shadow-sm border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-100">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-3 h-3 rounded-full bg-orange-500" />
+                <span className="text-sm font-medium text-orange-700">
+                  หมดภายใน 31-60 วัน
+                </span>
+              </div>
+              <p className="text-2xl font-bold text-orange-700">
+                {summary.expire_60.count}{' '}
+                <span className="text-sm font-normal text-orange-600/70">
+                  สัญญา
+                </span>
+              </p>
+              <p className="text-sm text-orange-700/80 mt-1">
+                มูลค่ารวม{' '}
+                <span className="font-semibold text-orange-800">
+                  {formatNumber(summary.expire_60.value)}
+                </span>{' '}
+                บาท
+              </p>
+            </div>
+
+            {/* หมดภายใน 61-90 วัน — ยังพอมีเวลา (เขียว) */}
+            <div className="p-5 rounded-xl shadow-sm border border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-100">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                <span className="text-sm font-medium text-emerald-700">
+                  หมดภายใน 61-90 วัน
+                </span>
+              </div>
+              <p className="text-2xl font-bold text-emerald-700">
+                {summary.expire_90.count}{' '}
+                <span className="text-sm font-normal text-emerald-600/70">
+                  สัญญา
+                </span>
+              </p>
+              <p className="text-sm text-emerald-700/80 mt-1">
+                มูลค่ารวม{' '}
+                <span className="font-semibold text-emerald-800">
+                  {formatNumber(summary.expire_90.value)}
+                </span>{' '}
+                บาท
+              </p>
+            </div>
+          </div>
+        )
+      )}
+
       {/* Toolbar */}
       <Card className="!p-4 flex-shrink-0 print:hidden">
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
-          <div className="relative w-full sm:flex-1 sm:min-w-[280px]">
+          <div className="relative w-full sm:w-[340px] flex-shrink-0">
             <input
               type="search"
               placeholder="ค้นหาเลขที่สัญญา, ชื่อลูกค้า, รหัสลูกค้า"
@@ -136,92 +225,6 @@ const ContractExpirationPage: React.FC = () => {
           </select>
         </div>
       </Card>
-
-      {/* Summary Cards */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="bg-white p-5 rounded-xl shadow-sm border border-slate-200/80 animate-pulse"
-            >
-              <div className="h-4 bg-slate-200 rounded w-1/2 mb-3" />
-              <div className="h-8 bg-slate-200 rounded w-1/3 mb-2" />
-              <div className="h-4 bg-slate-200 rounded w-2/3" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        summary && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200/80">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <span className="text-sm font-medium text-slate-600">
-                  หมดภายใน 30 วัน
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-red-600">
-                {summary.expire_30.count}{' '}
-                <span className="text-sm font-normal text-slate-500">
-                  สัญญา
-                </span>
-              </p>
-              <p className="text-sm text-slate-500 mt-1">
-                มูลค่ารวม{' '}
-                <span className="font-semibold text-red-600">
-                  {formatNumber(summary.expire_30.value)}
-                </span>{' '}
-                บาท
-              </p>
-            </div>
-
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200/80">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-3 h-3 rounded-full bg-orange-500" />
-                <span className="text-sm font-medium text-slate-600">
-                  หมดภายใน 31-60 วัน
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-orange-600">
-                {summary.expire_60.count}{' '}
-                <span className="text-sm font-normal text-slate-500">
-                  สัญญา
-                </span>
-              </p>
-              <p className="text-sm text-slate-500 mt-1">
-                มูลค่ารวม{' '}
-                <span className="font-semibold text-orange-600">
-                  {formatNumber(summary.expire_60.value)}
-                </span>{' '}
-                บาท
-              </p>
-            </div>
-
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200/80">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="text-sm font-medium text-slate-600">
-                  หมดภายใน 61-90 วัน
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-green-600">
-                {summary.expire_90.count}{' '}
-                <span className="text-sm font-normal text-slate-500">
-                  สัญญา
-                </span>
-              </p>
-              <p className="text-sm text-slate-500 mt-1">
-                มูลค่ารวม{' '}
-                <span className="font-semibold text-green-600">
-                  {formatNumber(summary.expire_90.value)}
-                </span>{' '}
-                บาท
-              </p>
-            </div>
-          </div>
-        )
-      )}
 
       {/* Data Table */}
       <div className="flex-1 flex flex-col min-h-[400px] rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
@@ -253,6 +256,9 @@ const ContractExpirationPage: React.FC = () => {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider w-16">
+                  ลำดับ
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   เลขที่สัญญา
                 </th>
@@ -289,7 +295,7 @@ const ContractExpirationPage: React.FC = () => {
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    {Array.from({ length: 10 }).map((_, j) => (
+                    {Array.from({ length: 11 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 bg-slate-200 rounded w-full" />
                       </td>
@@ -297,8 +303,11 @@ const ContractExpirationPage: React.FC = () => {
                   </tr>
                 ))
               ) : (
-                paginatedItems.map((item) => (
+                paginatedItems.map((item, idx) => (
                   <tr key={item.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 text-sm text-slate-500 text-center tabular-nums">
+                      {(currentPage - 1) * itemsPerPage + idx + 1}
+                    </td>
                     <td className="px-4 py-3 text-sm font-medium text-amber-700">
                       {item.code}
                     </td>

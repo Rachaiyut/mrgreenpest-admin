@@ -127,7 +127,7 @@ const DailyCashPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">บัญชีเงินสดรายวัน</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">การเดินบัญชี</h1>
           <p className="mt-1 text-slate-600">รายงานการเคลื่อนไหวของเงินสดประจำวัน (จากบัญชีที่เปิดใช้งาน)</p>
           <p className="hidden print:block text-slate-700 text-sm mt-1">
             ประจำเดือน {thaiMonths[selectedMonth - 1]} {selectedYear}
@@ -184,7 +184,7 @@ const DailyCashPage: React.FC = () => {
       {/* Toolbar */}
       <Card className="!p-4 flex-shrink-0 print:hidden">
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
-          <div className="relative w-full sm:flex-1 sm:min-w-[280px]">
+          <div className="relative w-full sm:w-[340px] flex-shrink-0">
             <input
               type="search"
               placeholder="ค้นหารายการ, รหัสอ้างอิง, หรือชื่อบัญชี"
@@ -257,9 +257,9 @@ const DailyCashPage: React.FC = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">อ้างอิง</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">รายการ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ประเภท</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-green-700 uppercase tracking-wider bg-green-50">รายรับ</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-red-600 uppercase tracking-wider">รายจ่าย</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">คงเหลือ</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-green-700 uppercase tracking-wider bg-green-50 w-36">รายรับ</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-red-600 uppercase tracking-wider w-36">รายจ่าย</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider w-36">คงเหลือ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -279,27 +279,19 @@ const DailyCashPage: React.FC = () => {
                           {typeLabel[row.type]}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-center bg-green-50/50 text-green-700 font-bold">
+                      <td className="px-4 py-3 text-sm text-right tabular-nums bg-green-50/50 text-green-700 font-bold w-36">
                         {isIncome ? formatNumber(row.amount) : '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-center text-red-600 font-medium">
+                      <td className="px-4 py-3 text-sm text-right tabular-nums text-red-600 font-medium w-36">
                         {!isIncome ? formatNumber(row.amount) : '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-center text-slate-900 font-bold">
+                      <td className="px-4 py-3 text-sm text-right tabular-nums text-slate-900 font-bold w-36">
                         {formatNumber(row.balance_after)}
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
-              <tfoot className="bg-slate-50 font-semibold">
-                <tr>
-                  <td colSpan={6} className="px-4 py-3 text-left text-slate-900">รวมทั้งสิ้น</td>
-                  <td className="px-4 py-3 text-center text-green-800">{formatNumber(summary.total_income)}</td>
-                  <td className="px-4 py-3 text-center text-red-800">{formatNumber(summary.total_expense)}</td>
-                  <td className="px-4 py-3 text-center text-slate-900">{formatNumber(summary.net)}</td>
-                </tr>
-              </tfoot>
             </table>
           </div>
           <div className="mt-auto border-t border-slate-200">

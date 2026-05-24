@@ -38,6 +38,18 @@ const thaiMonths = [
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
 ];
 
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  CASH: 'เงินสด',
+  TRANSFER: 'โอน',
+  CREDIT_CARD: 'บัตรเครดิต',
+  CHEQUE: 'เช็ค',
+  QR_PAYMENT: 'QR / พร้อมเพย์',
+  DIVIDED: 'แบ่งชำระ',
+  INSTALLMENT: 'ผ่อนชำระ',
+};
+const paymentLabel = (method: string) =>
+  PAYMENT_METHOD_LABEL[String(method || '').toUpperCase()] || method || '-';
+
 const formatNumber = (value: number): string =>
   value.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -168,7 +180,7 @@ const TaxInvoiceIncomePage: React.FC = () => {
       {/* Toolbar */}
       <Card className="!p-4 flex-shrink-0 print:hidden">
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
-          <div className="relative w-full sm:flex-1 sm:min-w-[280px]">
+          <div className="relative w-full sm:w-[380px] flex-shrink-0">
             <input
               type="search"
               placeholder="ค้นหาเลขที่ใบกำกับภาษี, ชื่อลูกค้า, หรือเลขผู้เสียภาษี"
@@ -249,21 +261,10 @@ const TaxInvoiceIncomePage: React.FC = () => {
                     <td className="px-4 py-3 text-sm text-center text-slate-900">{formatNumber(row.sub_total)}</td>
                     <td className="px-4 py-3 text-sm text-center text-slate-900">{formatNumber(row.vat_amount)}</td>
                     <td className="px-4 py-3 text-sm text-center bg-green-50/50 text-green-700 font-bold">{formatNumber(row.amount)}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{row.payment_method}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{paymentLabel(row.payment_method)}</td>
                   </tr>
                 ))}
               </tbody>
-              {items.length > 0 && (
-                <tfoot className="bg-slate-50 font-semibold">
-                  <tr>
-                    <td colSpan={6} className="px-4 py-3 text-left text-slate-900">รวมทั้งสิ้น</td>
-                    <td className="px-4 py-3 text-center text-slate-900">{formatNumber(summary.total_sub_total)}</td>
-                    <td className="px-4 py-3 text-center text-slate-900">{formatNumber(summary.total_vat)}</td>
-                    <td className="px-4 py-3 text-center text-green-800">{formatNumber(summary.total_amount)}</td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              )}
             </table>
           </div>
           <div className="mt-auto border-t border-slate-200">
