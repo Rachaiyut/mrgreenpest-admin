@@ -100,6 +100,12 @@ const JobCard: React.FC<{
       hour: '2-digit',
       minute: '2-digit',
     });
+    const fmtActual = (v?: string) =>
+      v
+        ? new Date(v).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+        : null;
+    const actualStartLabel = fmtActual(job.actual_start_time);
+    const actualEndLabel = fmtActual(job.actual_end_time);
 
     const hasActions =
       (job.status as unknown as JobStatus) !== JobStatus.Completed &&
@@ -349,6 +355,25 @@ const JobCard: React.FC<{
               {jobStartTime} - {jobEndTime}
             </span>
           </div>
+          {(actualStartLabel || actualEndLabel) && (
+            <div className="flex items-center gap-2.5 text-xs pl-6">
+              <span className="text-slate-500">
+                {actualStartLabel && (
+                  <span className="inline-flex items-center gap-1">
+                    <span className="text-emerald-600 font-semibold">เช็คอิน</span>
+                    <span className="text-slate-700 font-medium">{actualStartLabel}</span>
+                  </span>
+                )}
+                {actualStartLabel && actualEndLabel && <span className="mx-1 text-slate-300">·</span>}
+                {actualEndLabel && (
+                  <span className="inline-flex items-center gap-1">
+                    <span className="text-amber-600 font-semibold">เช็คเอาท์</span>
+                    <span className="text-slate-700 font-medium">{actualEndLabel}</span>
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-2.5 text-sm">
             <TechnicianIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
             <span
