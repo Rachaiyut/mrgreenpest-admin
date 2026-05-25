@@ -332,7 +332,7 @@ const JobCard: React.FC<{
         </div>
 
         {/* Info */}
-        <div className="px-4 pb-3 space-y-2">
+        <div className="px-4 pb-3 space-y-3">
           {(() => {
             const c = job.customer as (typeof job.customer & {
               primary_phone_name?: string;
@@ -365,7 +365,7 @@ const JobCard: React.FC<{
                 <div className="flex flex-col gap-0.5 text-slate-600">
                   {uniqueEntries.map((e, idx) => (
                     <div key={idx} className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs text-slate-400 font-medium min-w-[52px]">
+                      <span className="text-xs text-slate-700 font-bold min-w-[52px]">
                         {e.label}
                       </span>
                       <a
@@ -457,7 +457,7 @@ const JobCard: React.FC<{
                 <TechnicianIcon className={`h-4 w-4 ${iconColor} flex-shrink-0 mt-0.5`} />
                 <div className="min-w-0 flex-1 text-slate-700">
                   <div>{labelEl}</div>
-                  <div className="mt-0.5 space-y-0.5 pl-2">
+                  <div className="mt-1 space-y-1.5 pl-2">
                     {names.map((name, i) => (
                       <div key={`${i}-${name}`} className="break-words" title={name}>
                         <span className="text-slate-400 mr-1">{i + 1}.</span>
@@ -471,19 +471,19 @@ const JobCard: React.FC<{
 
             const leadNames = [primaryName, secondaryName].filter(Boolean);
             return (
-              <div className="space-y-1.5">
+              <div className="space-y-3">
                 {leadNames.length > 0 && listRow(
-                  <span className="text-slate-500 font-medium">หัวหน้าช่าง:</span>,
+                  <span className="text-slate-700 font-bold">หัวหน้าช่าง:</span>,
                   leadNames,
                   'text-slate-400',
                 )}
                 {techNames.length > 0 && listRow(
-                  <span className="text-slate-500 font-medium">พนักงาน:</span>,
+                  <span className="text-slate-700 font-bold">พนักงาน:</span>,
                   techNames,
                   'text-slate-400',
                 )}
                 {partTimeNames.length > 0 && listRow(
-                  <span className="text-amber-700 font-medium">พนักงาน Part-time:</span>,
+                  <span className="text-amber-700 font-bold">พนักงาน Part-time:</span>,
                   partTimeNames,
                   'text-amber-500',
                 )}
