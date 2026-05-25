@@ -8,6 +8,7 @@ const WORKAREA_BUILDING_LABELS: Record<string, string> = {
   HOUSE: 'บ้าน',
 };
 import { FormField, Input } from '../../common/FormControls';
+import { DecimalInput } from '../../common/DecimalInput';
 import { DropdownSelect } from '../../common';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
 import {
@@ -194,20 +195,13 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
             label="ราคาบริการหลัก (กำหนดเอง)"
             htmlFor={`manual-price-${index}`}
           >
-            <Input
+            <DecimalInput
               id={`manual-price-${index}`}
-              type="number"
-              value={area.package_price === undefined ? '' : area.package_price}
-              onChange={(e) => {
-                onAreaChange(index, {
-                  ...area,
-                  package_price:
-                    e.target.value === ''
-                      ? undefined
-                      : parseFloat(e.target.value),
-                });
+              value={area.package_price}
+              onChange={(num) => {
+                onAreaChange(index, { ...area, package_price: num });
               }}
-              step="0.01"
+              maxDecimals={2}
               placeholder="0.00"
               disabled={readOnly}
             />
@@ -233,28 +227,18 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
             </div>
             <div className="flex flex-col items-start sm:items-end">
               <div className="flex items-center gap-2">
-                <Input
-                  type="number"
+                <DecimalInput
                   className={`w-28 text-right font-bold text-sm h-10 !py-1 ${
                     readOnly
                       ? ''
                       : 'text-primary border-slate-300 focus:ring-primary focus:border-primary bg-white'
                   }`}
-                  value={
-                    area.package_price === undefined ? '' : area.package_price
-                  }
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    onAreaChange(index, {
-                      ...area,
-                      package_price:
-                        e.target.value === ''
-                          ? undefined
-                          : parseFloat(e.target.value),
-                    });
+                  value={area.package_price}
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                  onChange={(num) => {
+                    onAreaChange(index, { ...area, package_price: num });
                   }}
-                  step="0.01"
+                  maxDecimals={2}
                   placeholder="0.00"
                   required
                   disabled={readOnly}
@@ -817,19 +801,10 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     {/* Always show input for custom area size */}
                     <div className="mb-3">
                       <div className="relative">
-                        <Input
-                          name="area_size"
-                          type="text"
-                          inputMode="decimal"
-                          value={isAreaSizeFocused ? (area.area_size ?? '') : (area.area_size ? Number(area.area_size).toLocaleString('th-TH') : '')}
-                          onChange={(e) => {
-                            const raw = e.target.value.replace(/,/g, '');
-                            if (raw === '' || /^\d*\.?\d*$/.test(raw)) {
-                              onAreaChange(index, { ...area, area_size: raw === '' ? undefined : parseFloat(raw) });
-                            }
-                          }}
-                          onFocus={() => setIsAreaSizeFocused(true)}
-                          onBlur={() => setIsAreaSizeFocused(false)}
+                        <DecimalInput
+                          value={area.area_size}
+                          onChange={(num) => onAreaChange(index, { ...area, area_size: num })}
+                          maxDecimals={2}
                           placeholder="กรอกขนาดพื้นที่"
                           className="pr-20"
                           disabled={readOnly}
@@ -889,19 +864,10 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     )}
                     <div className="mb-3">
                       <div className="relative">
-                        <Input
-                          name="area_size"
-                          type="text"
-                          inputMode="decimal"
-                          value={isAreaSizeFocused ? (area.area_size ?? '') : (area.area_size ? Number(area.area_size).toLocaleString('th-TH') : '')}
-                          onChange={(e) => {
-                            const raw = e.target.value.replace(/,/g, '');
-                            if (raw === '' || /^\d*\.?\d*$/.test(raw)) {
-                              onAreaChange(index, { ...area, area_size: raw === '' ? undefined : parseFloat(raw) });
-                            }
-                          }}
-                          onFocus={() => setIsAreaSizeFocused(true)}
-                          onBlur={() => setIsAreaSizeFocused(false)}
+                        <DecimalInput
+                          value={area.area_size}
+                          onChange={(num) => onAreaChange(index, { ...area, area_size: num })}
+                          maxDecimals={2}
                           placeholder="กรอกขนาดพื้นที่"
                           className="pr-16"
                           disabled={readOnly}
@@ -992,18 +958,12 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                 {product?.name || item.product_name}
                               </td>
                               <td className="p-1 w-24">
-                                <Input
-                                  type="number"
+                                <DecimalInput
                                   value={item.quantity}
-                                  onChange={(e) =>
-                                    handleItemChange(
-                                      itemIndex,
-                                      'quantity',
-                                      parseInt(e.target.value) || 0
-                                    )
+                                  onChange={(val) =>
+                                    handleItemChange(itemIndex, 'quantity', val)
                                   }
                                   className="h-8 text-center"
-                                  min="1"
                                   disabled={readOnly}
                                 />
                               </td>
