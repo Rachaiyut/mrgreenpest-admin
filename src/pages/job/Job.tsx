@@ -2775,10 +2775,16 @@ const Job: React.FC<JobProps> = ({
                               {formatThaiDate(reportDate)}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center">
-                              {report.time_in || '-'}
+                              {report.time_in
+                                || (reportJob?.actual_start_time
+                                  ? new Date(reportJob.actual_start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+                                  : '-')}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center">
-                              {report.time_out || '-'}
+                              {report.time_out
+                                || (reportJob?.actual_end_time
+                                  ? new Date(reportJob.actual_end_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+                                  : '-')}
                             </td>
                             <td className="px-4 py-3 text-sm text-slate-700">
                               <div className="flex flex-wrap justify-center gap-1">

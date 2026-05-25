@@ -1622,6 +1622,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               </dd>
             </div>
 
+            {/* ช่างเทคนิค (chip list) — comment out ตามคำขอ, ดูจาก section "ช่างที่เข้าปฏิบัติงาน" ด้านล่างแทน
             <div className="col-span-2 md:col-span-2">
               <dt className="text-slate-500 mb-1">ช่างเทคนิค</dt>
               <dd className="font-semibold text-slate-900">
@@ -1663,13 +1664,19 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                 })()}
               </dd>
             </div>
+            */}
           </div>
         </div>
 
-        {/* Technician Photos */}
+        {/* Technician Photos + Part-time roster */}
         {(() => {
           const allTechs = allAssignedTechs;
-          if (allTechs.length === 0) return null;
+          const partTimeNames = (
+            (job?.part_time_employees as Array<{ name?: string } | string> | undefined) || []
+          )
+            .map((p) => (typeof p === 'string' ? p : p?.name || ''))
+            .filter(Boolean);
+          if (allTechs.length === 0 && partTimeNames.length === 0) return null;
           return (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
               <h3 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -1705,6 +1712,20 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                           {roleLabel}
                         </span>
                       )}
+                    </div>
+                  );
+                })}
+                {partTimeNames.map((name, idx) => {
+                  const initial = (name || '?').trim().charAt(0).toUpperCase();
+                  return (
+                    <div key={`pt-${idx}-${name}`} className="flex flex-col items-center text-center">
+                      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl bg-amber-100 text-amber-700 text-3xl font-bold flex items-center justify-center border border-amber-200">
+                        {initial}
+                      </div>
+                      <p className="mt-2 text-sm font-semibold text-slate-800 truncate w-full">{name}</p>
+                      <span className="mt-1 inline-block text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                        พนักงาน Part-time
+                      </span>
                     </div>
                   );
                 })}
