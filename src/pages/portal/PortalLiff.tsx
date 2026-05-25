@@ -11,7 +11,9 @@ const PortalLiff: React.FC = () => {
   const { isAuthenticated } = usePortal();
   const [status, setStatus] = useState<'loading' | 'linking' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState('');
-  const [linkToken, setLinkToken] = useState('');
+  const [customerCode, setCustomerCode] = useState('');
+  const [linkError, setLinkError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const page = searchParams.get('page') || 'dashboard';
   const validPages = ['dashboard', 'quotations', 'contracts', 'receipts', 'service-reports'];
@@ -71,21 +73,44 @@ const PortalLiff: React.FC = () => {
     }
   };
 
-  const handleLink = async () => {
-    if (!linkToken.trim()) return;
-    setStatus('loading');
+  const handleLink = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const code = customerCode.trim();
+    if (!code) {
+      setLinkError('กรุณากรอกรหัสลูกค้า');
+      return;
+    }
+    setLinkError('');
+    setSubmitting(true);
 
     try {
       const liff = (await import('@line/liff')).default;
       const accessToken = liff.getAccessToken();
+      if (!accessToken) {
+        setLinkError('ไม่สามารถดึง LINE access token ได้');
+        setSubmitting(false);
+        return;
+      }
 
-      // First link the account via webhook would be ideal,
-      // but since we're in LIFF, we can call a linking API directly
-      // For now, show instructions to type in LINE chat
-      setStatus('linking');
-    } catch {
-      setStatus('error');
-      setErrorMsg('เกิดข้อผิดพลาดในการเชื่อมบัญชี');
+      const res = await fetch(`${API_CONFIG.baseUrl}/customer-portal/line-link-by-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ line_access_token: accessToken, customer_code: code }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success && data.data?.access_token) {
+        localStorage.setItem('portal_token', data.data.access_token);
+        localStorage.setItem('portal_customer', JSON.stringify(data.data.customer));
+        window.location.href = `/portal/${targetPage}`;
+      } else {
+        setLinkError(data?.message || data?.data?.message || 'รหัสลูกค้าไม่ถูกต้องหรือไม่มีในระบบ');
+        setSubmitting(false);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการเชื่อมบัญชี';
+      setLinkError(msg);
+      setSubmitting(false);
     }
   };
 
@@ -106,22 +131,51 @@ const PortalLiff: React.FC = () => {
           )}
 
           {status === 'linking' && (
-            <div className="mt-6 space-y-4">
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-amber-700 text-sm font-medium mb-2">
-                  บัญชี LINE ของคุณยังไม่ได้เชื่อมกับระบบ
+            <form onSubmit={handleLink} className="mt-6 space-y-4 text-left">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+                <p className="text-amber-700 text-sm font-medium">
+                  เชื่อมบัญชี LINE กับลูกค้าครั้งแรก
                 </p>
-                <p className="text-amber-600 text-xs">
-                  กรุณาพิมพ์รหัสเชื่อมบัญชีที่ได้รับจากเจ้าหน้าที่ในแชท LINE ของ MrGreenPest
+                <p className="text-amber-600 text-xs mt-1">
+                  หลังเชื่อมแล้ว ครั้งถัดไปจะเข้าระบบอัตโนมัติ
                 </p>
               </div>
-              <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                <p className="text-slate-700 text-sm font-bold mb-2">วิธีเชื่อมบัญชี:</p>
-                <p className="text-slate-600 text-sm">1. กลับไปที่แชท LINE ของ MrGreenPest</p>
-                <p className="text-slate-600 text-sm">2. พิมพ์ <span className="font-mono bg-white px-2 py-0.5 rounded border text-green-700 font-bold">LINK รหัส</span></p>
-                <p className="text-slate-600 text-sm">3. กลับมากดเมนูอีกครั้ง</p>
+              <div>
+                <label htmlFor="customer-code" className="block text-sm font-medium text-slate-700 mb-1.5">
+                  รหัสลูกค้า
+                </label>
+                <input
+                  id="customer-code"
+                  type="text"
+                  value={customerCode}
+                  onChange={(e) => { setCustomerCode(e.target.value); setLinkError(''); }}
+                  placeholder="เช่น C690001"
+                  autoFocus
+                  disabled={submitting}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base disabled:bg-slate-100"
+                />
+                {linkError && (
+                  <p className="text-red-600 text-xs mt-1.5">{linkError}</p>
+                )}
+                <p className="text-slate-500 text-xs mt-1.5">
+                  รหัสลูกค้าอยู่บนใบเสนอราคา/ใบเสร็จ — ถามได้จากเจ้าหน้าที่
+                </p>
               </div>
-            </div>
+              <button
+                type="submit"
+                disabled={submitting || !customerCode.trim()}
+                className="w-full px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    กำลังเชื่อมบัญชี...
+                  </>
+                ) : (
+                  'เชื่อมบัญชีและเข้าสู่ระบบ'
+                )}
+              </button>
+            </form>
           )}
 
           {status === 'error' && (
