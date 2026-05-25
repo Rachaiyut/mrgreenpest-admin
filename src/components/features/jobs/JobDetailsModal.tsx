@@ -349,7 +349,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
         {/* Team & Vehicle Section */}
         <div className="rounded-xl border border-slate-200 p-3 sm:p-5">
           <SectionHeader icon={<TruckIcon />} title="ทีมงานและพาหนะ" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
             {/* Vehicle */}
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
               <h5 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-2">
@@ -427,6 +427,42 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
               )}
             </div>
           </div>
+
+          {/* พนักงาน Part Time — แสดงเฉพาะงานที่กรอกชื่อไว้ */}
+          {(() => {
+            const ptRaw = (job as unknown as Record<string, unknown>).part_time_employees;
+            if (!Array.isArray(ptRaw) || ptRaw.length === 0) return null;
+            const names = (ptRaw as Array<{ name?: string } | string>)
+              .map((p) => (typeof p === 'string' ? p : p?.name || ''))
+              .filter(Boolean);
+            if (names.length === 0) return null;
+            return (
+              <div className="mt-3 sm:mt-4 bg-slate-50 rounded-lg p-4 border border-slate-100">
+                <h5 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <TechnicianIcon className="w-4 h-4 text-amber-600" />
+                  พนักงาน Part Time
+                </h5>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                  {names.map((name, idx) => {
+                    const initial = (name || '?').trim().charAt(0).toUpperCase();
+                    return (
+                      <div key={idx} className="flex items-center gap-3">
+                        <img
+                          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(initial)}&background=fde68a&color=92400e&bold=true`}
+                          alt={name}
+                          className="h-9 w-9 rounded-full object-cover border border-slate-200"
+                        />
+                        <div>
+                          <div className="text-sm font-medium text-slate-800">{name}</div>
+                          <div className="text-xs text-amber-600 font-medium">Part Time</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* รายละเอียดงาน + หมายเหตุ */}
