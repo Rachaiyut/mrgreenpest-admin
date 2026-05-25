@@ -458,7 +458,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
 
     try {
       await InvoiceApi.adminApprove(invoice.id, accountId, taxInvoice);
-      await fetchData(['invoices']);
+      await Promise.all([fetchData(['invoices']), fetchInvoicesPage()]);
       Swal.fire({
         icon: 'success',
         title: 'ส่งฝ่ายบัญชีแล้ว',
@@ -586,7 +586,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     const chosenAccountId = (r.value as { accountId?: string })?.accountId || currentAccountId;
     try {
       await InvoiceApi.accountingApprove(invoice.id, chosenAccountId || undefined);
-      await fetchData(['invoices']);
+      await Promise.all([fetchData(['invoices']), fetchInvoicesPage()]);
       Swal.fire({
         icon: 'success',
         title: 'อนุมัติรายรับแล้ว',
@@ -616,7 +616,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     if (!r.isConfirmed || !r.value) return;
     try {
       await InvoiceApi.reject(invoice.id, r.value.trim());
-      await fetchData(['invoices']);
+      await Promise.all([fetchData(['invoices']), fetchInvoicesPage()]);
       Swal.fire({
         icon: 'success',
         title: 'ปฏิเสธแล้ว',
@@ -1136,7 +1136,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
           setInvoiceForPayment(null);
         }}
         invoice={invoiceForPayment}
-        onSuccess={() => fetchData(['invoices'])}
+        onSuccess={async () => { await Promise.all([fetchData(['invoices']), fetchInvoicesPage()]); }}
       />
 
     </div>

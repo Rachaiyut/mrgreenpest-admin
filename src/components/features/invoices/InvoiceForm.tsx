@@ -342,7 +342,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
       // ทบจากงวดก่อนหน้าที่เป็น PARTIAL (paid < total ของใบจริง) — แสดงให้รู้ว่าเลขรวมไม่ตรงกับแผนเพราะอะไร
       let carryFromPartial = 0;
-      return sorted.map((inst: any) => {
+      const rows = sorted.map((inst: any) => {
         const term = Number(inst.term || inst.installment_no);
         const schedule = scheduleByTerm.get(term);
         const invoice = invoiceByTerm.get(term);
@@ -384,6 +384,26 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           disabled: true,
         };
       });
+
+      // ถ้าใบที่กำลังดูเป็น PAY_ALL (ปิดยอด) — code = ...-ALL-... หรือ ไม่มี term
+      // → เพิ่ม row "รวบยอด" พร้อม mark ID เป็น 'PAY_ALL' (frontend จะเช็คว่า selected
+      //   จาก formData.selectedScheduleId ที่ถูก set ไว้ตอน initial load — ดู useEffect ด้านล่าง)
+      const initCode = String((initialValues as unknown as Record<string, string>)?.code || '');
+      const initTerm = (initialValues as unknown as Record<string, unknown>)?.term;
+      const isPayAllInvoice = /-ALL-/.test(initCode) || (initialValues?.id && (initTerm === null || initTerm === undefined));
+      if (isPayAllInvoice) {
+        rows.push({
+          id: 'PAY_ALL',
+          term: undefined as unknown as number,
+          description: 'ชำระปิดยอดสัญญา (ชำระยอดคงเหลือทั้งหมด)',
+          percentage: 0,
+          amount: Number((initialValues as unknown as Record<string, number>)?.total || 0),
+          is_pay_all: true,
+          disabled: true,
+        });
+      }
+
+      return rows;
     }
 
     if (formData.contractId && invoiceSchedules.length > 0) {
@@ -457,7 +477,21 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       (initialValues as unknown as Record<string, string>)?.installment_id;
     const linkedTerm = formData.term || initialValues?.term;
 
-    return referenceSource.installments.filter((inst: any) => {
+    // ถ้ามี PAY_ALL invoice (term ว่าง) ของ contract นี้ค้างอยู่แล้ว → ไม่ต้องโชว์งวดไหนอีก
+    // (กันสร้างใบซ้ำหลังกดปิดยอด — สอดคล้องกับ backend getInvoiceSchedulesForAdmin)
+    const contractIdForCheck = formData.contractId || referenceSource?.id;
+    const hasOpenPayAllInvoice = (invoices || []).some((inv: any) => {
+      if (String(inv.contract_id) !== String(contractIdForCheck)) return false;
+      if (inv.carried_over_to_id) return false;
+      if (String(inv.status).toUpperCase() === 'CANCELLED') return false;
+      // PAY_ALL marker: term ว่าง
+      return inv.term === null || inv.term === undefined;
+    });
+    if (hasOpenPayAllInvoice && !initialValues?.id) {
+      return [];
+    }
+
+    const installmentRows = referenceSource.installments.filter((inst: any) => {
       const term = inst.term || inst.installment_no;
       const isPaid = inst.status === Status.Paid || (inst.status as string) === 'PAID';
 
@@ -475,6 +509,24 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       amount: Number(inst.amount),
       is_pay_all: false,
     }));
+
+    // เพิ่ม PAY_ALL row เอง ถ้ามีงวดเหลือ ≥ 1 (กรณี invoice_schedules table ว่าง
+    // แต่ contract มี installment plan — fallback path นี้ backend ไม่ได้ append เอง)
+    if (installmentRows.length >= 1) {
+      const totalRemaining = installmentRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+      if (totalRemaining > 0) {
+        installmentRows.push({
+          id: 'PAY_ALL',
+          term: undefined as unknown as number,
+          description: 'ชำระปิดยอดสัญญา (ชำระยอดคงเหลือทั้งหมด)',
+          percentage: 0,
+          amount: totalRemaining,
+          is_pay_all: true,
+        });
+      }
+    }
+
+    return installmentRows;
   }, [mode, referenceSource, invoices, initialValues, formData.contractId, formData.selectedScheduleId, formData.term, invoiceSchedules, contracts]);
 
   // ชำระเต็มจำนวน: auto-select + auto-set items
@@ -640,7 +692,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         
         is_pay_all: selectedInst?.is_pay_all || undefined,
         // ส่ง term เสมอ (ทุก invoice ต้องมีงวด)
-        term: selectedInst?.is_pay_all ? undefined : formData.term,
+        term: selectedInst?.is_pay_all ? undefined : (formData.term ?? undefined),
         invoice_schedule_id: selectedInst?.is_pay_all ? undefined : selectedInst?.id,
 
         // ถ้ากำหนดยอดเอง → ใช้ custom amount + description
@@ -670,13 +722,12 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         })),
       };
 
+      // ทั้ง create + edit ส่งต่อให้ parent (Invoice page) จัดการ API call + table refresh
+      // — กัน table ไม่ refresh เพราะ fetchData() แค่อัปเดต global context ไม่ใช่ local
+      // table state ที่ Invoice.tsx ใช้แสดงผล
+      await onSubmit(payload);
       if (mode === 'create') {
-        await InvoiceApi.create(payload);
         Swal.fire({ icon: 'success', title: 'สร้างใบแจ้งหนี้สำเร็จ!', timer: 1500, showConfirmButton: false });
-        fetchData(['invoices']);
-        onCancel();
-      } else {
-        await onSubmit(payload);
       }
     } catch (error) {
       console.error('Submit Error:', error);
@@ -907,10 +958,15 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                     const initialScheduleId =
                       (initialValues as unknown as Record<string, string>)?.invoice_schedule_id ||
                       (initialValues as unknown as Record<string, string>)?.installment_id;
+                    // ใบ PAY_ALL (ปิดยอด): code มี -ALL- หรือ term ว่าง — auto-select row "รวบยอด"
+                    const initCode = String((initialValues as unknown as Record<string, string>)?.code || '');
+                    const initTerm = (initialValues as unknown as Record<string, unknown>)?.term;
+                    const isPayAllInvoice = /-ALL-/.test(initCode) || (initialValues?.id && (initTerm === null || initTerm === undefined));
                     const isSelected =
                       formData.selectedScheduleId === inst.id ||
                       (!!initialScheduleId && String(initialScheduleId) === String(inst.id)) ||
-                      (!!initialValues?.id && !!initialValues?.term && initialValues?.term === inst.term);
+                      (!!initialValues?.id && !!initialValues?.term && initialValues?.term === inst.term) ||
+                      (isPayAllInvoice && inst.is_pay_all);
                     return (
                     <tr
                       key={inst.id}
