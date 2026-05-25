@@ -419,19 +419,77 @@ const JobCard: React.FC<{
               </span>
             </div>
           )}
-          <div className="flex items-center gap-2.5 text-sm">
-            <TechnicianIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-            <span
-              className="text-slate-600 truncate"
-              title={job.technicians?.map((t) => t.name).join(', ')}
-            >
-              {job.technicians?.length > 0 ? (
-                job.technicians.map((t) => t.name).join(', ')
-              ) : (
-                <span className="text-slate-400 italic">ยังไม่มอบหมาย</span>
-              )}
-            </span>
-          </div>
+          {(() => {
+            const fullName = (u: { name?: string; first_name?: string; last_name?: string } | null | undefined) =>
+              (u?.name || `${u?.first_name || ''} ${u?.last_name || ''}`.trim()) || '';
+            const primary = job.primary_technician || null;
+            const secondary = job.secondary_technician || null;
+            const primaryName = fullName(primary);
+            const secondaryName = fullName(secondary);
+            const primaryId = primary?.id || job.primary_tech_id;
+            const secondaryId = secondary?.id || job.secondary_tech_id;
+            const techNames = (job.technicians || [])
+              .filter((t) => t && t.id !== primaryId && t.id !== secondaryId)
+              .map(fullName)
+              .filter(Boolean);
+            const partTimeNames = (
+              (job.part_time_employees as Array<{ name?: string } | string> | undefined) || []
+            )
+              .map((p) => (typeof p === 'string' ? p : p?.name || ''))
+              .filter(Boolean);
+
+            const hasAny = !!(primaryName || secondaryName || techNames.length || partTimeNames.length);
+            if (!hasAny) {
+              return (
+                <div className="flex items-center gap-2.5 text-sm">
+                  <TechnicianIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                  <span className="text-slate-400 italic">ยังไม่มอบหมาย</span>
+                </div>
+              );
+            }
+
+            const listRow = (
+              labelEl: React.ReactNode,
+              names: string[],
+              iconColor: string,
+            ) => (
+              <div className="flex items-start gap-2.5 text-sm">
+                <TechnicianIcon className={`h-4 w-4 ${iconColor} flex-shrink-0 mt-0.5`} />
+                <div className="min-w-0 flex-1 text-slate-700">
+                  <div>{labelEl}</div>
+                  <div className="mt-0.5 space-y-0.5 pl-2">
+                    {names.map((name, i) => (
+                      <div key={`${i}-${name}`} className="break-words" title={name}>
+                        <span className="text-slate-400 mr-1">{i + 1}.</span>
+                        {name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+
+            const leadNames = [primaryName, secondaryName].filter(Boolean);
+            return (
+              <div className="space-y-1.5">
+                {leadNames.length > 0 && listRow(
+                  <span className="text-slate-500 font-medium">หัวหน้าช่าง:</span>,
+                  leadNames,
+                  'text-slate-400',
+                )}
+                {techNames.length > 0 && listRow(
+                  <span className="text-slate-500 font-medium">พนักงาน:</span>,
+                  techNames,
+                  'text-slate-400',
+                )}
+                {partTimeNames.length > 0 && listRow(
+                  <span className="text-amber-700 font-medium">พนักงาน Part-time:</span>,
+                  partTimeNames,
+                  'text-amber-500',
+                )}
+              </div>
+            );
+          })()}
           <div className="flex items-center gap-2.5 text-sm">
             <JobRemarkIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
             {job.remarks ? (
