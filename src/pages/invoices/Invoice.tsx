@@ -1088,10 +1088,46 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             await Promise.all([fetchData(['invoices']), fetchInvoicesPage()]);
             setIsAddInvoiceModalOpen(false);
           } catch (err) {
-            const message = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
-              || (err as Error).message
-              || 'ไม่สามารถสร้างใบแจ้งหนี้ได้';
-            Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: message });
+            const errResp = (err as { response?: { data?: { message?: string; code?: string; existing_invoice?: { code: string; status: string; term: number } } } })?.response?.data;
+            const message = errResp?.message || (err as Error).message || 'ไม่สามารถสร้างใบแจ้งหนี้ได้';
+            setIsAddInvoiceModalOpen(false);
+            // เคส duplicate invoice — ใช้ HTML แบบ card สวยๆ แทน text ธรรมดา
+            if (errResp?.code === 'DUPLICATE_INVOICE_FOR_TERM' && errResp.existing_invoice) {
+              const inv = errResp.existing_invoice;
+              const statusColor: Record<string, string> = {
+                PENDING: 'bg-amber-100 text-amber-700 border-amber-200',
+                PARTIAL: 'bg-blue-100 text-blue-700 border-blue-200',
+                PAID: 'bg-green-100 text-green-700 border-green-200',
+                PENDING_REVIEW: 'bg-purple-100 text-purple-700 border-purple-200',
+                PENDING_ACCOUNTING_REVIEW: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+              };
+              const cls = statusColor[inv.status] || 'bg-slate-100 text-slate-700 border-slate-200';
+              await Swal.fire({
+                icon: 'warning',
+                title: 'งวดนี้มีใบแจ้งหนี้อยู่แล้ว',
+                html: `
+                  <div style="text-align:left; padding: 0 8px;">
+                    <p style="color:#475569; font-size:14px; margin: 0 0 16px;">งวดที่ <strong style="color:#0f172a;">${inv.term}</strong> ของสัญญานี้มีใบแจ้งหนี้ค้างอยู่ — กรุณายกเลิกใบเก่าก่อนถึงจะสร้างใบใหม่ได้</p>
+                    <div style="display:flex; flex-direction:column; gap:8px; padding:12px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px;">
+                      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                        <span style="color:#64748b; font-size:13px;">เลขที่ใบแจ้งหนี้</span>
+                        <span style="font-weight:600; color:#0f172a; font-family:monospace;">${inv.code}</span>
+                      </div>
+                      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                        <span style="color:#64748b; font-size:13px;">สถานะปัจจุบัน</span>
+                        <span class="${cls}" style="display:inline-block; padding:2px 10px; border-radius:9999px; font-size:12px; font-weight:600; border:1px solid;">${inv.status}</span>
+                      </div>
+                    </div>
+                  </div>
+                `,
+                confirmButtonText: 'รับทราบ',
+                confirmButtonColor: '#10b981',
+                customClass: { popup: 'rounded-2xl' },
+              });
+            } else {
+              await Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: message, confirmButtonColor: '#10b981' });
+            }
+            throw err;
           }
         }}
       />
@@ -1114,7 +1150,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             const message = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
               || (err as Error).message
               || 'ไม่สามารถบันทึกใบแจ้งหนี้ได้';
-            Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: message });
+            setIsInvoiceEditModalOpen(false);
+            await Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: message });
+            throw err;
           }
         }}
       />

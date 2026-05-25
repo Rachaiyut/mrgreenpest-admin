@@ -407,19 +407,13 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     }
 
     if (formData.contractId && invoiceSchedules.length > 0) {
-      // หา term สูงสุดที่มี invoice ค้างชำระ (INVOICED) เพื่อ disable งวดก่อนหน้า
-      const invoicedTerms = invoiceSchedules
-        .filter((inst: any) => String(inst.status).toUpperCase() === 'INVOICED')
-        .map((inst: any) => inst.installment_no || inst.sequence);
-      const maxInvoicedTerm = invoicedTerms.length > 0 ? Math.max(...invoicedTerms) : 0;
-
       const linkedScheduleId =
         formData.selectedScheduleId ||
         (initialValues as unknown as Record<string, string>)?.invoice_schedule_id ||
         (initialValues as unknown as Record<string, string>)?.installment_id;
       const linkedTerm = formData.term || initialValues?.term;
 
-      return invoiceSchedules.filter((inst: any) => {
+      const filtered = invoiceSchedules.filter((inst: any) => {
         const term = inst.installment_no || inst.sequence;
         const status = String(inst.status).toUpperCase();
 
@@ -430,11 +424,43 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         if (inst.is_pay_all) return true;
 
         return status === 'PENDING' || status === 'PARTIAL' || status === 'INVOICED';
-      }).map((inst: any) => {
-        const term = inst.installment_no || inst.sequence;
+      });
+
+      // Sequential lock: walk งวดจากน้อยไปมาก
+      //   - งวด INVOICED (มีใบแต่ยังไม่จ่าย) = block ทุกงวดถัดไป + ตัวเองก็ disable
+      //   - งวด PENDING (ไม่มีใบเลย) ที่เจอเป็นตัวแรก = enable; ที่เหลือ disable
+      //   - PARTIAL/PAID ถูก backend skip ออกไปจาก result แล้ว → ตัวต่อจากนั้นจะถูกเปิด
+      //   - PAY_ALL row enable เสมอ
+      const nonPayAllSorted = filtered
+        .filter((inst: any) => !inst.is_pay_all)
+        .map((inst: any) => ({
+          inst,
+          term: Number(inst.installment_no || inst.sequence),
+          status: String(inst.status).toUpperCase(),
+        }))
+        .sort((a: { term: number }, b: { term: number }) => a.term - b.term);
+
+      let enabledTerm: number | null = null;
+      for (const row of nonPayAllSorted) {
+        if (row.status === 'INVOICED') break; // ใบเก่าค้างอยู่ — block ทุก term ถัดไป
+        enabledTerm = row.term;
+        break; // เจอตัวแรกที่ไม่ block → enable แค่ตัวนี้
+      }
+
+      return filtered.map((inst: any) => {
+        const term = Number(inst.installment_no || inst.sequence);
         const status = String(inst.status).toUpperCase();
-        // disabled: งวดที่ค้าง (INVOICED) แต่มีงวดถัดไปที่พร้อมวางบิลแล้ว
-        const isOlderInvoiced = status === 'INVOICED' && term < maxInvoicedTerm;
+        const isInvoiced = status === 'INVOICED';
+        let disabled = false;
+        let reason: string | undefined;
+        if (!inst.is_pay_all && !initialValues?.id) {
+          if (isInvoiced) {
+            disabled = true;
+            reason = 'มีใบแจ้งหนี้สร้างไปแล้ว';
+          } else if (term !== enabledTerm) {
+            disabled = true;
+          }
+        }
 
         return {
           id: inst.id,
@@ -443,7 +469,8 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           percentage: inst.percentage || 0,
           amount: Number(inst.amount || inst.expected_amount || 0),
           is_pay_all: inst.is_pay_all || false,
-          disabled: isOlderInvoiced,
+          disabled,
+          disabledReason: reason,
         };
       }).sort((a, b) => {
         // PAY_ALL/CARRY ไว้ท้ายสุด, ที่เหลือเรียงตามเลขงวด
@@ -491,24 +518,72 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       return [];
     }
 
-    const installmentRows = referenceSource.installments.filter((inst: any) => {
-      const term = inst.term || inst.installment_no;
-      const isPaid = inst.status === Status.Paid || (inst.status as string) === 'PAID';
-
-      if (initialValues?.id) {
-        if (linkedScheduleId && String(inst.id) === String(linkedScheduleId)) return true;
-        if (linkedTerm && linkedTerm === term) return true;
+    // หา invoice ของแต่ละ term — เพื่อรู้สถานะว่าจ่ายไปบ้างหรือยัง
+    //   blocking = ใบยัง active + ยังไม่มีจ่ายเลย (paid_amount = 0)
+    //   non-blocking = ใบ active + จ่ายไปบางส่วน/ครบ (paid_amount > 0) หรือ cancelled/carry
+    const ACTIVE_STATUSES = new Set(['DRAFT', 'PENDING', 'PARTIAL', 'PAID', 'SENT', 'PENDING_REVIEW', 'PENDING_ACCOUNTING_REVIEW', 'OVERDUE']);
+    const invByTermFE = new Map<number, { code: string; status: string; paid: number }>();
+    (invoices || []).forEach((inv: any) => {
+      if (String(inv.contract_id) !== String(contractIdForCheck)) return;
+      if (inv.carried_over_to_id) return;
+      const status = String(inv.status || '').toUpperCase();
+      if (!ACTIVE_STATUSES.has(status)) return;
+      const t = Number(inv.term);
+      if (t > 0) {
+        invByTermFE.set(t, { code: inv.code, status, paid: Number(inv.paid_amount || 0) });
       }
-      // แสดงงวดที่ยังไม่จ่ายครบ — ให้สร้าง invoice ซ้ำได้ (วางบิลหลายครั้ง)
-      return !isPaid;
-    }).map((inst: any) => ({
-      id: inst.id,
-      term: inst.term || inst.installment_no,
-      description: inst.description || inst.notes || `งวดที่ ${inst.term || inst.installment_no}`,
-      percentage: inst.percentage || 0,
-      amount: Number(inst.amount),
-      is_pay_all: false,
-    }));
+    });
+
+    const baseRows = referenceSource.installments
+      .slice()
+      .sort((a: any, b: any) => Number(a.term || a.installment_no) - Number(b.term || b.installment_no))
+      .filter((inst: any) => {
+        const term = inst.term || inst.installment_no;
+        const isPaid = inst.status === Status.Paid || (inst.status as string) === 'PAID';
+        if (initialValues?.id) {
+          if (linkedScheduleId && String(inst.id) === String(linkedScheduleId)) return true;
+          if (linkedTerm && linkedTerm === term) return true;
+        }
+        return !isPaid;
+      })
+      .map((inst: any) => ({
+        id: inst.id,
+        term: Number(inst.term || inst.installment_no),
+        description: inst.description || inst.notes || `งวดที่ ${inst.term || inst.installment_no}`,
+        percentage: inst.percentage || 0,
+        amount: Number(inst.amount),
+        is_pay_all: false,
+      }));
+
+    // Sequential lock: walk จากน้อยไปมาก
+    //   - งวดมีใบ + paid = 0 (block ทุกตัวถัดไป + ตัวเอง disabled "มีใบแจ้งหนี้สร้างไปแล้ว")
+    //   - งวดมีใบ + paid > 0 (PARTIAL/PAID) → ข้ามตัวนี้ (ยกยอดไป backend) — ตัวเอง disabled
+    //     "มีใบแจ้งหนี้สร้างไปแล้ว", ตัวถัดไปยังเปิดได้
+    //   - งวดไม่มีใบ + เป็นตัวแรกที่เจอแบบนี้ → enable, ที่เหลือ disable
+    let enabledTermFE: number | null = null;
+    for (const r of baseRows) {
+      const inv = invByTermFE.get(r.term);
+      if (inv) {
+        if (inv.paid <= 0) break; // block — ใบยังไม่จ่ายเลย
+        continue; // มีจ่ายบางส่วน/ครบ → ข้ามไป term ถัดไป
+      }
+      enabledTermFE = r.term;
+      break;
+    }
+
+    const installmentRows = baseRows.map((r: { term: number; id: string; description: string; percentage: number; amount: number; is_pay_all: boolean }) => {
+      let disabled = false;
+      let disabledReason: string | undefined;
+      if (!initialValues?.id) {
+        if (invByTermFE.has(r.term)) {
+          disabled = true;
+          disabledReason = 'มีใบแจ้งหนี้สร้างไปแล้ว';
+        } else if (r.term !== enabledTermFE) {
+          disabled = true;
+        }
+      }
+      return { ...r, disabled, disabledReason };
+    });
 
     // เพิ่ม PAY_ALL row เอง ถ้ามีงวดเหลือ ≥ 1 (กรณี invoice_schedules table ว่าง
     // แต่ contract มี installment plan — fallback path นี้ backend ไม่ได้ append เอง)
@@ -522,6 +597,8 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           percentage: 0,
           amount: totalRemaining,
           is_pay_all: true,
+          disabled: false,
+          disabledReason: undefined,
         });
       }
     }
@@ -987,7 +1064,14 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                         {inst.is_pay_all ? 'รวบยอด' : `งวดที่ ${inst.term}`}
                       </td>
                       <td className={`px-4 py-4 text-sm text-left ${inst.is_pay_all ? 'text-amber-700 font-medium' : 'text-slate-600'}`}>
-                        {inst.description}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span>{inst.description}</span>
+                          {inst.disabled && inst.disabledReason && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                              {inst.disabledReason}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       {availableInstallments.some((i: { percentage: number }) => i.percentage > 0) && (
                         <td className="px-4 py-4 text-sm text-center text-slate-600">
