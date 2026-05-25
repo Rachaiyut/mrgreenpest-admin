@@ -884,7 +884,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
       {/* 📌 SECTION 3.5: สถานที่บริการ — แสดงเฉพาะนิติบุคคล */}
       {formData.type === CustomerType.CORPORATE && (
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+      <div className="bg-amber-50 rounded-2xl border-2 border-amber-200 shadow-sm p-6">
         <SectionHeader
           title="สถานที่บริการ"
           description="ที่อยู่ที่ใช้ในการให้บริการจริง (หากต่างจากที่อยู่ผู้ว่าจ้าง)"
