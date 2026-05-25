@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { usePortal } from '../../contexts/PortalContext';
 import { API_CONFIG } from '@/src/constants/config';
 
 const PortalLoginByCode: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const params = useParams<{ page?: string }>();
   const { isAuthenticated } = usePortal();
   const [code, setCode] = useState(searchParams.get('code') || '');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const page = searchParams.get('page') || 'dashboard';
+  // รับ page จาก path param ก่อน (LINE Rich Menu friendly) → fallback ไป query string เก่า
+  const page = params.page || searchParams.get('page') || 'dashboard';
   const validPages = ['dashboard', 'quotations', 'contracts', 'receipts', 'service-reports'];
   const targetPage = validPages.includes(page) ? page : 'dashboard';
 

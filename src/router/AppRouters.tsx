@@ -115,6 +115,7 @@ export const AppRouter = (props: AppRouterProps) => {
             <Route path="/portal" element={<PortalLogin />} />
             <Route path="/portal/liff" element={<PortalLiff />} />
             <Route path="/portal/login-by-code" element={<PortalLoginByCode />} />
+            <Route path="/portal/login-by-code/:page" element={<PortalLoginByCode />} />
             <Route path="/portal/sign" element={<PortalSignQuotation />} />
             <Route path="/portal" element={<PortalRoute><PortalLayoutLazy /></PortalRoute>}>
               <Route path="dashboard" element={<PortalDashboard />} />
