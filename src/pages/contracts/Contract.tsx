@@ -587,10 +587,17 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                           {formatThaiDate(c.end_date)}
                         </td>
                         <td className="px-4 py-3 text-sm text-left">
-                          {(c as unknown as Record<string, unknown>).service_schedule
-                            ? <span className="text-xs text-green-700 font-medium">{((c as unknown as Record<string, unknown>).service_schedule as Record<string, string>)?.name}</span>
-                            : <span className="text-slate-400">-</span>
-                          }
+                          {(() => {
+                            const raw = (c as unknown as Record<string, unknown>).service_schedule_ids;
+                            const ids: string[] = Array.isArray(raw)
+                              ? raw as string[]
+                              : (typeof raw === 'string' && raw.trim().startsWith('['))
+                                ? (() => { try { return JSON.parse(raw); } catch { return []; } })()
+                                : [];
+                            return ids.length > 0
+                              ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{ids.length} รายการ</span>
+                              : <span className="text-slate-400">-</span>;
+                          })()}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-800 text-right font-semibold">
                           {(Number(c.total_amount) || 0).toLocaleString('th-TH', {

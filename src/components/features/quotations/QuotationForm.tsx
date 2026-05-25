@@ -358,18 +358,34 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const [paymentTerms, setPaymentTerms] = useState(initialValues?.payment_terms || 'ชำระเมื่อเข้าปฏิบัติงานครั้งแรกเสร็จเรียบร้อย');
   const [notes, setNotes] = useState(initialValues?.notes || '');
 
-  // Attachments
-  const [procedureTemplateIds, setProcedureTemplateIds] = useState<string[]>(
-    Array.isArray(initialValues?.service_procedure_template_ids)
-      ? (initialValues!.service_procedure_template_ids as string[])
-      : (initialValues?.service_procedure_template_id ? [initialValues.service_procedure_template_id] : [])
+  // Attachments — JSON arrays บางทีมาจาก backend เป็น string (longtext + json_valid)
+  // จึง parse เผื่อไว้ทั้งตอน initial และตอน sync useEffect
+  const parseIdArray = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v.filter((s): s is string => typeof s === 'string' && s.length === 36);
+    if (typeof v === 'string' && v.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(v);
+        return Array.isArray(parsed)
+          ? parsed.filter((s): s is string => typeof s === 'string' && s.length === 36)
+          : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+  const [procedureTemplateIds, setProcedureTemplateIds] = useState<string[]>(() => {
+    const ids = parseIdArray(initialValues?.service_procedure_template_ids);
+    if (ids.length > 0) return ids;
+    return initialValues?.service_procedure_template_id
+      ? [initialValues.service_procedure_template_id]
+      : [];
+  });
+  const [scheduleIds, setScheduleIds] = useState<string[]>(() =>
+    parseIdArray(initialValues?.service_schedule_ids),
   );
-  const [scheduleId, setScheduleId] = useState(initialValues?.service_schedule_id || '');
-  const [chemicalCatalogIds, setChemicalCatalogIds] = useState<string[]>(
-    // กัน data ที่ JSON column เคยถูก stringify ซ้อน — ถ้าเจอ element ที่ไม่ใช่ UUID-like ก็ทิ้ง
-    Array.isArray(initialValues?.chemical_catalog_ids)
-      ? (initialValues!.chemical_catalog_ids as string[]).filter((s) => typeof s === 'string' && s.length === 36)
-      : []
+  const [chemicalCatalogIds, setChemicalCatalogIds] = useState<string[]>(() =>
+    parseIdArray(initialValues?.chemical_catalog_ids),
   );
   const [procedureTemplates, setProcedureTemplates] = useState<IServiceProcedureTemplate[]>([]);
   const [schedules, setSchedules] = useState<ServiceSchedule[]>([]);
@@ -506,14 +522,15 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
       // Sync attachment fields (procedure templates / service schedule / chemical catalogs)
       const ad = activeData as unknown as Record<string, unknown>;
-      const procTemplateIds = Array.isArray(ad.service_procedure_template_ids)
-        ? (ad.service_procedure_template_ids as string[])
-        : (ad.service_procedure_template_id ? [ad.service_procedure_template_id as string] : []);
-      if (procTemplateIds.length > 0) setProcedureTemplateIds(procTemplateIds);
-      if (ad.service_schedule_id) setScheduleId(ad.service_schedule_id as string);
-      if (Array.isArray(ad.chemical_catalog_ids)) {
-        setChemicalCatalogIds((ad.chemical_catalog_ids as string[]).filter((s) => typeof s === 'string' && s.length === 36));
-      }
+      const procTemplateIds = parseIdArray(ad.service_procedure_template_ids);
+      const fallbackProc = procTemplateIds.length === 0 && ad.service_procedure_template_id
+        ? [ad.service_procedure_template_id as string]
+        : procTemplateIds;
+      if (fallbackProc.length > 0) setProcedureTemplateIds(fallbackProc);
+      const schedIds = parseIdArray(ad.service_schedule_ids);
+      if (schedIds.length > 0) setScheduleIds(schedIds);
+      const catalogIds = parseIdArray(ad.chemical_catalog_ids);
+      if (catalogIds.length > 0) setChemicalCatalogIds(catalogIds);
     }
   }, [activeData, mode]);
 
@@ -1383,7 +1400,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments.map((inst) => ({ ...inst, percentage: inst.percentage || 0 })) : [],
       is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
       service_procedure_template_ids: procedureTemplateIds.length > 0 ? procedureTemplateIds : undefined,
-      service_schedule_id: scheduleId || undefined,
+      service_schedule_ids: scheduleIds.length > 0 ? scheduleIds : undefined,
       chemical_catalog_ids: (() => {
         const cleaned = chemicalCatalogIds.filter((id) => typeof id === 'string' && id.trim().length > 0);
         return cleaned.length > 0 ? cleaned : undefined;
@@ -1559,10 +1576,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 />
               </FormField>
               <FormField label="ตารางเข้าปฏิบัติงาน">
-                <SearchableSelect
-                  options={[{ value: '', label: 'ไม่แนบ' }, ...schedules.map((s) => ({ value: s.id, label: s.name }))]}
-                  value={scheduleId}
-                  onChange={(val) => setScheduleId(val)}
+                <SearchableMultiSelect
+                  options={schedules.map((s) => ({ value: s.id, label: s.name }))}
+                  value={scheduleIds}
+                  onChange={(val) => setScheduleIds(val)}
                   placeholder="เลือกตารางปฏิบัติงาน..."
                 />
               </FormField>

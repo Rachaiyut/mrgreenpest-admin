@@ -30,6 +30,7 @@ import {
   Textarea,
 } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
+import { SearchableMultiSelect } from '../../common/SearchableMultiSelect';
 
 // ===== API =====
 import { CategoryApi } from '../../../api/category';
@@ -196,8 +197,24 @@ export const ContractForm: FC<ContractFormProps> = ({
   );
   const [notes, setNotes] = useState(initialValues?.notes || '');
 
-  // Schedule attachment
-  const [scheduleId, setScheduleId] = useState(initialValues?.service_schedule_id || '');
+  // Schedule attachment — รองรับหลายตาราง (JSON array)
+  const parseScheduleIds = (v: unknown): string[] => {
+    if (Array.isArray(v)) return v.filter((s): s is string => typeof s === 'string' && s.length === 36);
+    if (typeof v === 'string' && v.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(v);
+        return Array.isArray(parsed)
+          ? parsed.filter((s): s is string => typeof s === 'string' && s.length === 36)
+          : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+  const [scheduleIds, setScheduleIds] = useState<string[]>(() =>
+    parseScheduleIds(initialValues?.service_schedule_ids),
+  );
   const [schedules, setSchedules] = useState<ServiceSchedule[]>([]);
 
   // Pricing & VAT (เพิ่ม State สำหรับคำนวณ VAT)
@@ -615,9 +632,12 @@ export const ContractForm: FC<ContractFormProps> = ({
           const shouldOverwriteForm = mode === 'create' || selectedQuotationId !== initialValues?.quotation_id;
 
           if (shouldOverwriteForm) {
-            // Auto-copy schedule from quotation
-            if (fullQuotationData.service_schedule_id) {
-              setScheduleId(fullQuotationData.service_schedule_id);
+            // Auto-copy schedules from quotation — ทั้ง quotation + contract รองรับหลายตารางแล้ว
+            const copiedScheduleIds = parseScheduleIds(
+              (fullQuotationData as unknown as Record<string, unknown>).service_schedule_ids,
+            );
+            if (copiedScheduleIds.length > 0) {
+              setScheduleIds(copiedScheduleIds);
             }
 
             // 1. Customer & Basic Info
@@ -1191,7 +1211,7 @@ export const ContractForm: FC<ContractFormProps> = ({
       id: mode === 'renew' ? undefined : initialValues?.id,
       code: contractCode,
       quotation_id: selectedQuotationId || undefined,
-      service_schedule_id: scheduleId || undefined,
+      service_schedule_ids: scheduleIds.length > 0 ? scheduleIds : undefined,
       customer_id: selectedCustomerId,
       customer_name: selectedCustomerObj
         ? `${selectedCustomerObj.first_name} ${selectedCustomerObj.last_name || ''}`.trim()
@@ -1526,10 +1546,10 @@ export const ContractForm: FC<ContractFormProps> = ({
             <h3 className="text-base font-semibold text-slate-800 mb-4">เอกสารแนบท้ายสัญญา</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="ตารางเข้าปฏิบัติงาน">
-                <SearchableSelect
-                  options={[{ value: '', label: 'ไม่แนบ' }, ...schedules.map((s) => ({ value: s.id, label: s.name }))]}
-                  value={scheduleId}
-                  onChange={(val) => setScheduleId(val)}
+                <SearchableMultiSelect
+                  options={schedules.map((s) => ({ value: s.id, label: s.name }))}
+                  value={scheduleIds}
+                  onChange={(val) => setScheduleIds(val)}
                   placeholder="เลือกตารางปฏิบัติงาน..."
                 />
               </FormField>

@@ -794,22 +794,29 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           {q['assessment']?.code || '-'}
                         </td>
                         <td className="px-4 py-3 text-sm text-left">
-                          {(q as unknown as Record<string, unknown>).service_schedule
-                            ? <span className="text-xs text-green-700 font-medium">{((q as unknown as Record<string, unknown>).service_schedule as Record<string, string>)?.name}</span>
-                            : <span className="text-slate-400">-</span>
-                          }
+                          {(() => {
+                            const raw = (q as unknown as Record<string, unknown>).service_schedule_ids;
+                            const ids: string[] = Array.isArray(raw)
+                              ? raw as string[]
+                              : (typeof raw === 'string' && raw.trim().startsWith('['))
+                                ? (() => { try { return JSON.parse(raw); } catch { return []; } })()
+                                : [];
+                            return ids.length > 0
+                              ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{ids.length} รายการ</span>
+                              : <span className="text-slate-400">-</span>;
+                          })()}
                         </td>
                         <td className="px-4 py-3 text-sm text-left">
                           {(() => {
-                            const templates = (q as unknown as Record<string, unknown>).service_procedure_templates as Array<Record<string, string>> | undefined;
-                            const singleTemplate = (q as unknown as Record<string, unknown>).service_procedure_template as Record<string, string> | undefined;
-                            if (templates && templates.length > 0) {
-                              return <div className="flex flex-col gap-0.5">{templates.map((t, i) => <span key={i} className="text-xs text-blue-700 font-medium">{t?.name}</span>)}</div>;
-                            }
-                            if (singleTemplate) {
-                              return <span className="text-xs text-blue-700 font-medium">{singleTemplate?.name}</span>;
-                            }
-                            return <span className="text-slate-400">-</span>;
+                            const raw = (q as unknown as Record<string, unknown>).service_procedure_template_ids;
+                            const ids: string[] = Array.isArray(raw)
+                              ? raw as string[]
+                              : (typeof raw === 'string' && raw.trim().startsWith('['))
+                                ? (() => { try { return JSON.parse(raw); } catch { return []; } })()
+                                : [];
+                            return ids.length > 0
+                              ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">{ids.length} รายการ</span>
+                              : <span className="text-slate-400">-</span>;
                           })()}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700 text-left">

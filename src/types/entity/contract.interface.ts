@@ -32,7 +32,7 @@ export interface Contract {
   end_date: string;
   notes?: string;
   signature?: string;
-  service_schedule_id?: string;
+  service_schedule_ids?: string[];
   created_by?: string;
   updated_by?: string;
   created_at?: string;

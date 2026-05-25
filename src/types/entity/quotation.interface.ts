@@ -44,7 +44,7 @@ export interface Quotation extends IBase {
   cancellation_reason?: string;
   service_procedure_template_id?: string;
   service_procedure_template_ids?: string[];
-  service_schedule_id?: string;
+  service_schedule_ids?: string[];
   chemical_catalog_ids?: string[];
   created_by?: string;
   updated_by?: string;
