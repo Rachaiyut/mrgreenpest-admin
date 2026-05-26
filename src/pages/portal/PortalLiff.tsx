@@ -28,7 +28,26 @@ const PortalLiff: React.FC = () => {
   const [linkError, setLinkError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const page = searchParams.get('page') || 'dashboard';
+  // LIFF เอา query string ของ LIFF URL (เช่น ?page=quotations) ห่อใส่ `liff.state`
+  // เป็น `?liff.state=%3Fpage%3Dquotations` แล้ว redirect มาที่ endpoint URL
+  // → ต้อง decode liff.state เพื่อดึง page ที่แท้จริง
+  const resolvePageParam = (): string => {
+    const direct = searchParams.get('page');
+    if (direct) return direct;
+    const liffState = searchParams.get('liff.state');
+    if (liffState) {
+      try {
+        const inner = liffState.startsWith('?') ? liffState.slice(1) : liffState;
+        const innerParams = new URLSearchParams(inner);
+        const fromState = innerParams.get('page');
+        if (fromState) return fromState;
+      } catch {
+        // ignore parse error
+      }
+    }
+    return 'dashboard';
+  };
+  const page = resolvePageParam();
   const validPages = ['dashboard', 'quotations', 'contracts', 'receipts', 'service-reports'];
   const targetPage = validPages.includes(page) ? page : 'dashboard';
 
