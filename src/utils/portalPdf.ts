@@ -19,18 +19,21 @@ export async function openPortalPdf(
   id: string,
   filename: string,
 ): Promise<void> {
-  const blob = await portalApi.downloadPdf(type, id);
-  const objectUrl = window.URL.createObjectURL(blob);
-
   if (isInsideLineBrowser()) {
-    // LINE webview: navigate ในหน้าเดิม → PDF viewer เปิดให้เลย
-    // ไม่ revoke ทันที — รอ webview โหลด PDF เสร็จก่อน
-    window.location.href = objectUrl;
-    setTimeout(() => window.URL.revokeObjectURL(objectUrl), 30_000);
+    // LINE webview: ขอ short-lived token → ใช้ URL ตรงๆ (ฝัง token ใน query)
+    //   - liff.openWindow({ external: true }) → ผ่าน access.line.me proxy → 400 Bad Request
+    //   - blob: URL → ใน iOS LINE webview มัก render ไม่ได้
+    //   - window.location.href = httpsUrl → LINE webview fetch ตรง → built-in PDF viewer
+    //     เปิดให้เลย (รองรับ inline content-disposition)
+    const { token } = await portalApi.getPdfToken(type, id);
+    const url = portalApi.buildPdfUrl(type, id, token);
+    window.location.href = url;
     return;
   }
 
-  // Standard browser: trigger download
+  // Standard browser: fetch blob ผ่าน Authorization header + trigger download
+  const blob = await portalApi.downloadPdf(type, id);
+  const objectUrl = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = objectUrl;
   a.download = filename;
