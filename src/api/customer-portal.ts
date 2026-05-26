@@ -1,6 +1,13 @@
 import axios, { AxiosInstance } from 'axios';
 import { API_CONFIG } from '@/src/constants/config';
 
+export type PortalDocType =
+  | 'quotations'
+  | 'contracts'
+  | 'receipts'
+  | 'service-reports'
+  | 'assessments';
+
 const PORTAL_STORAGE_KEYS = {
   TOKEN: 'portal_token',
   CUSTOMER: 'portal_customer',
@@ -67,7 +74,12 @@ class CustomerPortalApi {
     return res.data;
   }
 
-  async downloadPdf(type: 'quotations' | 'contracts' | 'receipts' | 'service-reports', id: string): Promise<Blob> {
+  async getAssessments() {
+    const res = await this.http.get('/customer-portal/assessments');
+    return res.data;
+  }
+
+  async downloadPdf(type: PortalDocType, id: string): Promise<Blob> {
     const res = await this.http.get(`/customer-portal/${type}/${id}/pdf`, {
       responseType: 'blob',
     });
@@ -78,7 +90,7 @@ class CustomerPortalApi {
    * ออก short-lived token (5 min) สำหรับเปิด PDF ใน external browser
    * — ใช้กับ LIFF/LINE webview ที่ใส่ Authorization header ใน openWindow ไม่ได้
    */
-  async getPdfToken(type: 'quotations' | 'contracts' | 'receipts' | 'service-reports', id: string): Promise<{ token: string; expires_in: number }> {
+  async getPdfToken(type: PortalDocType, id: string): Promise<{ token: string; expires_in: number }> {
     const res = await this.http.post(`/customer-portal/${type}/${id}/pdf-token`);
     return res.data?.data || res.data;
   }
@@ -86,7 +98,7 @@ class CustomerPortalApi {
   /**
    * Build full PDF URL พร้อม embedded token (สำหรับ external browser)
    */
-  buildPdfUrl(type: 'quotations' | 'contracts' | 'receipts' | 'service-reports', id: string, token: string): string {
+  buildPdfUrl(type: PortalDocType, id: string, token: string): string {
     return `${API_CONFIG.baseUrl}/customer-portal/${type}/${id}/pdf?token=${encodeURIComponent(token)}`;
   }
 }

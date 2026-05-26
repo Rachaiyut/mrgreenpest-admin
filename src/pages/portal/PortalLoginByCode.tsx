@@ -14,7 +14,7 @@ const PortalLoginByCode: React.FC = () => {
 
   // รับ page จาก path param ก่อน (LINE Rich Menu friendly) → fallback ไป query string เก่า
   const page = params.page || searchParams.get('page') || 'dashboard';
-  const validPages = ['dashboard', 'quotations', 'contracts', 'receipts', 'service-reports'];
+  const validPages = ['dashboard', 'quotations', 'contracts', 'receipts', 'service-reports', 'assessments'];
   const targetPage = validPages.includes(page) ? page : 'dashboard';
 
   useEffect(() => {

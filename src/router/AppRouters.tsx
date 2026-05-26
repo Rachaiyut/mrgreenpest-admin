@@ -34,6 +34,7 @@ const PortalQuotations = lazy(() => import('../pages/portal/PortalQuotations'));
 const PortalContracts = lazy(() => import('../pages/portal/PortalContracts'));
 const PortalReceipts = lazy(() => import('../pages/portal/PortalReceipts'));
 const PortalServiceReports = lazy(() => import('../pages/portal/PortalServiceReports'));
+const PortalAssessments = lazy(() => import('../pages/portal/PortalAssessments'));
 const PortalLiff = lazy(() => import('../pages/portal/PortalLiff'));
 const PortalLoginByCode = lazy(() => import('../pages/portal/PortalLoginByCode'));
 const PortalLayoutLazy = lazy(() => import('../components/layout/PortalLayout').then(m => ({ default: m.PortalLayout })));
@@ -123,6 +124,7 @@ export const AppRouter = (props: AppRouterProps) => {
               <Route path="contracts" element={<PortalContracts />} />
               <Route path="receipts" element={<PortalReceipts />} />
               <Route path="service-reports" element={<PortalServiceReports />} />
+              <Route path="assessments" element={<PortalAssessments />} />
             </Route>
           </Routes>
         </Suspense>

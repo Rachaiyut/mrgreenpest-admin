@@ -48,7 +48,7 @@ const PortalLiff: React.FC = () => {
     return 'dashboard';
   };
   const page = resolvePageParam();
-  const validPages = ['dashboard', 'quotations', 'contracts', 'receipts', 'service-reports'];
+  const validPages = ['dashboard', 'quotations', 'contracts', 'receipts', 'service-reports', 'assessments'];
   const targetPage = validPages.includes(page) ? page : 'dashboard';
 
   useEffect(() => {

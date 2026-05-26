@@ -309,6 +309,7 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
                 <th className="px-5 py-3.5">วันที่และเวลา</th>
                 <th className="px-5 py-3.5">ประเภท</th>
                 <th className="px-5 py-3.5">รายละเอียด</th>
+                <th className="px-5 py-3.5">ผู้รับเงิน</th>
                 <th className="px-5 py-3.5 text-right">จำนวนเงิน</th>
                 <th className="px-5 py-3.5 text-right">ยอดคงเหลือ</th>
               </tr>
@@ -316,7 +317,7 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
             <tbody className="bg-white divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="py-16">
+                  <td colSpan={7} className="py-16">
                     <div className="flex flex-col items-center text-slate-500">
                       <LoadingIcon className="w-10 h-10 animate-spin mb-3 text-primary" />
                       <p className="text-sm font-medium">กำลังโหลด...</p>
@@ -325,7 +326,7 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
                 </tr>
               ) : transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-16">
+                  <td colSpan={7} className="py-16">
                     <div className="flex flex-col items-center text-slate-400">
                       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 mb-3">
                         <DocumentCheckIcon className="h-8 w-8 opacity-60" />
@@ -355,6 +356,14 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
                       </td>
                       <td className="px-5 py-4 text-sm text-slate-700 text-left">
                         {t.description || <span className="text-slate-300">-</span>}
+                      </td>
+                      <td className="px-5 py-4 text-sm text-slate-700 text-left whitespace-nowrap">
+                        {(() => {
+                          const u = t.created_by_user;
+                          if (!u) return <span className="text-slate-300">-</span>;
+                          const name = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+                          return name || <span className="text-slate-300">-</span>;
+                        })()}
                       </td>
                       <td
                         className={`px-5 py-4 text-base font-bold tabular-nums text-right whitespace-nowrap ${meta.amountClass}`}

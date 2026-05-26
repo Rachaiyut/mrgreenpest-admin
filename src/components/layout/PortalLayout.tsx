@@ -12,6 +12,7 @@ import {
 
 const NAV_ITEMS: { label: string; path: string; icon: FC<any> }[] = [
   { label: 'ภาพรวม', path: '/portal/dashboard', icon: NewDashboardIcon },
+  { label: 'ใบประเมิน', path: '/portal/assessments', icon: ClipboardDocumentListIcon },
   { label: 'ใบเสนอราคา', path: '/portal/quotations', icon: DocumentTextIcon },
   { label: 'สัญญา', path: '/portal/contracts', icon: ClipboardDocumentListIcon },
   { label: 'ใบเสร็จ', path: '/portal/receipts', icon: DocumentCheckIcon },

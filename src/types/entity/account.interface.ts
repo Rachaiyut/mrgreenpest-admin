@@ -30,4 +30,11 @@ export interface AccountTransaction extends IBase {
   reference_id?: string;
   description?: string;
   account?: Account;
+  created_by?: string;
+  created_by_user?: {
+    id?: string;
+    first_name?: string;
+    last_name?: string;
+    nick_name?: string;
+  } | null;
 }

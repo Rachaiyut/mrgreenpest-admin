@@ -1,6 +1,4 @@
-import { portalApi } from '../api/customer-portal';
-
-type PortalDocType = 'quotations' | 'contracts' | 'receipts' | 'service-reports';
+import { portalApi, type PortalDocType } from '../api/customer-portal';
 
 /**
  * Open / download portal PDF — รองรับทั้ง LINE in-app webview และ browser ปกติ
