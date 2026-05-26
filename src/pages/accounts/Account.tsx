@@ -1,5 +1,6 @@
 import { FC, MouseEvent as ReactMouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import Swal from '@/src/utils/swal';
 
 import { Card } from '../../components/common/Card';
@@ -74,7 +75,11 @@ const AccountPage: FC = () => {
   }, [canSeeAllAccounts]);
 
   // Tab state — บัญชี (default) | ใบขอเบิกเงิน
-  const [activeTab, setActiveTab] = useState<'accounts' | 'requests'>('accounts');
+  // อ่าน ?tab=requests จาก URL เพื่อรองรับ deep-link จาก notification
+  const [searchParams] = useSearchParams();
+  const initialTab: 'accounts' | 'requests' =
+    searchParams.get('tab') === 'requests' ? 'requests' : 'accounts';
+  const [activeTab, setActiveTab] = useState<'accounts' | 'requests'>(initialTab);
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {

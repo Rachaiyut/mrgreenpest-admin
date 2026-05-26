@@ -114,6 +114,15 @@ export const NotificationMenu: React.FC = () => {
       navigate(buildPath('/field-operations'));
     } else if (notification.related_entity_type === 'INVOICE') {
       navigate(buildPath('/invoice'));
+    } else if (notification.related_entity_type === 'CASH_WITHDRAWAL_REQUEST') {
+      // ไปหน้าบัญชี → tab "ใบขอเบิกเงิน" พร้อม focus + action เพื่อให้ list เปิด modal ของใบนั้น
+      const params = new URLSearchParams();
+      params.set('tab', 'requests');
+      if (focusId) {
+        params.set('focus', focusId);
+        params.set('action', 'approve');
+      }
+      navigate(`/accounts?${params.toString()}`);
     }
   };
 
