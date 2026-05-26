@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Swal from '@/src/utils/swal';
 import { portalApi } from '../../api/customer-portal';
+import { openPortalPdf } from '../../utils/portalPdf';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import dayjs from 'dayjs';
 
@@ -27,26 +28,20 @@ const PortalQuotations: React.FC = () => {
     if (loadingPdfId) return;
     setLoadingPdfId(id);
     try {
-      const blob = await portalApi.downloadPdf('quotations', id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `quotation-${code || id}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      await openPortalPdf('quotations', id, `quotation-${code || id}.pdf`);
     } catch (error) {
-      console.error('Error downloading PDF:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถดาวน์โหลดเอกสารได้' });
+      console.error('Error opening PDF:', error);
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิดเอกสารได้' });
     } finally {
       setLoadingPdfId(null);
     }
   };
 
-  const PdfButton = ({ id, code }: { id: string; code: string }) => (
+  const PdfButton = ({ id, code, full }: { id: string; code: string; full?: boolean }) => (
     <button
       onClick={() => handleDownloadPdf(id, code)}
       disabled={loadingPdfId === id}
-      className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${loadingPdfId === id ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'}`}
+      className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${full ? 'w-full' : ''} ${loadingPdfId === id ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-sm hover:shadow active:scale-[0.98]'}`}
     >
       {loadingPdfId === id ? (
         <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
@@ -67,39 +62,58 @@ const PortalQuotations: React.FC = () => {
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-800">ใบเสนอราคา</h2>
-        <p className="text-slate-500 mt-1 text-sm sm:text-base">รายการใบเสนอราคาทั้งหมดของคุณ</p>
+      <div className="mb-5 sm:mb-6 flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight">ใบเสนอราคา</h2>
+          <p className="text-slate-500 mt-0.5 text-sm">รายการใบเสนอราคาทั้งหมดของคุณ</p>
+        </div>
+        <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+          ทั้งหมด {quotations.length} รายการ
+        </span>
       </div>
 
       {quotations.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 p-8 sm:p-12 text-center">
-          <p className="text-slate-500">ยังไม่มีใบเสนอราคา</p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center shadow-sm">
+          <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-slate-100 flex items-center justify-center">
+            <svg className="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.6} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+          </div>
+          <p className="text-slate-600 font-medium">ยังไม่มีใบเสนอราคา</p>
+          <p className="text-slate-400 text-sm mt-1">เมื่อมีใบใหม่ ระบบจะแสดงที่นี่</p>
         </div>
       ) : (
         <>
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
             {quotations.map((item) => (
-              <div key={item.id} className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-semibold text-slate-800">{item.code || '-'}</span>
-                  <StatusBadge status={item.status} />
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-slate-400">วันที่</span>
-                    <p className="text-slate-700 font-medium">{item.created_at ? dayjs(item.created_at).format('DD/MM/YYYY') : '-'}</p>
+              <div
+                key={item.id}
+                className="bg-white rounded-2xl border-l-4 border-blue-400 border-y border-r border-slate-200 shadow-sm overflow-hidden"
+              >
+                <div className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">ใบเสนอราคา</span>
+                      </div>
+                      <p className="text-base font-bold text-slate-900 font-mono truncate">{item.code || '-'}</p>
+                    </div>
+                    <StatusBadge status={item.status} />
                   </div>
-                  <div>
-                    <span className="text-slate-400">จำนวนเงิน</span>
-                    <p className="text-slate-700 font-medium">
-                      {item.total_amount != null ? Number(item.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 }) : '-'}
-                    </p>
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+                    <div>
+                      <p className="text-[11px] text-slate-400 font-medium">วันที่</p>
+                      <p className="text-sm text-slate-700 font-semibold mt-0.5">{item.created_at ? dayjs(item.created_at).format('DD/MM/YYYY') : '-'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[11px] text-slate-400 font-medium">ยอดรวม</p>
+                      <p className="text-sm text-slate-900 font-bold mt-0.5">
+                        {item.total_amount != null ? `${Number(item.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })} ฿` : '-'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex justify-end pt-2 border-t border-slate-100">
-                  <PdfButton id={item.id} code={item.code} />
+                  <PdfButton id={item.id} code={item.code} full />
                 </div>
               </div>
             ))}

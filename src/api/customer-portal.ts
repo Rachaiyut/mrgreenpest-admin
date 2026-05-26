@@ -73,6 +73,22 @@ class CustomerPortalApi {
     });
     return res.data;
   }
+
+  /**
+   * ออก short-lived token (5 min) สำหรับเปิด PDF ใน external browser
+   * — ใช้กับ LIFF/LINE webview ที่ใส่ Authorization header ใน openWindow ไม่ได้
+   */
+  async getPdfToken(type: 'quotations' | 'contracts' | 'receipts' | 'service-reports', id: string): Promise<{ token: string; expires_in: number }> {
+    const res = await this.http.post(`/customer-portal/${type}/${id}/pdf-token`);
+    return res.data?.data || res.data;
+  }
+
+  /**
+   * Build full PDF URL พร้อม embedded token (สำหรับ external browser)
+   */
+  buildPdfUrl(type: 'quotations' | 'contracts' | 'receipts' | 'service-reports', id: string, token: string): string {
+    return `${API_CONFIG.baseUrl}/customer-portal/${type}/${id}/pdf?token=${encodeURIComponent(token)}`;
+  }
 }
 
 export const portalApi = new CustomerPortalApi();

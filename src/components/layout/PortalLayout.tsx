@@ -27,31 +27,28 @@ export const PortalLayout: React.FC = () => {
   const noMenu = typeof window !== 'undefined' && localStorage.getItem('portal_no_menu') === '1';
 
   if (noMenu) {
+    const displayName = `${customer?.first_name || ''} ${customer?.last_name || ''}`.trim();
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <header className="bg-white shadow-sm sticky top-0 z-10">
-          <div className="mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14 sm:h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">MG</span>
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 flex flex-col">
+        <header className="bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-slate-200 sticky top-0 z-10">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+                <span className="text-white font-extrabold text-sm sm:text-base">MG</span>
               </div>
-              <div className="hidden sm:block">
-                <h1 className="text-sm font-bold text-slate-800 leading-tight">MR. GREEN</h1>
-                <p className="text-[10px] text-slate-500 tracking-wider">PEST CONTROL PORTAL</p>
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-base font-extrabold text-slate-800 leading-tight truncate">MR. GREEN</h1>
+                <p className="hidden sm:block text-[10px] text-slate-500 tracking-wider">PEST CONTROL PORTAL</p>
+                {displayName && (
+                  <p className="sm:hidden text-[11px] text-slate-500 truncate" title={displayName}>{displayName}</p>
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {customer && (
-                <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-slate-50 border border-slate-200">
-                  <img
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(customer.first_name || '')}+${encodeURIComponent(customer.last_name || '')}`}
-                    alt={customer.first_name}
-                    className="h-7 w-7 rounded-full object-cover"
-                  />
-                  <span className="text-xs sm:text-sm font-medium text-slate-700 max-w-[140px] truncate">
-                    {customer.first_name} {customer.last_name}
-                  </span>
-                </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {displayName && (
+                <span className="hidden sm:inline-block text-sm font-medium text-slate-700 max-w-[200px] truncate" title={displayName}>
+                  {displayName}
+                </span>
               )}
               <Button
                 variant="outline"
@@ -60,7 +57,7 @@ export const PortalLayout: React.FC = () => {
                   localStorage.removeItem('portal_no_menu');
                   setTimeout(() => navigate('/portal/login-by-code'), 0);
                 }}
-                className="px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-medium border border-slate-300"
+                className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold border border-slate-300 shadow-sm"
               >
                 ออกจากระบบ
               </Button>
@@ -68,7 +65,7 @@ export const PortalLayout: React.FC = () => {
           </div>
         </header>
         <main className="flex-1 overflow-auto">
-          <div className="p-4 sm:p-6 lg:p-8">
+          <div className="mx-auto max-w-5xl p-4 sm:p-6 lg:p-8">
             <Outlet />
           </div>
         </main>
