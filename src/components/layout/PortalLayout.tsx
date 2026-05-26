@@ -22,7 +22,10 @@ export const PortalLayout: React.FC = () => {
   const { customer, logout } = usePortal();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isOpen, setIsOpen] = useState(true);
+  // Default ปิด sidebar บน mobile (overlay บัง content), เปิดบน desktop (อยู่ข้างเนื้อหา)
+  const [isOpen, setIsOpen] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : false,
+  );
   // Session มาจาก code-login (Rich Menu) → ซ่อน sidebar/menu, เหลือแค่ header + content
   const noMenu = typeof window !== 'undefined' && localStorage.getItem('portal_no_menu') === '1';
 
