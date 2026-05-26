@@ -8,6 +8,7 @@ services:
       target: production
       args:
         - API_BASE_URL=https://mrgreenpest.knacx.dev/api
+        - LIFF_ID=2010196179-0PNUpshq
     image: mrgreenpest-dev:latest
     container_name: mrgreenpest-dev
     ports:
