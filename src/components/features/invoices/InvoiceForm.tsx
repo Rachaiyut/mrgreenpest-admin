@@ -441,11 +441,25 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         .sort((a: { term: number }, b: { term: number }) => a.term - b.term);
 
       let enabledTerm: number | null = null;
+      let hasBlocker = false;
       for (const row of nonPayAllSorted) {
-        if (row.status === 'INVOICED') break; // ใบเก่าค้างอยู่ — block ทุก term ถัดไป
+        if (row.status === 'INVOICED') {
+          hasBlocker = true;
+          break;
+        }
         enabledTerm = row.term;
-        break; // เจอตัวแรกที่ไม่ block → enable แค่ตัวนี้
+        break;
       }
+
+      // Edit mode markers — ล็อกให้เลือกได้แต่ row ของ invoice เดิม
+      const initLinkedScheduleId =
+        (initialValues as unknown as Record<string, string>)?.invoice_schedule_id ||
+        (initialValues as unknown as Record<string, string>)?.installment_id;
+      const initLinkedTerm = initialValues?.term;
+      const initCodeEdit = String((initialValues as unknown as Record<string, string>)?.code || '');
+      const initTermEdit = (initialValues as unknown as Record<string, unknown>)?.term;
+      const isEditingPayAll = !!initialValues?.id
+        && (/-ALL-/.test(initCodeEdit) || initTermEdit === null || initTermEdit === undefined);
 
       return filtered.map((inst: any) => {
         const term = Number(inst.installment_no || inst.sequence);
@@ -453,13 +467,23 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         const isInvoiced = status === 'INVOICED';
         let disabled = false;
         let reason: string | undefined;
-        if (!inst.is_pay_all && !initialValues?.id) {
-          if (isInvoiced) {
+        if (initialValues?.id) {
+          // Edit: enable เฉพาะ row ของ invoice เดิม
+          const isThisRow =
+            (!!initLinkedScheduleId && String(inst.id) === String(initLinkedScheduleId))
+            || (!!initLinkedTerm && term === Number(initLinkedTerm))
+            || (isEditingPayAll && inst.is_pay_all);
+          if (!isThisRow) disabled = true;
+        } else if (inst.is_pay_all) {
+          if (hasBlocker) {
             disabled = true;
-            reason = 'มีใบแจ้งหนี้สร้างไปแล้ว';
-          } else if (term !== enabledTerm) {
-            disabled = true;
+            reason = 'ต้องยกเลิกใบที่ค้างก่อนถึงจะรวบยอดได้';
           }
+        } else if (isInvoiced) {
+          disabled = true;
+          reason = 'มีใบแจ้งหนี้สร้างไปแล้ว';
+        } else if (term !== enabledTerm) {
+          disabled = true;
         }
 
         return {
@@ -561,26 +585,42 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     //     "มีใบแจ้งหนี้สร้างไปแล้ว", ตัวถัดไปยังเปิดได้
     //   - งวดไม่มีใบ + เป็นตัวแรกที่เจอแบบนี้ → enable, ที่เหลือ disable
     let enabledTermFE: number | null = null;
+    let hasBlockerFE = false;
     for (const r of baseRows) {
       const inv = invByTermFE.get(r.term);
       if (inv) {
-        if (inv.paid <= 0) break; // block — ใบยังไม่จ่ายเลย
+        if (inv.paid <= 0) {
+          hasBlockerFE = true;
+          break; // block — ใบยังไม่จ่ายเลย
+        }
         continue; // มีจ่ายบางส่วน/ครบ → ข้ามไป term ถัดไป
       }
       enabledTermFE = r.term;
       break;
     }
 
+    // Edit mode lock — เลือกได้แต่ row ของ invoice เดิม
+    const initCodeFE = String((initialValues as unknown as Record<string, string>)?.code || '');
+    const initTermFE = (initialValues as unknown as Record<string, unknown>)?.term;
+    const isEditingPayAllFE = !!initialValues?.id
+      && (/-ALL-/.test(initCodeFE) || initTermFE === null || initTermFE === undefined);
+    const initLinkedScheduleIdFE = linkedScheduleId;
+    const initLinkedTermFE = initialValues?.term;
+
     const installmentRows = baseRows.map((r: { term: number; id: string; description: string; percentage: number; amount: number; is_pay_all: boolean }) => {
       let disabled = false;
       let disabledReason: string | undefined;
-      if (!initialValues?.id) {
-        if (invByTermFE.has(r.term)) {
-          disabled = true;
-          disabledReason = 'มีใบแจ้งหนี้สร้างไปแล้ว';
-        } else if (r.term !== enabledTermFE) {
-          disabled = true;
-        }
+      if (initialValues?.id) {
+        const isThisRow =
+          (!!initLinkedScheduleIdFE && String(r.id) === String(initLinkedScheduleIdFE))
+          || (!!initLinkedTermFE && r.term === Number(initLinkedTermFE))
+          || (isEditingPayAllFE && r.is_pay_all);
+        if (!isThisRow) disabled = true;
+      } else if (invByTermFE.has(r.term)) {
+        disabled = true;
+        disabledReason = 'มีใบแจ้งหนี้สร้างไปแล้ว';
+      } else if (r.term !== enabledTermFE) {
+        disabled = true;
       }
       return { ...r, disabled, disabledReason };
     });
@@ -590,6 +630,13 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     if (installmentRows.length >= 1) {
       const totalRemaining = installmentRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
       if (totalRemaining > 0) {
+        // ปิด PAY_ALL ใน edit mode (ยกเว้นกำลังแก้ใบ PAY_ALL อยู่)
+        const payAllDisabled = !!initialValues?.id
+          ? !isEditingPayAllFE
+          : (hasBlockerFE && !initialValues?.id);
+        const payAllReason = !initialValues?.id && hasBlockerFE
+          ? 'ต้องยกเลิกใบที่ค้างก่อนถึงจะรวบยอดได้'
+          : undefined;
         installmentRows.push({
           id: 'PAY_ALL',
           term: undefined as unknown as number,
@@ -597,8 +644,8 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           percentage: 0,
           amount: totalRemaining,
           is_pay_all: true,
-          disabled: false,
-          disabledReason: undefined,
+          disabled: payAllDisabled,
+          disabledReason: payAllReason,
         });
       }
     }

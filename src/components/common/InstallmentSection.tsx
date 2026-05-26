@@ -212,7 +212,7 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
                       </div>
                       <div className={showDueDate ? 'col-span-12 sm:col-span-1' : 'col-span-12 sm:col-span-2'}>
                         <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block">% สัดส่วน</label>
-                        <Input type="number" value={inst.percentage !== undefined && inst.percentage !== null ? inst.percentage : ''} onChange={(e) => handleChange(idx, 'percentage', e.target.value)} className={`h-10 text-right font-mono ${!isReadOnly && last ? 'bg-slate-50 text-slate-400' : ''}`} disabled={isReadOnly || last} min={0} max={100} />
+                        <Input type="number" value={inst.percentage !== undefined && inst.percentage !== null ? inst.percentage : ''} onChange={(e) => handleChange(idx, 'percentage', e.target.value)} className={`h-10 text-right ${!isReadOnly && last ? 'bg-slate-50 text-slate-400' : ''}`} disabled={isReadOnly || last} min={0} max={100} />
                       </div>
                       <div className={showDueDate ? 'col-span-12 sm:col-span-3' : 'col-span-12 sm:col-span-3'}>
                         <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block sm:text-center">จำนวนเงิน (บาท)</label>
