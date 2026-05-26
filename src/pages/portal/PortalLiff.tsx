@@ -5,6 +5,19 @@ import { API_CONFIG } from '@/src/constants/config';
 
 const LIFF_ID = import.meta.env.VITE_LINE_LIFF_ID || '';
 
+/**
+ * Lock layout เป็น single-page (ซ่อน sidebar) ถ้า target ไม่ใช่ dashboard
+ *   - dashboard → ลบ flag (เห็นเมนูเต็ม เพื่อ navigate ได้)
+ *   - quotations / contracts / receipts / service-reports → set flag (ล็อกหน้านั้น)
+ */
+const applyNoMenuFlag = (targetPage: string) => {
+  if (targetPage === 'dashboard') {
+    localStorage.removeItem('portal_no_menu');
+  } else {
+    localStorage.setItem('portal_no_menu', '1');
+  }
+};
+
 const PortalLiff: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -21,6 +34,7 @@ const PortalLiff: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
+      applyNoMenuFlag(targetPage);
       navigate(`/portal/${targetPage}`, { replace: true });
       return;
     }
@@ -61,6 +75,8 @@ const PortalLiff: React.FC = () => {
         // Store JWT and customer info (same as portal login flow)
         localStorage.setItem('portal_token', data.data.access_token);
         localStorage.setItem('portal_customer', JSON.stringify(data.data.customer));
+        // Lock layout: dashboard เห็นเมนูเต็ม, page อื่น ๆ ซ่อนเมนู (เข้าตรงๆ จาก Rich Menu)
+        applyNoMenuFlag(targetPage);
         // Force page reload to pick up new auth state
         window.location.href = `/portal/${targetPage}`;
       } else {
@@ -102,6 +118,7 @@ const PortalLiff: React.FC = () => {
       if (res.ok && data.success && data.data?.access_token) {
         localStorage.setItem('portal_token', data.data.access_token);
         localStorage.setItem('portal_customer', JSON.stringify(data.data.customer));
+        applyNoMenuFlag(targetPage);
         window.location.href = `/portal/${targetPage}`;
       } else {
         setLinkError(data?.message || data?.data?.message || 'รหัสลูกค้าไม่ถูกต้องหรือไม่มีในระบบ');
