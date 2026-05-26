@@ -8,6 +8,7 @@ import { PhotoIcon, EyeIcon, EyeSlashIcon } from '../../../assets/icons/Icons';
 import { getRoleNameTh } from '@/src/utils/role';
 import { StorageApi } from '@/src/api/storage';
 import { AccountApi } from '@/src/api/account';
+import { usePermissions } from '@/src/hooks/usePermissions';
 import { RoleAccountApi } from '@/src/api/role-account';
 import {
   validateCitizenId,
@@ -51,12 +52,6 @@ const initialFormData = {
 
 type FormDataShape = typeof initialFormData;
 
-// Match เฉพาะ SUPERADMIN — ระวัง "หัวหน้าช่าง" (LEAD_TECH) ไม่ให้ผ่าน
-const isSuperadminRoleName = (name?: string): boolean => {
-  if (!name) return false;
-  if (name === 'SUPERADMIN') return true;
-  return name.includes('สูงสุด') || name.includes('หัวหน้าผู้ดูแล');
-};
 
 export const UserForm: React.FC<UserFormProps> = ({
   formId,
@@ -81,9 +76,14 @@ export const UserForm: React.FC<UserFormProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // เช็คจาก role ที่เลือกใน dropdown — section จะโผล่เฉพาะเมื่อเลือก SUPERADMIN
-  const selectedRoleName = roles.find((r) => r.id === formData.role_id)?.name;
-  const canEditRoleAccount = isSuperadminRoleName(selectedRoleName);
+  // section "บัญชีบันทึกรายรับรายจ่าย" — check จาก permission ของผู้ใช้ที่ login อยู่
+  // (ไม่ผูกกับ role_type หรือ name ของ user ที่กำลังสร้าง/แก้ไข)
+  //   - create mode → ต้องมี CREATE_USER
+  //   - edit / view mode → ต้องมี UPDATE_USER
+  const { hasPermission } = usePermissions();
+  const canEditRoleAccount = isCreate
+    ? hasPermission('CREATE_USER')
+    : hasPermission('UPDATE_USER');
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountId, setAccountId] = useState<string>('');
   const [originalAccountId, setOriginalAccountId] = useState<string>('');
