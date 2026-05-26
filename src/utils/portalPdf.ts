@@ -21,12 +21,20 @@ export async function openPortalPdf(
   id: string,
   filename: string,
 ): Promise<void> {
-  if (await isInsideLiff()) {
-    // LIFF path: external browser + signed URL
-    const { token } = await portalApi.getPdfToken(type, id);
-    const url = portalApi.buildPdfUrl(type, id, token);
-    const liff = (await import('@line/liff')).default;
-    liff.openWindow({ url, external: true });
+  const inLine = isInsideLineBrowser();
+
+  if (inLine) {
+    // LINE in-app webview:
+    //   - liff.openWindow({ external: true }) ผ่าน LINE proxy → บางทีจบที่
+    //     access.line.me 400 Bad Request (known issue iOS)
+    //   - blob + <a download> ก็ไม่ trigger download dialog
+    //   → ใช้ blob URL + navigate same window: LINE webview มี PDF preview
+    //     built-in, user แตะ "..." menu เพื่อ save/share ผ่าน LINE ได้
+    const blob = await portalApi.downloadPdf(type, id);
+    const objectUrl = window.URL.createObjectURL(blob);
+    window.location.href = objectUrl;
+    // ไม่ revoke ทันที — ปล่อยให้ webview โหลด PDF เสร็จก่อน
+    setTimeout(() => window.URL.revokeObjectURL(objectUrl), 30_000);
     return;
   }
 
@@ -40,23 +48,8 @@ export async function openPortalPdf(
   window.URL.revokeObjectURL(objectUrl);
 }
 
-/**
- * เช็คว่ารันใน LINE in-app browser (LIFF) อยู่ไหม
- * ถ้าใช่ — ensure LIFF SDK ถูก init แล้ว (เพื่อให้ openWindow ใช้ได้)
- */
-async function isInsideLiff(): Promise<boolean> {
-  if (typeof navigator === 'undefined' || !/Line/i.test(navigator.userAgent)) {
-    return false;
-  }
-  try {
-    const liff = (await import('@line/liff')).default;
-    const LIFF_ID = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_LINE_LIFF_ID;
-    // liff.init เรียกซ้ำได้ — ถ้า init แล้วจะ resolve ทันที
-    if (LIFF_ID) {
-      await liff.init({ liffId: LIFF_ID });
-    }
-    return liff.isInClient();
-  } catch {
-    return false;
-  }
+function isInsideLineBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Line/i.test(navigator.userAgent);
 }
+
