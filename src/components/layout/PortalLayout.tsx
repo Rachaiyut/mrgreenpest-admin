@@ -23,6 +23,58 @@ export const PortalLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(true);
+  // Session มาจาก code-login (Rich Menu) → ซ่อน sidebar/menu, เหลือแค่ header + content
+  const noMenu = typeof window !== 'undefined' && localStorage.getItem('portal_no_menu') === '1';
+
+  if (noMenu) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="bg-white shadow-sm sticky top-0 z-10">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14 sm:h-16">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">MG</span>
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="text-sm font-bold text-slate-800 leading-tight">MR. GREEN</h1>
+                <p className="text-[10px] text-slate-500 tracking-wider">PEST CONTROL PORTAL</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {customer && (
+                <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-slate-50 border border-slate-200">
+                  <img
+                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(customer.first_name || '')}+${encodeURIComponent(customer.last_name || '')}`}
+                    alt={customer.first_name}
+                    className="h-7 w-7 rounded-full object-cover"
+                  />
+                  <span className="text-xs sm:text-sm font-medium text-slate-700 max-w-[140px] truncate">
+                    {customer.first_name} {customer.last_name}
+                  </span>
+                </div>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  logout();
+                  localStorage.removeItem('portal_no_menu');
+                  setTimeout(() => navigate('/portal/login-by-code'), 0);
+                }}
+                className="px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-medium border border-slate-300"
+              >
+                ออกจากระบบ
+              </Button>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 overflow-auto">
+          <div className="p-4 sm:p-6 lg:p-8">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -129,7 +181,11 @@ export const PortalLayout: React.FC = () => {
               )}
               <Button
                 variant="outline"
-                onClick={() => { logout(); setTimeout(() => navigate('/portal'), 0); }}
+                onClick={() => {
+                  logout();
+                  localStorage.removeItem('portal_no_menu');
+                  setTimeout(() => navigate('/portal'), 0);
+                }}
                 className="ml-2 px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium border border-slate-300"
               >
                 ออกจากระบบ

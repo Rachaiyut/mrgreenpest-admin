@@ -42,6 +42,8 @@ const PortalLoginByCode: React.FC = () => {
       if (res.ok && data.success && data.data?.access_token) {
         localStorage.setItem('portal_token', data.data.access_token);
         localStorage.setItem('portal_customer', JSON.stringify(data.data.customer));
+        // Mark session มาจาก code-login → PortalLayout จะซ่อน sidebar
+        localStorage.setItem('portal_no_menu', '1');
         window.location.href = `/portal/${targetPage}`;
       } else {
         setError(data?.message || data?.data?.message || 'รหัสลูกค้าไม่ถูกต้องหรือไม่มีในระบบ');
