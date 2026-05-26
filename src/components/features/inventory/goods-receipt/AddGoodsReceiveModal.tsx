@@ -6,6 +6,9 @@ import DatePicker from '@/src/components/common/BuddhistDatePicker';
 // ===== API =====
 import { SupplierApi } from '@/src/api/supplier';
 
+// ===== Hooks =====
+import { useCurrentUser } from '@/src/hooks/useCurrentUser';
+
 // ===== Types / Enums =====
 import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';
 import {
@@ -63,6 +66,21 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
 }) => {
   const isEditMode = !!editingReceipt && !viewOnly;
   const isViewMode = viewOnly && !!editingReceipt;
+  const currentUser = useCurrentUser();
+  // ผู้ทำรับ: ตอน edit/view → ใช้ผู้สร้างเอกสาร, ตอน create → ใช้ user ที่ login
+  const createdByName = (() => {
+    if (editingReceipt) {
+      const r = editingReceipt as unknown as Record<string, unknown>;
+      const cu = (r.created_by_user || r.createdByUser) as { first_name?: string; last_name?: string } | undefined;
+      if (cu?.first_name || cu?.last_name) {
+        return `${cu.first_name || ''} ${cu.last_name || ''}`.trim();
+      }
+    }
+    if (currentUser?.firstName || currentUser?.lastName) {
+      return `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim();
+    }
+    return 'ผู้ดูแลระบบ';
+  })();
   const [items, setItems] = useState<LineItem[]>([]);
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
@@ -309,8 +327,9 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                   id="created-by"
                   name="createdBy"
                   type="text"
-                  value="ผู้ดูแลระบบ"
+                  value={createdByName}
                   readOnly
+                  title={createdByName}
                   className="bg-white text-slate-500 cursor-not-allowed"
                 />
               </FormField>
