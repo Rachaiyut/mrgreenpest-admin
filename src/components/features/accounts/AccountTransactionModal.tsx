@@ -3,6 +3,7 @@ import Swal from '@/src/utils/swal';
 
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
+import BuddhistDatePicker from '../../common/BuddhistDatePicker';
 import { AccountApi } from '../../../api/account';
 import { Account, AccountTransaction, AccountTransactionType } from '../../../types/entity/account.interface';
 
@@ -24,16 +25,8 @@ const todayISO = () => new Date().toISOString().substring(0, 10);
 const formatTHB = (n: number) =>
   n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const formatCompactTHB = (n: number): string => {
-  const abs = Math.abs(n);
-  const sign = n < 0 ? '-' : '';
-  const fmt = (v: number) => v.toLocaleString('th-TH', { maximumFractionDigits: 2 });
-  if (abs >= 1_000_000_000_000) return `${sign}${fmt(abs / 1_000_000_000_000)}T`;
-  if (abs >= 1_000_000_000) return `${sign}${fmt(abs / 1_000_000_000)}B`;
-  if (abs >= 1_000_000) return `${sign}${fmt(abs / 1_000_000)}M`;
-  if (abs >= 10_000) return `${sign}${fmt(abs / 1_000)}K`;
-  return formatTHB(n);
-};
+// แสดงจำนวนเงินแบบเต็มเสมอ (เลิก compact K/M/B/T) — user ขอเห็นยอดละเอียดในหน้ารายละเอียดรายการ
+const formatCompactTHB = (n: number): string => formatTHB(n);
 
 /* ---------- icons ---------- */
 const IconArrowDown: FC<{ className?: string }> = ({ className }) => (
@@ -226,8 +219,15 @@ export const AccountTransactionModal: FC<Props> = ({
         {/* Transaction type tiles */}
         <div>
           <p className="text-xs font-medium text-slate-600 mb-2">ประเภทรายการ <span className="text-red-500">*</span></p>
-          <div className={`grid gap-2 ${isView ? 'grid-cols-3' : 'grid-cols-2'}`}>
-            {((isView ? ['DEPOSIT', 'WITHDRAW', 'ADJUSTMENT'] : ['DEPOSIT', 'WITHDRAW']) as AccountTransactionType[]).map((t) => {
+          {(() => {
+            // view mode: แสดง ADJUSTMENT tile เฉพาะตอน trx นั้นเป็นการปรับปรุงยอดจริงๆ
+            //   (เดิมแสดงเสมอ → ดู cluttered กับรายการ DEPOSIT/WITHDRAW ธรรมดา)
+            const tiles: AccountTransactionType[] = isView
+              ? (type === 'ADJUSTMENT' ? ['DEPOSIT', 'WITHDRAW', 'ADJUSTMENT'] : ['DEPOSIT', 'WITHDRAW'])
+              : ['DEPOSIT', 'WITHDRAW'];
+            return (
+          <div className={`grid gap-2 ${tiles.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            {tiles.map((t) => {
               const meta = TYPE_META[t];
               const Icon = meta.icon;
               const cls = TYPE_CLASSES[meta.color];
@@ -248,6 +248,8 @@ export const AccountTransactionModal: FC<Props> = ({
               );
             })}
           </div>
+            );
+          })()}
         </div>
 
         {/* Amount hero */}
@@ -283,7 +285,23 @@ export const AccountTransactionModal: FC<Props> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1.5">วันที่รายการ {!isView && <span className="text-red-500">*</span>}</label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required={!isView} readOnly={isView} />
+            <BuddhistDatePicker
+              selected={date ? new Date(date) : null}
+              onChange={(d: Date | null) => {
+                if (!d) { setDate(''); return; }
+                // เก็บเป็น ISO yyyy-mm-dd ตามเดิม (ใช้ตอน submit + transaction_date column)
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                setDate(`${y}-${m}-${day}`);
+              }}
+              dateFormat="dd/MM/yyyy"
+              required={!isView}
+              disabled={isView}
+              placeholderText="dd/mm/yyyy"
+              wrapperClassName="w-full"
+              className="w-full h-10 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary disabled:bg-slate-50 disabled:text-slate-500"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1.5">เลขอ้างอิง / เช็ค</label>

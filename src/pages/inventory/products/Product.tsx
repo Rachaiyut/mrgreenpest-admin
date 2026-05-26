@@ -258,11 +258,29 @@ const Product: React.FC = () => {
     };
   }, [openDropdownId]);
 
-  const handleEdit = (product: IProduct) => {
-    setSelectedProduct(product);
+  const handleEdit = async (product: IProduct) => {
+    setOpenDropdownId(null);
+    // List response ไม่ส่ง field ครบ (cost_price, unit_id, fda_number, remark, image_url, ฯลฯ)
+    // — ต้องดึง detail เต็มจาก API ก่อน เพื่อให้ form pre-fill ค่าครบตอนเปิดแก้ไข
+    try {
+      const isService = (product as unknown as Record<string, string>)?._type === 'SERVICE';
+      const detailRes = isService
+        ? await ProductServiceApi.getById(product.id)
+        : await ProductApi.getProductById(product.id);
+      const full = (detailRes as any)?.data ?? detailRes ?? product;
+      const merged: IProduct = {
+        ...product,
+        ...full,
+        category: full.category || product.category,
+        _type: (product as unknown as Record<string, string>)._type,
+      } as IProduct;
+      setSelectedProduct(merged);
+    } catch (error) {
+      console.error('Failed to load product detail, falling back to list payload:', error);
+      setSelectedProduct(product);
+    }
     setModalMode('edit');
     setIsModalOpen(true);
-    setOpenDropdownId(null);
   };
 
   return (
@@ -501,7 +519,7 @@ const Product: React.FC = () => {
                     </td>
                     {selectedType === 'PRODUCT' && (
                     <>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center tabular-nums">
                       {Math.trunc(Number((product as unknown as Record<string, number>).stock_quantity ?? 0)).toLocaleString('th-TH')}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">

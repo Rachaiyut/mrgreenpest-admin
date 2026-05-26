@@ -138,36 +138,43 @@ const ProductForm: React.FC<ProductFormProps> = ({
     <form id="product-form" onSubmit={handleSubmit} className="space-y-4">
       {/* Type toggle */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
-        {/* Image */}
-        <div className="md:col-span-1">
-          <FormField label="รูปภาพ">
-            <div className="mt-1 flex justify-center border-2 border-slate-300 border-dashed rounded-md px-6 pt-5 pb-6">
-              <div className="text-center space-y-1">
-                {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="object-cover rounded-md mx-auto h-32 w-32" />
-                ) : (
-                  <PhotoIcon className="text-slate-400 mx-auto h-12 w-12" />
-                )}
-                <div>
-                  <label
-                    htmlFor={`file-upload-${mode}`}
-                    className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none text-sm"
-                  >
-                    <span>{imagePreview ? 'เปลี่ยนรูป' : 'อัปโหลดรูปภาพ'}</span>
-                    <input
-                      id={`file-upload-${mode}`}
-                      name="file-upload"
-                      type="file"
-                      className="sr-only"
-                      accept="image/png, image/jpeg"
-                      onChange={handleImageChange}
-                    />
-                  </label>
-                  <p className="text-xs text-slate-500">PNG, JPG</p>
+        {/* Image — ใช้ pattern เดียวกับ UserForm: full-frame + hover overlay เพื่อเปลี่ยน */}
+        <div className="md:col-span-1 flex flex-col items-center">
+          <label className="block text-sm font-medium text-slate-700 mb-2 w-full text-left">
+            รูปภาพ
+          </label>
+          <div className="w-full aspect-square border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center bg-slate-50 relative overflow-hidden group transition-colors hover:border-primary cursor-pointer">
+            <input
+              id={`file-upload-${mode}`}
+              name="file-upload"
+              type="file"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              accept="image/png, image/jpeg"
+              onChange={handleImageChange}
+            />
+            {imagePreview ? (
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center text-slate-400">
+                <div className="p-4 bg-white rounded-full shadow-sm mb-2">
+                  <PhotoIcon className="h-8 w-8 text-slate-300" />
                 </div>
+                <span className="text-sm font-medium text-slate-500">อัปโหลดรูปภาพ</span>
+                <span className="text-xs text-slate-400 mt-1">PNG, JPG</span>
               </div>
-            </div>
-          </FormField>
+            )}
+            {imagePreview && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <span className="text-white text-sm font-medium bg-black/50 px-3 py-1 rounded-full">
+                  เปลี่ยนรูปภาพ
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Type + Code/Barcode */}

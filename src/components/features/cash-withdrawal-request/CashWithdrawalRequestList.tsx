@@ -20,7 +20,7 @@ import {
   EyeIcon,
   ManageIcon,
 } from '@/src/assets/icons/Icons';
-import { formatThaiDateTime } from '@/src/utils/date';
+import { formatDateBuddhist } from '@/src/utils/date';
 import { CreateCashWithdrawalRequestModal } from './CreateCashWithdrawalRequestModal';
 import Swal from '@/src/utils/swal';
 
@@ -320,8 +320,8 @@ export const CashWithdrawalRequestList: FC<Props> = ({
                     <tr key={req.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3 text-center text-sm text-slate-500 tabular-nums">{(page - 1) * limit + idx + 1}</td>
                       <td className="px-4 py-3 text-sm font-bold text-primary">{req.request_code}</td>
-                      <td className="px-4 py-3 text-sm text-slate-700 whitespace-nowrap">
-                        {formatThaiDateTime(req.requested_at || req.created_at)}
+                      <td className="px-4 py-3 text-sm text-slate-700 whitespace-nowrap tabular-nums">
+                        {formatDateBuddhist(req.requested_at || req.created_at)}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700 max-w-[260px]">
                         <span className="line-clamp-2" title={req.request_note || ''}>

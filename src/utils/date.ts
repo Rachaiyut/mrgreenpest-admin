@@ -43,6 +43,20 @@ export const toLocalISODate = (date: Date | null | undefined): string => {
 };
 
 /**
+ * Format as dd/MM/yyyy พ.ศ. (Buddhist year, 4-digit) — e.g. 26/05/2569
+ *  ใช้ให้ตรงกับ BuddhistDatePicker (dd/MM/yyyy) ในฟอร์ม
+ */
+export const formatDateBuddhist = (isoString: string | Date | undefined): string => {
+  if (!isoString) return '-';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return '-';
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const yyyy = date.getFullYear() + 543;
+  return `${dd}/${mm}/${yyyy}`;
+};
+
+/**
  * Format as dd/mm/yy (Buddhist year, 2-digit) — e.g. 08/05/69
  */
 export const formatDateShort = (isoString: string | Date | undefined): string => {

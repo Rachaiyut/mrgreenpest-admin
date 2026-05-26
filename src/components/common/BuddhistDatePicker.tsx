@@ -45,7 +45,7 @@ const BuddhistCustomInput = forwardRef<HTMLInputElement, any>(
     if (!showCalendarIcon) return input;
 
     return (
-      <div className="relative">
+      <div className="relative w-full">
         <CalendarIcon />
         {input}
       </div>

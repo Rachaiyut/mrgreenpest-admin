@@ -83,11 +83,28 @@ const SearchableSelect: React.FC<{
         type="text"
         value={search}
         onChange={(e) => {
-          setSearch(e.target.value);
+          const next = e.target.value;
+          setSearch(next);
           setOpen(true);
-          // Clear the selected value if user is typing something different
-          if (e.target.value !== value) {
+          // Auto-commit เมื่อพิมพ์ตรงกับ option เป๊ะ → cascade ถัดไป unlock ทันที
+          //   (เดิม: onChange('') ทุกครั้งที่พิมพ์ → ล้าง value parent → district disabled ตลอด)
+          const exact = options.find((o) => o === next);
+          if (exact) {
+            onChange(exact);
+          } else if (value && next !== value) {
+            // user แก้ของเดิม → clear parent value (cascade reset) แต่คงข้อความ search ไว้
             onChange('');
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            // Enter → commit ตัวแรกของ filtered list (ถ้ามี)
+            const first = filtered[0];
+            if (first) handleSelect(first);
+          } else if (e.key === 'Escape') {
+            setOpen(false);
+            setSearch(value || '');
           }
         }}
         onFocus={() => setOpen(true)}
@@ -95,7 +112,7 @@ const SearchableSelect: React.FC<{
         required={required}
         disabled={disabled}
         autoComplete="off"
-        className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900`}
+        className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed`}
       />
       {open && filtered.length > 0 && (
         <ul className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto text-sm">
@@ -388,7 +405,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       setFormData({
         type: CustomerType.INDIVIDUAL,
         'address-country': 'ประเทศไทย',
-        serviceSameAsBilling: true,
+        serviceSameAsBilling: false,
       });
       setAdditionalPhones([]);
       setAdditionalPhoneNames([]);
