@@ -16,6 +16,8 @@ import {
   WalletIcon,
   LoadingIcon,
   DocumentCheckIcon,
+  CheckCircleIcon,
+  XCircleIcon,
 } from '../../assets/icons/Icons';
 import { RoleModal } from '../../components/features/users/RoleModal';
 import { Pagination } from '../../components/common/Pagination';
@@ -248,6 +250,36 @@ const Users: React.FC<UsersProps> = ({
     setIsEditUserModalOpen(true);
   };
 
+  // Toggle active/inactive — policy: ห้ามลบ user เด็ดขาด ใช้ปิดใช้งานแทน
+  const handleToggleStatus = async (user: User) => {
+    setOpenDropdownId(null);
+    const isActive = ((user as unknown as Record<string, unknown>).status ?? 'active') !== 'inactive';
+    const nextStatus = isActive ? 'inactive' : 'active';
+    const result = await Swal.fire({
+      icon: 'question',
+      title: isActive ? 'ปิดใช้งานผู้ใช้นี้?' : 'เปิดใช้งานผู้ใช้นี้?',
+      html: `<b>${user.name || `${user.first_name} ${user.last_name}`}</b>`,
+      showCancelButton: true,
+      confirmButtonText: isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: isActive ? '#dc2626' : '#059669',
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await UserApi.update(user.id, { status: nextStatus } as unknown as Partial<User>);
+      await fetchUsers();
+      Swal.fire({
+        icon: 'success',
+        title: isActive ? 'ปิดใช้งานแล้ว' : 'เปิดใช้งานแล้ว',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      console.error('Failed to toggle user status:', error);
+      Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเปลี่ยนสถานะได้', 'error');
+    }
+  };
+
   const handleDelete = (user: User) => {
     setUserToDelete(user);
     setIsDeleteModalOpen(true);
@@ -317,12 +349,22 @@ const Users: React.FC<UsersProps> = ({
     return counts;
   }, [roles]);
 
-  const userActions = [
-    { label: 'ดูรายละเอียด', icon: EyeIcon },
-    { label: 'แก้ไข', icon: PencilIcon },
-    { label: 'กระเป๋าเงิน', icon: WalletIcon },
-    { label: 'ลบ', icon: TrashIcon, isDanger: true },
-  ];
+  // Per-user actions — label for toggle เปลี่ยนตามสถานะ user
+  //   ตัด "ลบ" ออก (policy: ห้ามลบ user เด็ดขาด) → ใช้ toggle active/inactive แทน
+  const getUserActions = (user: User | undefined) => {
+    const isActive = ((user as unknown as Record<string, unknown>)?.status ?? 'active') !== 'inactive';
+    return [
+      { key: 'view', label: 'ดูรายละเอียด', icon: EyeIcon },
+      { key: 'edit', label: 'แก้ไข', icon: PencilIcon },
+      { key: 'wallet', label: 'กระเป๋าเงิน', icon: WalletIcon },
+      {
+        key: 'toggle',
+        label: isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน',
+        icon: isActive ? XCircleIcon : CheckCircleIcon,
+        isDanger: isActive,
+      },
+    ];
+  };
 
   const handleDropdownToggle = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -677,9 +719,9 @@ const Users: React.FC<UsersProps> = ({
         >
           <div className="py-1" role="none">
             {view === 'users' &&
-              userActions.map((action) => (
+              getUserActions(users.find((u) => u.id === openDropdownId)).map((action) => (
                 <a
-                  key={action.label}
+                  key={action.key}
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
@@ -688,14 +730,14 @@ const Users: React.FC<UsersProps> = ({
                       setOpenDropdownId(null);
                       return;
                     }
-                    if (action.label === 'ดูรายละเอียด') {
+                    if (action.key === 'view') {
                       handleViewDetails(user);
-                    } else if (action.label === 'แก้ไข') {
+                    } else if (action.key === 'edit') {
                       handleEdit(user);
-                    } else if (action.label === 'กระเป๋าเงิน') {
+                    } else if (action.key === 'wallet') {
                       handleOpenWallet(user);
-                    } else if (action.label === 'ลบ') {
-                      handleDelete(user);
+                    } else if (action.key === 'toggle') {
+                      handleToggleStatus(user);
                     } else {
                       setOpenDropdownId(null);
                     }
