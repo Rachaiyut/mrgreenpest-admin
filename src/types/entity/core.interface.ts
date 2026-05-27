@@ -42,6 +42,7 @@ export interface UserQuery extends IBaseQuery {
   citizen_id?: string;
   phone?: string;
   role?: string;
+  role_type?: string;
 }
 
 export interface User {

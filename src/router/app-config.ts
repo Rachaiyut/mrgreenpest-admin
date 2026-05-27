@@ -121,6 +121,18 @@ const ContractExpirationPage = React.lazy(() => import('../pages/reports/Contrac
 const ProfitLossPage = React.lazy(() => import('../pages/reports/ProfitLossPage'));
 const TaxInvoiceIncomePage = React.lazy(() => import('../pages/reports/TaxInvoiceIncomePage'));
 const DailyCashPage = React.lazy(() => import('../pages/reports/DailyCashPage'));
+// New analysis reports (Phase 1)
+const JobCancellationPage = React.lazy(() => import('../pages/reports/JobCancellationPage'));
+const AssessmentStatusPage = React.lazy(() => import('../pages/reports/AssessmentStatusPage'));
+const OverdueJobsPage = React.lazy(() => import('../pages/reports/OverdueJobsPage'));
+const ContractRenewalStatusPage = React.lazy(() => import('../pages/reports/ContractRenewalStatusPage'));
+const DailyServiceCountPage = React.lazy(() => import('../pages/reports/DailyServiceCountPage'));
+// Analysis reports (Phase 2)
+const ChemicalUsageDailyPage = React.lazy(() => import('../pages/reports/ChemicalUsageDailyPage'));
+const DailyTechDeploymentPage = React.lazy(() => import('../pages/reports/DailyTechDeploymentPage'));
+const ContractRenewalCohortPage = React.lazy(() => import('../pages/reports/ContractRenewalCohortPage'));
+const ServiceTimePerformancePage = React.lazy(() => import('../pages/reports/ServiceTimePerformancePage'));
+const TechLeadActivityPage = React.lazy(() => import('../pages/reports/TechLeadActivityPage'));
 
 // Unified Configuration - All routes and navigation in one place
 const UNIFIED_CONFIG: UnifiedConfig[] = [
@@ -490,6 +502,68 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         path: 'reports/daily-cash',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: DailyCashPage,
+      },
+      // ── รายงานวิเคราะห์การปฏิบัติงาน ─────────────────────────────
+      {
+        name: 'การยกเลิกงาน',
+        path: 'reports/job-cancellation',
+        access: 'ACCESS_REPORT_ANALYSIS',
+        component: JobCancellationPage,
+      },
+      {
+        name: 'สถานะใบประเมิน',
+        path: 'reports/assessment-status',
+        access: 'ACCESS_REPORT_ANALYSIS',
+        component: AssessmentStatusPage,
+      },
+      {
+        name: 'ลูกค้ารอบริการค้าง',
+        path: 'reports/overdue-jobs',
+        access: 'ACCESS_REPORT_ANALYSIS',
+        component: OverdueJobsPage,
+      },
+      {
+        name: 'สถานะสัญญาหมดอายุ',
+        path: 'reports/contract-renewal-status',
+        access: 'ACCESS_REPORT_ANALYSIS',
+        component: ContractRenewalStatusPage,
+      },
+      {
+        name: 'บริการรายวัน',
+        path: 'reports/daily-service-count',
+        access: 'ACCESS_REPORT_ANALYSIS',
+        component: DailyServiceCountPage,
+      },
+      // ── รายงานวิเคราะห์การปฏิบัติงาน (Phase 2) ─────────────────────────────
+      {
+        name: 'การใช้สารเคมี/อุปกรณ์ รายวัน',
+        path: 'reports/chemical-usage-daily',
+        access: 'ACCESS_REPORT_ANALYSIS',
+        component: ChemicalUsageDailyPage,
+      },
+      {
+        name: 'พนักงาน vs บ้านลูกค้า',
+        path: 'reports/daily-tech-deployment',
+        access: 'ACCESS_REPORT_ANALYSIS',
+        component: DailyTechDeploymentPage,
+      },
+      {
+        name: 'ต่อสัญญา: ลูกค้าใหม่/เดิม',
+        path: 'reports/contract-renewal-cohort',
+        access: 'ACCESS_REPORT_ANALYSIS',
+        component: ContractRenewalCohortPage,
+      },
+      {
+        name: 'เวลาเข้าบริการ',
+        path: 'reports/service-time-performance',
+        access: 'ACCESS_REPORT_ANALYSIS',
+        component: ServiceTimePerformancePage,
+      },
+      {
+        name: 'หัวหน้าทีม: เก็บเงิน + สารเคมี',
+        path: 'reports/tech-lead-activity',
+        access: 'ACCESS_REPORT_ANALYSIS',
+        component: TechLeadActivityPage,
       },
     ],
   },
