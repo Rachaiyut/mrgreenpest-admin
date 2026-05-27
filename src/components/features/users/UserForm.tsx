@@ -8,7 +8,6 @@ import { PhotoIcon, EyeIcon, EyeSlashIcon } from '../../../assets/icons/Icons';
 import { getRoleNameTh } from '@/src/utils/role';
 import { StorageApi } from '@/src/api/storage';
 import { AccountApi } from '@/src/api/account';
-import { usePermissions } from '@/src/hooks/usePermissions';
 import { RoleAccountApi } from '@/src/api/role-account';
 import {
   validateCitizenId,
@@ -34,7 +33,7 @@ interface UserFormProps {
   formId: string;
   mode: UserFormMode;
   user?: User | null;
-  roles: { id: string; name: string }[];
+  roles: { id: string; name: string; permissions?: Array<{ name?: string }> }[];
   isSubmitting?: boolean;
   onSubmit: (args: UserFormSubmitArgs) => void | Promise<void>;
 }
@@ -76,17 +75,27 @@ export const UserForm: React.FC<UserFormProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // section "บัญชีบันทึกรายรับรายจ่าย" — check จาก permission ของผู้ใช้ที่ login อยู่
-  // (ไม่ผูกกับ role_type หรือ name ของ user ที่กำลังสร้าง/แก้ไข)
-  //   - create mode → ต้องมี CREATE_USER
-  //   - edit / view mode → ต้องมี UPDATE_USER
-  const { hasPermission } = usePermissions();
-  const canEditRoleAccount = isCreate
-    ? hasPermission('CREATE_USER')
-    : hasPermission('UPDATE_USER');
+  // section "บัญชีบันทึกรายรับรายจ่าย" — gate ต่าง mode:
+  //   - create mode → ต้องมี CREATE_USER_ACCOUNT_TRANSACTION
+  //   - edit / view mode → ต้องมี UPDATE_USER_ACCOUNT_TRANSACTION
+  //   (default seed grant ทั้ง 2 ให้ SUPERADMIN — admin grant ให้ role อื่นได้
+  //    ผ่านหน้า "จัดการบทบาท" โดย tick "สร้าง" และ/หรือ "แก้ไข"
+  //    ใต้ sub-row "- จัดการบัญชีบันทึกรายรับรายจ่าย" ใน row "จัดการผู้ใช้งาน")
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountId, setAccountId] = useState<string>('');
   const [originalAccountId, setOriginalAccountId] = useState<string>('');
+
+  const canEditRoleAccount = (() => {
+    if (!formData.role_id) return false;
+    const selected = (roles as unknown as Array<{
+      id: string;
+      permissions?: Array<{ name?: string }>;
+    }>).find((r) => r.id === formData.role_id);
+    const requiredPerm = isCreate
+      ? 'CREATE_USER_ACCOUNT_TRANSACTION'
+      : 'UPDATE_USER_ACCOUNT_TRANSACTION';
+    return !!selected?.permissions?.some((p) => p.name === requiredPerm);
+  })();
 
   // Hydrate from user (edit / view) or reset (create)
   useEffect(() => {

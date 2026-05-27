@@ -132,6 +132,15 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
     items: [
       { label: 'จัดการบทบาท', module: 'ROLE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
       { label: 'จัดการผู้ใช้งาน', module: 'USER', skipActions: ['APPROVE', 'NOTIFY'] },
+      // Sub-item: ผูกบัญชีบันทึกรายรับรายจ่ายให้ role (ใช้ใน UserForm)
+      //   - CREATE = ผูกตอนสร้าง user
+      //   - UPDATE = เปลี่ยนตอนแก้ไข user
+      //   default seed grant ให้แค่ SUPERADMIN — admin tick เพิ่มให้ role อื่นได้
+      {
+        label: '- จัดการบัญชีบันทึกรายรับรายจ่าย (ของผู้ดูแลระบบสูงสุด)',
+        module: 'USER_ACCOUNT_TRANSACTION',
+        skipActions: ['ACCESS', 'READ', 'CANCEL', 'DELETE', 'APPROVE', 'NOTIFY'],
+      },
     ],
   },
 ];

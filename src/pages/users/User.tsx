@@ -216,10 +216,23 @@ const Users: React.FC<UsersProps> = ({
     }
   };
 
-  const handleViewDetails = (user: User) => {
-    setSelectedUser(user);
-    setIsDetailsModalOpen(true);
+  // List endpoint ไม่ populate avatar url (เลือก attributes บางอัน + ไม่ join storage)
+  //   → ต้อง fetch detail เต็มจาก getById ก่อนเปิด modal เพื่อให้ form pre-fill รูป
+  const loadFullUser = async (user: User): Promise<User> => {
+    try {
+      const full = await UserApi.getById(user.id);
+      return { ...user, ...full };
+    } catch (error) {
+      console.error('Failed to load user detail, falling back to list payload:', error);
+      return user;
+    }
+  };
+
+  const handleViewDetails = async (user: User) => {
     setOpenDropdownId(null);
+    const full = await loadFullUser(user);
+    setSelectedUser(full);
+    setIsDetailsModalOpen(true);
   };
 
   const handleViewRoleDetails = (roleId: string) => {
@@ -228,10 +241,11 @@ const Users: React.FC<UsersProps> = ({
     setOpenDropdownId(null);
   };
 
-  const handleEdit = (user: User) => {
-    setUserToEdit(user);
-    setIsEditUserModalOpen(true);
+  const handleEdit = async (user: User) => {
     setOpenDropdownId(null);
+    const full = await loadFullUser(user);
+    setUserToEdit(full);
+    setIsEditUserModalOpen(true);
   };
 
   const handleDelete = (user: User) => {
