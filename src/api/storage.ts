@@ -18,10 +18,10 @@ class StorageService extends AuthService {
     if (data.note) formData.append('note', data.note);
     if (data.entity_type) formData.append('entity_type', data.entity_type);
     if (data.entity_id) formData.append('entity_id', data.entity_id);
-    
+
     formData.append('file', data.file);
 
-    const res = await this.http.post<StorageModel>(
+    const res = await this.http.post<{ data: StorageModel } | StorageModel>(
       `${this.path}/upload`,
       formData,
       {
@@ -30,7 +30,9 @@ class StorageService extends AuthService {
         },
       }
     );
-    return res.data;
+    // Storage controller ไม่ wrap response (return record ตรงๆ) แต่ fallback ไว้
+    //   เผื่อ middleware/interceptor มี wrap ที่ไหน → uploaded.id จะได้ทำงานทุกกรณี
+    return ((res.data as { data?: StorageModel })?.data ?? (res.data as StorageModel)) as StorageModel;
   }
 
   async uploadMultiple(

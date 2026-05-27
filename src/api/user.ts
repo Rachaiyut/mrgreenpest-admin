@@ -46,8 +46,10 @@ class UserService extends AuthService {
   }
 
   async getById(id: string): Promise<User> {
-    const res = await this.http.get<User>(`${this.path}/${id}`);
-    const u = res.data;
+    const res = await this.http.get<{ data: User } | User>(`${this.path}/${id}`);
+    // Backend ห่อ response เป็น { status, success, data, timestamp } → ต้องดึง .data.data
+    //   ไม่งั้น u จะเป็น wrapper → first_name/url ทั้งหมดเป็น undefined → ชื่อขึ้น "Unknown" + รูปไม่แสดง
+    const u = ((res.data as { data?: User })?.data ?? (res.data as User)) as User;
     return {
       ...u,
       name:
@@ -61,13 +63,15 @@ class UserService extends AuthService {
   }
 
   async create(data: Partial<User>): Promise<User> {
-    const res = await this.http.post<User>(this.path, data);
-    return res.data;
+    const res = await this.http.post<{ data: User } | User>(this.path, data);
+    // Unwrap response wrapper — ไม่งั้น created.id = undefined ทำให้
+    //   avatar upload หลัง create ลิงก์กับ user ไม่ได้ (storage_id ไม่ถูก set)
+    return ((res.data as { data?: User })?.data ?? (res.data as User)) as User;
   }
 
   async update(id: string, data: Partial<User>): Promise<User> {
-    const res = await this.http.patch<User>(`${this.path}/${id}`, data);
-    return res.data;
+    const res = await this.http.patch<{ data: User } | User>(`${this.path}/${id}`, data);
+    return ((res.data as { data?: User })?.data ?? (res.data as User)) as User;
   }
 
   async delete(id: string): Promise<void> {
