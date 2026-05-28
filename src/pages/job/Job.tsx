@@ -1067,7 +1067,7 @@ const Job: React.FC<JobProps> = ({
     try {
       await JobApi.update(job.id, {
         status: JobMainStatus.CANCELLED,
-        remarks: result.value,
+        rejection_reason: result.value,
       } as Record<string, unknown>);
       Swal.fire({ icon: 'success', title: 'ยกเลิกงานแล้ว', timer: 1500, showConfirmButton: false });
       fetchData();
