@@ -214,82 +214,112 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
     0,
   );
   const shortId = (summary.id as string)?.slice(0, 8) || '-';
-  const fmtMoney = (v: number) =>
-    `${v.toLocaleString('th-TH', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })} บาท`;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="รายละเอียดใบเบิก">
-      <div className="space-y-4 text-sm">
-        {/* Header Info Card */}
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`รายละเอียดใบเบิก: ${shortId}`}
+      size="4xl"
+      footer={
+        <div className="flex w-full justify-end items-center gap-2">
+          {isPending && (needStockApproval || needExpenseApproval) && needStockApproval && canApproveStock && needExpenseApproval && canApproveExpense && (
+            <Button
+              type="button"
+              variant="primary"
+              disabled={submitting}
+              onClick={() => confirmApprove()}
+              className="!bg-primary hover:!bg-primary/90"
+            >
+              ✓ อนุมัติทั้งหมด
+            </Button>
+          )}
+          <Button variant="primary" type="button" onClick={onClose}>
+            ปิด
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-6">
+        {/* ข้อมูลใบเบิก */}
+        <div>
+          <h4 className="text-base font-semibold text-slate-800 mb-3">ข้อมูลใบเบิก</h4>
+          <dl className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-6 text-sm">
             <div>
-              <div className="text-xs text-slate-500 mb-0.5">เลขที่ใบเบิก</div>
-              <div className="font-mono text-slate-800" title={summary.id as string}>
+              <dt className="font-medium text-slate-500">เลขที่ใบเบิก</dt>
+              <dd className="mt-1 text-slate-900 font-semibold font-mono" title={summary.id as string}>
                 #{shortId}
-              </div>
+              </dd>
             </div>
             <div>
-              <div className="text-xs text-slate-500 mb-0.5">วันที่สร้าง</div>
-              <div className="text-slate-800">
+              <dt className="font-medium text-slate-500">สถานะใบ</dt>
+              <dd className="mt-1">
+                {(() => {
+                  // ใช้ mapping เดียวกับหน้าตาราง IssueSummary (ภาษาไทย + สี)
+                  const map: Record<string, { text: string; cls: string }> = {
+                    DRAFT: { text: 'ฉบับร่าง', cls: 'bg-slate-100 text-slate-700 border-slate-200' },
+                    PENDING: { text: 'รออนุมัติ', cls: 'bg-amber-100 text-amber-700 border-amber-200' },
+                    CANCELLED: { text: 'ยกเลิก', cls: 'bg-red-100 text-red-700 border-red-200' },
+                    APPROVED: { text: 'อนุมัติแล้ว', cls: 'bg-blue-100 text-blue-700 border-blue-200' },
+                    COMPLETED: { text: 'เสร็จสิ้น', cls: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+                  };
+                  const entry = map[summaryStatus] || { text: summary.status || '-', cls: 'bg-slate-100 text-slate-700 border-slate-200' };
+                  return (
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${entry.cls}`}>
+                      {entry.text}
+                    </span>
+                  );
+                })()}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium text-slate-500">วันที่สร้าง</dt>
+              <dd className="mt-1 text-slate-900">
                 {summary.created_at ? formatThaiDate(summary.created_at) : '-'}
-              </div>
+              </dd>
             </div>
             <div>
-              <div className="text-xs text-slate-500 mb-0.5">คลัง/รถ</div>
-              <div className="text-slate-800">
+              <dt className="font-medium text-slate-500">คลัง/รถ</dt>
+              <dd className="mt-1 text-slate-900">
                 {warehouseMap.get(summary.warehouse_id)?.name || '-'}
-              </div>
+              </dd>
             </div>
             <div>
-              <div className="text-xs text-slate-500 mb-0.5">ผู้เบิก</div>
-              <div className="text-slate-800">
+              <dt className="font-medium text-slate-500">ผู้เบิก</dt>
+              <dd className="mt-1 text-slate-900">
                 {summary.requester_id ? userMap.get(summary.requester_id) || '-' : '-'}
-              </div>
+              </dd>
             </div>
             <div>
-              <div className="text-xs text-slate-500 mb-0.5">ผู้สร้าง</div>
-              <div className="text-slate-800">
+              <dt className="font-medium text-slate-500">ผู้สร้าง</dt>
+              <dd className="mt-1 text-slate-900">
                 {summary.created_by ? userMap.get(summary.created_by) || '-' : '-'}
-              </div>
+              </dd>
             </div>
-            {summary.items && summary.items.length > 0 && (
-              <div>
-                <div className="text-xs text-slate-500 mb-0.5">มูลค่าสินค้า</div>
-                <div className="text-slate-800 font-semibold">
-                  {fmtMoney(totalAmount)}
-                </div>
+            {summary.notes && (
+              <div className="md:col-span-3">
+                <dt className="font-medium text-slate-500">หมายเหตุ</dt>
+                <dd className="mt-1 text-slate-900 bg-slate-50 p-2 rounded-md whitespace-pre-wrap">
+                  {summary.notes}
+                </dd>
               </div>
             )}
-            {expenseItems.length > 0 && (
-              <div>
-                <div className="text-xs text-slate-500 mb-0.5">จำนวนเงินที่เบิก</div>
-                <div className="text-slate-800 font-semibold">
-                  {fmtMoney(totalExpenseAmount)}
-                </div>
+            {summary.over_limit_reason && (
+              <div className="md:col-span-3">
+                <dt className="font-medium text-amber-600">เหตุผลเกินลิมิต</dt>
+                <dd className="mt-1 text-amber-800 bg-amber-50 p-2 rounded-md">
+                  {summary.over_limit_reason}
+                </dd>
               </div>
             )}
-          </div>
+          </dl>
         </div>
 
-        {/* Notes */}
-        {summary.notes && (
-          <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
-            <div className="text-xs text-slate-500 mb-1">หมายเหตุ</div>
-            <p className="text-slate-800 whitespace-pre-wrap">{summary.notes}</p>
-          </div>
-        )}
-
-        {/* Approval Panel */}
+        {/* สถานะการอนุมัติ */}
         {(stockApproval || expenseApproval) && (
-          <div className="border border-slate-200 rounded-lg overflow-hidden">
-            <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 font-semibold text-slate-700">
-              สถานะการอนุมัติ
-            </div>
-            <div className="divide-y divide-slate-100">
+          <div>
+            <h4 className="text-base font-semibold text-slate-800 mb-3">สถานะการอนุมัติ</h4>
+            <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
               {stockApproval && (
                 <div className="flex items-center justify-between px-4 py-3 bg-white">
                   <div className="flex items-center gap-2">
@@ -309,61 +339,59 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
                 </div>
               )}
             </div>
-            {summary.over_limit_reason && (
-              <div className="px-4 py-2 bg-amber-50 border-t border-amber-200 text-xs text-amber-800">
-                <span className="font-semibold">เหตุผลเกินลิมิต:</span> {summary.over_limit_reason}
-              </div>
-            )}
           </div>
         )}
 
-        {/* Items Table */}
+        {/* รายการสินค้า */}
         {summary.items && summary.items.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-1 h-5 bg-emerald-500 rounded"></span>
-              <h4 className="font-semibold text-slate-700">
-                รายการสินค้า ({summary.items.length})
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-base font-semibold text-slate-800">
+                รายการสินค้า/อุปกรณ์ที่เบิก
               </h4>
             </div>
-            <div className="border border-slate-200 rounded-lg overflow-hidden">
+            <div className="overflow-hidden border border-slate-200 rounded-lg max-h-60 overflow-y-auto">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr className="[&>th]:px-3 [&>th]:py-2 [&>th]:text-xs [&>th]:font-semibold [&>th]:text-slate-600 [&>th]:uppercase">
-                    <th className="text-left w-12">ลำดับ</th>
-                    <th className="text-left">สินค้า</th>
-                    <th className="text-left w-20">จำนวน</th>
-                    <th className="text-left w-20">หน่วย</th>
-                    <th className="text-right w-28">ราคา/หน่วย</th>
-                    <th className="text-right w-28">รวม</th>
+                <thead className="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">ลำดับ</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">สินค้า</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">จำนวน</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">หน่วย</th>
+                    <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase">มูลค่า (บาท)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
+                <tbody className="bg-white divide-y divide-slate-200">
                   {summary.items.map((item, index) => {
                     const product = productMap.get(item.product_id);
-                    const price = getUnitValue(product);
-                    const itemTotal = price * item.quantity;
+                    const total = getUnitValue(product) * item.quantity;
                     return (
-                      <tr key={item.id || index} className="hover:bg-slate-50 [&>td]:px-3 [&>td]:py-2 [&>td]:text-slate-800">
-                        <td className="text-center text-slate-500">{index + 1}</td>
-                        <td>{item.product_name || product?.name || '-'}</td>
-                        <td className="text-center">{item.quantity}</td>
-                        <td className="text-center text-slate-500">
+                      <tr key={item.id || index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{index + 1}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-slate-900">
+                          <div>{item.product_name || product?.name || 'ไม่พบสินค้า'}</div>
+                          {product?.code && (
+                            <div className="text-xs text-slate-500 font-mono">{product.code}</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{item.quantity}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                           {item.unit || product?.unit?.name || '-'}
                         </td>
-                        <td className="text-right">{fmtMoney(price)}</td>
-                        <td className="text-right font-medium">{fmtMoney(itemTotal)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right">
+                          {total.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
                 <tfoot className="bg-slate-50">
                   <tr>
-                    <td colSpan={5} className="px-3 py-2 text-right text-slate-600 font-medium">
-                      รวมมูลค่าสินค้า
+                    <td colSpan={4} className="px-6 py-3 text-right text-sm font-medium text-slate-900">
+                      รวมค่าสินค้า/อุปกรณ์
                     </td>
-                    <td className="px-3 py-2 text-right font-bold text-slate-800">
-                      {fmtMoney(totalAmount)}
+                    <td className="px-6 py-3 text-right text-sm font-medium text-slate-900">
+                      {totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                   </tr>
                 </tfoot>
@@ -372,40 +400,41 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
           </div>
         )}
 
-        {/* Expense Items */}
+        {/* รายการค่าใช้จ่ายเพิ่มเติม */}
         {expenseItems.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-1 h-5 bg-amber-500 rounded"></span>
-              <h4 className="font-semibold text-slate-700">
-                รายการค่าใช้จ่าย ({expenseItems.length})
+            <div className="flex items-center gap-2 mb-3">
+              <h4 className="text-base font-semibold text-slate-800">
+                รายการค่าใช้จ่ายเพิ่มเติม
               </h4>
             </div>
-            <div className="border border-slate-200 rounded-lg overflow-hidden">
+            <div className="overflow-hidden border border-slate-200 rounded-lg max-h-60 overflow-y-auto">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr className="[&>th]:px-3 [&>th]:py-2 [&>th]:text-xs [&>th]:font-semibold [&>th]:text-slate-600 [&>th]:uppercase">
-                    <th className="text-left w-12">ลำดับ</th>
-                    <th className="text-left">รายการ</th>
-                    <th className="text-right w-32">จำนวนเงิน</th>
+                <thead className="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">ลำดับ</th>
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">รายการ</th>
+                    <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase">จำนวนเงิน (บาท)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
+                <tbody className="bg-white divide-y divide-slate-200">
                   {expenseItems.map((e, index) => (
-                    <tr key={e.id || index} className="hover:bg-slate-50 [&>td]:px-3 [&>td]:py-2 [&>td]:text-slate-800">
-                      <td className="text-center text-slate-500">{index + 1}</td>
-                      <td>{e.description || '-'}</td>
-                      <td className="text-right font-medium">{fmtMoney(Number(e.amount || 0))}</td>
+                    <tr key={e.id || index}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{index + 1}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-slate-900">{e.description || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right">
+                        {Number(e.amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot className="bg-slate-50">
                   <tr>
-                    <td colSpan={2} className="px-3 py-2 text-right text-slate-600 font-medium">
-                      รวมค่าใช้จ่าย
+                    <td colSpan={2} className="px-6 py-3 text-right text-sm font-medium text-slate-900">
+                      รวมค่าใช้จ่ายเพิ่มเติม
                     </td>
-                    <td className="px-3 py-2 text-right font-bold text-slate-800">
-                      {fmtMoney(totalExpenseAmount)}
+                    <td className="px-6 py-3 text-right text-sm font-medium text-slate-900">
+                      {totalExpenseAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                   </tr>
                 </tfoot>
@@ -414,88 +443,61 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex flex-col gap-3 pt-4 border-t">
-          {isPending && (needStockApproval || needExpenseApproval) && (
-            <>
-              {needStockApproval && canApproveStock && (
-                <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                  <span className="flex-1 text-sm text-emerald-900 font-medium">
-                    อนุมัติเบิกสินค้า/สารเคมี
-                  </span>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    disabled={submitting}
-                    onClick={() => confirmApprove('STOCK')}
-                    className="!bg-emerald-600 hover:!bg-emerald-700 !py-1.5 !px-3 !text-xs"
-                  >
-                    ✓ อนุมัติ
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    disabled={submitting}
-                    onClick={() => confirmReject('STOCK')}
-                    className="!py-1.5 !px-3 !text-xs"
-                  >
-                    ✗ ปฏิเสธ
-                  </Button>
-                </div>
-              )}
-              {needExpenseApproval && canApproveExpense && (
-                <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <span className="flex-1 text-sm text-amber-900 font-medium">
-                    อนุมัติค่าใช้จ่าย
-                  </span>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    disabled={submitting}
-                    onClick={() => confirmApprove('EXPENSE')}
-                    className="!bg-amber-600 hover:!bg-amber-700 !py-1.5 !px-3 !text-xs"
-                  >
-                    ✓ อนุมัติ
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    disabled={submitting}
-                    onClick={() => confirmReject('EXPENSE')}
-                    className="!py-1.5 !px-3 !text-xs"
-                  >
-                    ✗ ปฏิเสธ
-                  </Button>
-                </div>
-              )}
-              {needStockApproval &&
-                needExpenseApproval &&
-                canApproveStock &&
-                canApproveExpense && (
-                  <Button
-                    type="button"
-                    variant="primary"
-                    disabled={submitting}
-                    onClick={() => confirmApprove()}
-                    className="w-full !bg-primary hover:!bg-primary/90"
-                  >
-                    ✓ อนุมัติทั้งหมด (สินค้า + ค่าใช้จ่าย)
-                  </Button>
-                )}
-            </>
-          )}
-
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              variant="primary"
-              onClick={onClose}
-              className="!bg-emerald-600 hover:!bg-emerald-700"
-            >
-              ปิด
-            </Button>
+        {/* Per-category approve/reject actions */}
+        {isPending && (needStockApproval || needExpenseApproval) && (
+          <div className="flex flex-col gap-3">
+            {needStockApproval && canApproveStock && (
+              <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <span className="flex-1 text-sm text-emerald-900 font-medium">
+                  อนุมัติเบิกสินค้า/สารเคมี
+                </span>
+                <Button
+                  type="button"
+                  variant="primary"
+                  disabled={submitting}
+                  onClick={() => confirmApprove('STOCK')}
+                  className="!bg-emerald-600 hover:!bg-emerald-700 !py-1.5 !px-3 !text-xs"
+                >
+                  ✓ อนุมัติ
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={submitting}
+                  onClick={() => confirmReject('STOCK')}
+                  className="!py-1.5 !px-3 !text-xs"
+                >
+                  ✗ ปฏิเสธ
+                </Button>
+              </div>
+            )}
+            {needExpenseApproval && canApproveExpense && (
+              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <span className="flex-1 text-sm text-amber-900 font-medium">
+                  อนุมัติค่าใช้จ่าย
+                </span>
+                <Button
+                  type="button"
+                  variant="primary"
+                  disabled={submitting}
+                  onClick={() => confirmApprove('EXPENSE')}
+                  className="!bg-amber-600 hover:!bg-amber-700 !py-1.5 !px-3 !text-xs"
+                >
+                  ✓ อนุมัติ
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={submitting}
+                  onClick={() => confirmReject('EXPENSE')}
+                  className="!py-1.5 !px-3 !text-xs"
+                >
+                  ✗ ปฏิเสธ
+                </Button>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
     </Modal>
   );

@@ -486,10 +486,10 @@ const Dashboard: React.FC<DashboardProps> = () => {
             )}
           </Card>
 
-          <Card>
+          <Card className="h-full flex flex-col">
             <CardHeader title="สินค้าใกล้หมดสต็อก" />
             {lowStockItems.length > 0 ? (
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+              <div className="space-y-2 flex-1 overflow-y-auto">
                 {lowStockItems.map((item: DashboardStockItem) => (
                   <div key={item.id} className="flex items-center justify-between p-2 bg-rose-50 rounded-md">
                     <div className="truncate flex-1">
@@ -508,7 +508,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
                 ))}
               </div>
             ) : (
-              <div className="h-32 flex items-center justify-center text-emerald-500 text-sm">สต็อกปกติทั้งหมด</div>
+              <div className="flex-1 flex items-center justify-center text-emerald-500 text-sm">สต็อกปกติทั้งหมด</div>
             )}
           </Card>
 
