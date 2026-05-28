@@ -37,9 +37,7 @@ export const PortalLayout: React.FC = () => {
         <header className="bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-slate-200 sticky top-0 z-10">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16 gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
-                <span className="text-white font-extrabold text-sm sm:text-base">MG</span>
-              </div>
+              <img src="/mrgreen1.png" alt="Mr. Green" className="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0" />
               <div className="min-w-0">
                 <h1 className="text-sm sm:text-base font-extrabold text-slate-800 leading-tight truncate">MR. GREEN</h1>
                 <p className="hidden sm:block text-[10px] text-slate-500 tracking-wider">PEST CONTROL PORTAL</p>

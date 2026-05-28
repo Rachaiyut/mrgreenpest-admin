@@ -195,9 +195,11 @@ const PortalSignQuotation: React.FC = () => {
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-3 sm:mb-4">
           <div className="flex items-center gap-3 mb-3 sm:mb-4">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold text-xs sm:text-sm">MG</span>
-            </div>
+            <img
+              src="/mrgreen1.png"
+              alt="Mr. Green"
+              className="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0"
+            />
             <div className="min-w-0">
               <h1 className="text-base sm:text-lg font-bold text-slate-800 truncate">{docLabel}</h1>
               <p className="text-[11px] sm:text-xs text-slate-500 truncate">บริษัท มิสเตอร์กรีน เพสท์ คอนโทรล จำกัด</p>
@@ -206,20 +208,20 @@ const PortalSignQuotation: React.FC = () => {
           <div className="border-t border-slate-100 pt-3 sm:pt-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-sm">
               <div className="flex justify-between sm:block">
-                <span className="text-slate-500">เลขที่:</span>
-                <span className="ml-2 font-semibold text-slate-800">{document?.code || '-'}</span>
+                <span className="font-semibold text-slate-700">เลขที่:</span>
+                <span className="ml-2 text-slate-800">{document?.code || '-'}</span>
               </div>
               <div className="flex justify-between sm:block">
-                <span className="text-slate-500">ลูกค้า:</span>
-                <span className="ml-2 font-semibold text-slate-800">{(document?.customer_name || '-').replace(/\s*-\s*$/, '').trim() || '-'}</span>
+                <span className="font-semibold text-slate-700">ลูกค้า:</span>
+                <span className="ml-2 text-slate-800">{(document?.customer_name || '-').replace(/\s*-\s*$/, '').trim() || '-'}</span>
               </div>
               <div className="flex justify-between sm:block">
-                <span className="text-slate-500">สถานที่:</span>
-                <span className="ml-2 text-slate-700 text-right sm:text-left">{document?.service_location || '-'}</span>
+                <span className="font-semibold text-slate-700">สถานที่:</span>
+                <span className="ml-2 text-slate-700 text-right sm:text-left whitespace-pre-line">{document?.service_location || '-'}</span>
               </div>
               <div className="flex justify-between sm:block">
-                <span className="text-slate-500">{isContract ? 'มูลค่า:' : 'ยอดรวม:'}</span>
-                <span className="ml-2 font-bold text-green-700">
+                <span className="font-semibold text-slate-700">{isContract ? 'มูลค่า:' : 'ยอดรวม:'}</span>
+                <span className="ml-2 text-green-700">
                   {formatCurrency(isContract ? document?.total_amount : document?.total)} บาท
                 </span>
               </div>

@@ -45,9 +45,7 @@ const PortalLogin: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="max-w-md w-full mx-4">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
-          <div className="w-16 h-16 bg-green-600 rounded-xl flex items-center justify-center mx-auto mb-6">
-            <span className="text-white font-bold text-2xl">MG</span>
-          </div>
+          <img src="/mrgreen1.png" alt="Mr. Green" className="w-20 h-20 object-contain mx-auto mb-6" />
           <h1 className="text-2xl font-bold text-slate-800 mb-2">MrGreenPest Portal</h1>
 
           {loading && (
