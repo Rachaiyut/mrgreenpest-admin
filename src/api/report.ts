@@ -107,7 +107,14 @@ class ReportApiService extends AuthService {
   }
 
   // ── Phase 2 analysis reports ─────────────────────────────────────
-  async getChemicalUsageDaily(filter?: ReportFilter) {
+  async getChemicalUsageDaily(filter?: ReportFilter & {
+    technician_id?: string;
+    source_warehouse_id?: string;
+    category_id?: string;
+    granularity?: 'day' | 'month';
+    start_date?: string;
+    end_date?: string;
+  }) {
     const res = await this.http.get(`${this.path}/chemical-usage-daily`, { params: filter });
     const body = res.data as unknown as { data?: unknown };
     return body?.data || res.data;

@@ -105,21 +105,6 @@ const JobCancellationPage: React.FC = () => {
           </Card>
         </div>
 
-        {/* Top reasons */}
-        {data?.summary.by_reason?.length ? (
-          <Card className="!p-4">
-            <p className="font-semibold text-slate-800 mb-3">เหตุผลยกเลิก (Top {data.summary.by_reason.length})</p>
-            <div className="space-y-2">
-              {data.summary.by_reason.map((r, i) => (
-                <div key={i} className="flex items-center justify-between text-sm">
-                  <span className="text-slate-700">{r.reason}</span>
-                  <span className="font-semibold text-slate-900 tabular-nums">{r.count}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        ) : null}
-
         {/* Filters */}
         <Card className="!p-4">
           <div className="flex flex-wrap items-center gap-3">
@@ -147,6 +132,7 @@ const JobCancellationPage: React.FC = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase whitespace-nowrap">ลำดับ</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">เลขที่งาน</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">ลูกค้า</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">เบอร์</th>
@@ -159,7 +145,7 @@ const JobCancellationPage: React.FC = () => {
               <tbody className="bg-white [&>tr]:border-b [&>tr]:border-slate-100">
                 {loading || paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-0 border-b-0 h-0">
+                    <td colSpan={8} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
                         {loading ? (
                           <>
@@ -176,8 +162,9 @@ const JobCancellationPage: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ) : paginated.map((item) => (
+                ) : paginated.map((item, idx) => (
                   <tr key={item.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 text-sm text-center text-slate-500 tabular-nums">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                     <td className="px-4 py-3 text-sm font-medium text-primary">{item.code}</td>
                     <td className="px-4 py-3 text-sm text-slate-700">{item.customer_name || '-'}</td>
                     <td className="px-4 py-3 text-sm text-slate-700">{item.primary_phone || '-'}</td>
