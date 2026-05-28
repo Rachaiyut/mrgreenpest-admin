@@ -1085,8 +1085,19 @@ export const ContractForm: FC<ContractFormProps> = ({
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // อ่านปุ่มที่กด — "บันทึกร่าง" (value=draft) → status DRAFT
+    //   ปุ่มอื่น (value=save) สำหรับ create mode → status PENDING; mode อื่นคง status เดิมไว้
+    const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    const submitAction = submitter?.value || 'save';
+    const isNewContract = mode === 'create' || mode === 'renew';
+    const submitStatus: ContractStatus = submitAction === 'draft'
+      ? ContractStatus.DRAFT
+      : isNewContract
+        ? ContractStatus.PENDING
+        : status;
 
     const errors: { customer?: string; serviceLocation?: string; areas?: string; contractType?: string } = {};
     if (!selectedCustomerId) errors.customer = 'กรุณาเลือกลูกค้า';
@@ -1227,11 +1238,11 @@ export const ContractForm: FC<ContractFormProps> = ({
       service_count: serviceCount,
       total_amount: totalAmount,
       vat_amount: vatAmount,
-      status: status,
+      status: submitStatus,
       start_date: startDate,
       end_date: endDate,
       notes: notes,
-      signature: status === ContractStatus.ACTIVE
+      signature: submitStatus === ContractStatus.ACTIVE
         ? (fullQuotation?.signature || initialValues?.signature || undefined)
         : undefined,
 

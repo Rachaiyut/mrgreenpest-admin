@@ -7,6 +7,7 @@ import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 // ===== Types / Enums =====
 import { AsessmentStatus, CategoryType, ServiceSystem, WarehouseType } from '@/src/types';
+import { ContractStatusLabel } from '@/src/types/enums/contract';
 import { isFieldRole } from '@/src/utils/role';
 import { RoleType } from '@/src/types/enums/role';
 import { useCurrentUser } from '@/src/hooks/useCurrentUser';
@@ -508,11 +509,11 @@ export const JobForm: React.FC<JobFormProps> = ({
     return [];
   }, [customers, selectedCustomerId, selectedCustomerData, fetchedAssessments]);
 
-  // สัญญาที่อ้างอิงได้: PENDING (รอดำเนินการ — ยังไม่เซ็น) + ACTIVE (อยู่ในสัญญา)
+  // สัญญาที่อ้างอิงได้: DRAFT (ร่าง) + PENDING (รอดำเนินการ — ยังไม่เซ็น) + ACTIVE (อยู่ในสัญญา)
   const availableContracts = useMemo(() => {
     const isUsable = (a: { status?: string }) => {
       const s = String(a.status || '');
-      return s === 'PENDING' || s === 'ACTIVE';
+      return s === 'DRAFT' || s === 'PENDING' || s === 'ACTIVE';
     };
     if (fetchedContracts.length > 0) return fetchedContracts.filter(isUsable);
     if (selectedCustomerId) {
@@ -561,9 +562,15 @@ export const JobForm: React.FC<JobFormProps> = ({
   }, [availableInvoices, invoiceSearch, mode, jobToEdit]);
 
   const filteredReferences = useMemo(() => {
+    const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString('th-TH') : '');
     const refs = [
       ...availableAssessments.map((a) => ({ value: `asm-${a.id}`, label: `ใบประเมิน: ${a.code}` })),
-      ...availableContracts.map((c) => ({ value: `cnt-${c.id}`, label: `สัญญา: ${c.code}` })),
+      ...availableContracts.map((c) => {
+        const status = ContractStatusLabel[c.status as keyof typeof ContractStatusLabel] || c.status || '';
+        const date = fmtDate(c.created_at);
+        const tail = [status, date].filter(Boolean).join(' · ');
+        return { value: `cnt-${c.id}`, label: `สัญญา: ${c.code}${tail ? ` (${tail})` : ''}` };
+      }),
     ];
 
     if (mode === 'edit' && jobToEdit) {

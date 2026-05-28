@@ -798,7 +798,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
               <DocumentTextIcon className="w-4 h-4 text-green-500" />
               ส่ง Link Portal ลูกค้า
             </button>
-            {selectedContract?.status === ContractStatus.PENDING && (
+            {(selectedContract?.status === ContractStatus.PENDING || selectedContract?.status === ContractStatus.DRAFT) && (
               <button
                 onClick={async () => {
                   if (!selectedContract?.customer_id) return;

@@ -31,9 +31,17 @@ export const ContractModal: React.FC<ContractModalProps> = ({
         ยกเลิก
       </Button>
       {mode !== 'detail' && (
-        <Button variant="primary" type="submit" form="contract-form">
-          บันทึก
-        </Button>
+        <>
+          {/* บันทึกร่าง — สถานะ DRAFT แก้ไขต่อภายหลังได้ */}
+          {(mode === 'create' || mode === 'renew') && (
+            <Button variant="secondary" type="submit" form="contract-form" name="action" value="draft">
+              บันทึกร่าง
+            </Button>
+          )}
+          <Button variant="primary" type="submit" form="contract-form" name="action" value="save">
+            บันทึก
+          </Button>
+        </>
       )}
     </div>
   );

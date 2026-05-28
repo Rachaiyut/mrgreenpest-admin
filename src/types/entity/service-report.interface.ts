@@ -198,6 +198,7 @@ export interface FieldJob {
   team_member?: TeamMember[];
   vehicle?: Vehicle;
   service_report?: ServiceReport;
+  contract?: { id: string; code: string; status: string };
 }
 
 export interface JobRejectionHistoryEntry {

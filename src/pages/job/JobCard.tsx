@@ -10,6 +10,9 @@ import { FieldJob, JobStatus, User } from "@/src/types";
 import { Button } from "@/src/components/common";
 import { JobStatusLabel } from '@/src/types/enums/job';
 
+// ===== API =====
+import { ContractApi } from "@/src/api/contract";
+
 // ===== Utils =====
 import { formatThaiDate } from "@/src/utils/date";
 
@@ -110,6 +113,29 @@ const JobCard: React.FC<{
     const hasActions =
       (job.status as unknown as JobStatus) !== JobStatus.Completed &&
       String(job.api_status || '').toUpperCase() !== 'WAITING_CLEAR';
+
+    // ปุ่มส่งลิงก์เซ็นสัญญา — แสดงเฉพาะเมื่อสัญญายัง DRAFT หรือ PENDING (รอลูกค้าเซ็น)
+    const contractStatus = String(job.contract?.status || '').toUpperCase();
+    const showSignContractButton = !!(job.contract?.id && job.customer_id && (contractStatus === 'DRAFT' || contractStatus === 'PENDING'));
+
+    const handleSendContractSigningLink = async () => {
+      if (!job.contract?.id || !job.customer_id) return;
+      try {
+        const response = await ContractApi.generateSigningLink(job.customer_id, job.contract.id);
+        const signingUrl = `${window.location.origin}/portal/sign?token=${response.token}`;
+        await navigator.clipboard.writeText(signingUrl);
+        Swal.fire({
+          title: 'คัดลอกสำเร็จ!',
+          html: `<div class="text-sm">ลิงก์เซ็นสัญญาถูกคัดลอกแล้ว ส่งให้ลูกค้าได้ทันที<br><span class="text-xs text-slate-500 mt-2 block">หมดอายุใน 72 ชั่วโมง</span></div>`,
+          icon: 'success',
+          timer: 2500,
+          confirmButtonColor: '#10b981',
+        });
+      } catch (err) {
+        const errMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+        Swal.fire({ title: 'เกิดข้อผิดพลาด', text: errMsg || 'ไม่สามารถสร้างลิงก์เซ็นสัญญาได้', icon: 'error' });
+      }
+    };
 
     const handleApprove = () => {
       if (!onApprove) return;
@@ -526,6 +552,18 @@ const JobCard: React.FC<{
               >
                 <PencilIcon className="h-4 w-4" />
                 {isRejected ? 'แก้ไขและส่งอนุมัติใหม่' : 'แก้ไขงานและใบประเมิน'}
+              </button>
+            )}
+
+            {showSignContractButton && (
+              <button
+                onClick={handleSendContractSigningLink}
+                title={`ส่งลิงก์เซ็นสัญญาให้ลูกค้า (${contractStatus === 'DRAFT' ? 'ร่างสัญญา' : 'รอเซ็น'})`}
+                className="w-full py-2 text-sm font-semibold rounded-lg shadow-sm flex items-center justify-center gap-1.5 text-white"
+                style={{ backgroundColor: '#10b981' }}
+              >
+                <DocumentCheckIcon className="h-4 w-4" />
+                ส่งลิงก์เซ็นสัญญา
               </button>
             )}
 
