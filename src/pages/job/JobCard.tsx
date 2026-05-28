@@ -120,18 +120,20 @@ const JobCard: React.FC<{
 
     const handleSendContractSigningLink = async () => {
       if (!job.contract?.id || !job.customer_id) return;
+      // เปิด tab/window ก่อน (ใน synchronous click handler) เพื่อกัน popup-blocker ของ browser
+      //   แล้วค่อย set URL ตอน API ตอบกลับ
+      const win = window.open('about:blank', '_blank');
       try {
         const response = await ContractApi.generateSigningLink(job.customer_id, job.contract.id);
         const signingUrl = `${window.location.origin}/portal/sign?token=${response.token}`;
-        await navigator.clipboard.writeText(signingUrl);
-        Swal.fire({
-          title: 'คัดลอกสำเร็จ!',
-          html: `<div class="text-sm">ลิงก์เซ็นสัญญาถูกคัดลอกแล้ว ส่งให้ลูกค้าได้ทันที<br><span class="text-xs text-slate-500 mt-2 block">หมดอายุใน 72 ชั่วโมง</span></div>`,
-          icon: 'success',
-          timer: 2500,
-          confirmButtonColor: '#10b981',
-        });
+        if (win) {
+          win.location.href = signingUrl;
+        } else {
+          // fallback ถ้า popup ถูก block — เปิดใน tab เดิม
+          window.location.href = signingUrl;
+        }
       } catch (err) {
+        if (win) win.close();
         const errMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
         Swal.fire({ title: 'เกิดข้อผิดพลาด', text: errMsg || 'ไม่สามารถสร้างลิงก์เซ็นสัญญาได้', icon: 'error' });
       }
