@@ -8,7 +8,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { TruncateText } from '../../components/common/TruncateText';
-import { formatThaiDate } from '../../utils/date';
+import { formatThaiDate, toLocalISODate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
 import {
   PlusIcon,
@@ -83,6 +83,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   const currentUser = useCurrentUser();
   const { hasPermission } = usePermissions();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [serverStats, setServerStats] = useState<{ total: number; draft: number; pending: number; approved: number; signed: number; cancelled: number; total_value: number } | null>(null);
   const [totalFromServer, setTotalFromServer] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -100,25 +101,23 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   const fetchQuotations = async (page = currentPage, limit = itemsPerPage) => {
     setIsLoading(true);
     try {
-      const query: any = {
-        page,
-        limit,
-        sort_by: 'created_at',
-        sort_order: 'DESC',
-      };
-      if (searchQuery.trim()) query.search = searchQuery.trim();
-      if (statusFilter !== 'ทั้งหมด') query.status = statusFilter;
-      if (startDate) query.start_date = startDate;
-      if (endDate) query.end_date = endDate;
-
+      const filterBase: any = { sort_by: 'created_at', sort_order: 'DESC' };
+      if (searchQuery.trim()) filterBase.search = searchQuery.trim();
+      if (statusFilter !== 'ทั้งหมด') filterBase.status = statusFilter;
+      if (startDate) filterBase.start_date = startDate;
+      if (endDate) filterBase.end_date = endDate;
       // LEAD_TECH/TECH: เห็นที่ตัวเองสร้าง + ที่ผูกกับ job ของตัวเอง
       if (isFieldRole(currentUser?.roleType)) {
-        query.tech_id = currentUser.id;
+        filterBase.tech_id = currentUser.id;
       }
 
-      const res = await QuotationApi.getAll(query);
-      setQuotations(res.data || []);
-      setTotalFromServer(res.meta?.total || res.data?.length || 0);
+      const [pageRes, statsRes] = await Promise.all([
+        QuotationApi.getAll({ ...filterBase, page, limit }),
+        QuotationApi.getStats(filterBase),
+      ]);
+      setQuotations(pageRes.data || []);
+      setTotalFromServer(pageRes.meta?.total || pageRes.data?.length || 0);
+      setServerStats(statsRes);
     } catch (error) {
       console.error('Failed to fetch quotations:', error);
     } finally {
@@ -163,29 +162,16 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
   const [isUploadingSignature, setIsUploadingSignature] = useState(false);
 
-  // Stats calculations
-  const stats = useMemo(() => {
-    const total = quotations.length;
-    const draft = quotations.filter(
-      (q) => q.status === QuotationStatus.DRAFT
-    ).length;
-    const pending = quotations.filter(
-      (q) =>
-        q.status === QuotationStatus.PENDING_SIGNATURE ||
-        q.status === QuotationStatus.PENDING_APPROVAL ||
-        q.status === QuotationStatus.APPROVED
-    ).length;
-    const approved = quotations.filter(
-      (q) =>
-        q.status === QuotationStatus.SIGNED
-    ).length;
-    const totalValue = quotations.reduce(
-      (sum, q) => sum + (Number(q.total) || 0),
-      0
-    );
-
-    return { total, draft, pending, approved, totalValue };
-  }, [quotations]);
+  // Stats จาก /quotations/stats endpoint (SQL aggregated)
+  //   pending = PENDING_SIGNATURE + PENDING_APPROVAL + APPROVED (รวมที่ยังไม่เซ็น)
+  //   approved badge = SIGNED
+  const stats = useMemo(() => ({
+    total: serverStats?.total ?? 0,
+    draft: serverStats?.draft ?? 0,
+    pending: (serverStats?.pending ?? 0) + (serverStats?.approved ?? 0),
+    approved: serverStats?.signed ?? 0,
+    totalValue: serverStats?.total_value ?? 0,
+  }), [serverStats]);
 
   // Customer phone map
   const custPhoneMap = useMemo(
@@ -659,9 +645,9 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               </svg>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เสนอราคา" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
+              <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date) => setStartDate(toLocalISODate(date))} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เสนอราคา" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
               <span className="text-slate-400">-</span>
-              <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="ใช้ได้ถึงวันที่" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
+              <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date) => setEndDate(toLocalISODate(date))} dateFormat="dd/MM/yyyy" locale="th" placeholderText="ใช้ได้ถึงวันที่" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
             </div>
             <div className="w-full sm:w-40">
               <DropdownSelect

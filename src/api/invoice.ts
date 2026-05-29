@@ -15,6 +15,11 @@ class InvoiceService extends AuthService {
     return res.data;
   }
 
+  async getStats(query?: Record<string, unknown>): Promise<{ total: number; pending: number; paid: number; overdue: number; cancelled: number; total_value: number; pending_value: number }> {
+    const res = await this.http.get<{ data: { total: number; pending: number; paid: number; overdue: number; cancelled: number; total_value: number; pending_value: number } }>(`${this.path}/stats`, { params: query });
+    return (res.data as { data: { total: number; pending: number; paid: number; overdue: number; cancelled: number; total_value: number; pending_value: number } }).data;
+  }
+
   async getAllInvoiceSchedule(id: string): Promise<IBaseResponseArray<InvoiceSchedule>> {
     const res = await this.http.get<IBaseResponseArray<InvoiceSchedule>>(`${this.path}/${id}/invoice-schedules`);
     return res.data;

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { TruncateText } from '../../components/common/TruncateText';
-import { formatThaiDate } from '../../utils/date';
+import { formatThaiDate, toLocalISODate } from '../../utils/date';
 import {
   PlusIcon,
   ManageIcon,
@@ -82,6 +82,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   const navigate = useNavigate();
 
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [serverStats, setServerStats] = useState<{ total: number; draft: number; active: number; completed: number; cancelled: number; total_value: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [totalFromServer, setTotalFromServer] = useState(0);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -110,22 +111,23 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   const fetchContractsData = async (page = currentPage, limit = itemsPerPage) => {
     setIsLoading(true);
     try {
-      const query: any = {
-        page,
-        limit,
-        sort_by: 'created_at',
-        sort_order: 'DESC',
-      };
-      if (searchQuery.trim()) query.search = searchQuery.trim();
-      if (statusFilter !== 'ทั้งหมด') query.status = statusFilter;
-      if (startDate) query.start_date = startDate;
-      if (endDate) query.end_date = endDate;
+      const filterBase: any = { sort_by: 'created_at', sort_order: 'DESC' };
+      if (searchQuery.trim()) filterBase.search = searchQuery.trim();
+      if (statusFilter !== 'ทั้งหมด') filterBase.status = statusFilter;
+      if (startDate) filterBase.start_date = startDate;
+      if (endDate) filterBase.end_date = endDate;
 
-      const response = await ContractApi.getAll(query);
-      if (response && response.data) {
-        setContracts(response.data);
-        setTotalFromServer(response.meta?.total || response.data.length || 0);
+      // ดึงคู่ขนาน: page สำหรับตาราง + stats endpoint สำหรับ summary cards
+      //   (stats ใช้ SQL COUNT/SUM ไม่ดึง row จริง — เร็วแม้มีสัญญาหลายแสน)
+      const [pageRes, statsRes] = await Promise.all([
+        ContractApi.getAll({ ...filterBase, page, limit }),
+        ContractApi.getStats(filterBase),
+      ]);
+      if (pageRes && pageRes.data) {
+        setContracts(pageRes.data);
+        setTotalFromServer(pageRes.meta?.total || pageRes.data.length || 0);
       }
+      if (statsRes) setServerStats(statsRes);
     } catch (error) {
       console.error('Failed to fetch contracts:', error);
     } finally {
@@ -137,25 +139,14 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
     fetchContractsData(currentPage, itemsPerPage);
   }, [currentPage, itemsPerPage, searchQuery, statusFilter, startDate, endDate]);
 
-  // Stats calculations
-  const stats = useMemo(() => {
-    const total = contracts.length;
-    const draft = contracts.filter(
-      (c) => c.status === ContractStatus.DRAFT
-    ).length;
-    const active = contracts.filter(
-      (c) => c.status === ContractStatus.ACTIVE
-    ).length;
-    const completed = contracts.filter(
-      (c) => (c.status as string) === 'COMPLETED'
-    ).length;
-    const totalValue = contracts.reduce(
-      (sum, c) => sum + (Number(c.total_amount) || 0),
-      0
-    );
-
-    return { total, draft, active, completed, totalValue };
-  }, [contracts]);
+  // Stats จาก /contracts/stats endpoint (SQL aggregated) — ไม่ต้องดึง row จริง
+  const stats = useMemo(() => ({
+    total: serverStats?.total ?? 0,
+    draft: serverStats?.draft ?? 0,
+    active: serverStats?.active ?? 0,
+    completed: serverStats?.completed ?? 0,
+    totalValue: serverStats?.total_value ?? 0,
+  }), [serverStats]);
 
   // Customer phone map
   const custPhoneMap = useMemo(
@@ -495,9 +486,9 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+            <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(toLocalISODate(date))} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
             <span className="text-slate-400">-</span>
-            <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+            <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(toLocalISODate(date))} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
           </div>
 
           <div className="w-full lg:w-48">

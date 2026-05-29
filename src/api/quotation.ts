@@ -15,6 +15,11 @@ class QuotationService extends AuthService {
     return res.data;
   }
 
+  async getStats(query?: Record<string, unknown>): Promise<{ total: number; draft: number; pending: number; approved: number; signed: number; cancelled: number; total_value: number }> {
+    const res = await this.http.get<{ data: { total: number; draft: number; pending: number; approved: number; signed: number; cancelled: number; total_value: number } }>(`${this.path}/stats`, { params: query });
+    return (res.data as { data: { total: number; draft: number; pending: number; approved: number; signed: number; cancelled: number; total_value: number } }).data;
+  }
+
   async getById(id: string): Promise<Quotation> {
     const res = await this.http.get<Quotation>(`${this.path}/${id}`);
     return res.data;

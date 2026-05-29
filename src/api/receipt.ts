@@ -15,6 +15,11 @@ class ReceiptService extends AuthService {
     return res.data;
   }
 
+  async getStats(query?: Record<string, unknown>): Promise<{ total: number; today_count: number; today_amount: number; total_amount: number }> {
+    const res = await this.http.get<{ data: { total: number; today_count: number; today_amount: number; total_amount: number } }>(`${this.path}/stats`, { params: query });
+    return (res.data as { data: { total: number; today_count: number; today_amount: number; total_amount: number } }).data;
+  }
+
   async getById(id: string): Promise<Receipt> {
     const res = await this.http.get<Receipt>(`${this.path}/${id}`);
     return res.data;

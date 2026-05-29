@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Swal from '@/src/utils/swal';
 import { Card } from '../../components/common/Card';
-import { formatThaiDate } from '../../utils/date';
+import { formatThaiDate, toLocalISODate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import {
@@ -81,6 +81,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
   const [receiptEndDate, setReceiptEndDate] = useState('');
   // Server-side pagination state (เหมือน Contract/Invoice page)
   const [localReceipts, setLocalReceipts] = useState<Receipt[]>([]);
+  const [serverStats, setServerStats] = useState<{ total: number; today_count: number; today_amount: number; total_amount: number } | null>(null);
   const [totalFromServer, setTotalFromServer] = useState(0);
 
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
@@ -149,29 +150,29 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
     return () => clearTimeout(t);
   }, [receiptSearchQuery]);
 
-  // Server-side fetch — ดึงเฉพาะหน้าปัจจุบัน + filters
+  // Server-side fetch — ดึงเฉพาะหน้าปัจจุบัน + filters; ดึง stats query (limit 1000) คู่กันสำหรับ summary cards
   const fetchReceiptsPage = useCallback(async () => {
     setIsLoading(true);
     try {
-      const query: Record<string, unknown> = {
-        page: receiptPage,
-        limit: receiptItemsPerPage,
-        sort_by: 'created_at',
-        sort_order: 'DESC',
-      };
-      if (debouncedReceiptSearch) query.search = debouncedReceiptSearch;
-      if (receiptPaymentMethodFilter !== 'ทั้งหมด') query.payment_method = receiptPaymentMethodFilter;
-      if (receiptStartDate) query.start_date = receiptStartDate;
-      if (receiptEndDate) query.end_date = receiptEndDate;
+      const filterBase: Record<string, unknown> = { sort_by: 'created_at', sort_order: 'DESC' };
+      if (debouncedReceiptSearch) filterBase.search = debouncedReceiptSearch;
+      if (receiptPaymentMethodFilter !== 'ทั้งหมด') filterBase.payment_method = receiptPaymentMethodFilter;
+      if (receiptStartDate) filterBase.start_date = receiptStartDate;
+      if (receiptEndDate) filterBase.end_date = receiptEndDate;
 
-      const response = await ReceiptApi.getAll(query as unknown as Record<string, never>);
-      const res = response as unknown as { data?: Receipt[]; meta?: { total?: number } };
-      const items = res?.data || (response as unknown as Receipt[]) || [];
+      const [pageRes, statsRes] = await Promise.all([
+        ReceiptApi.getAll({ ...filterBase, page: receiptPage, limit: receiptItemsPerPage } as unknown as Record<string, never>),
+        ReceiptApi.getStats(filterBase),
+      ]);
+      const res = pageRes as unknown as { data?: Receipt[]; meta?: { total?: number } };
+      const items = res?.data || (pageRes as unknown as Receipt[]) || [];
       setLocalReceipts(Array.isArray(items) ? items : []);
       setTotalFromServer(res?.meta?.total ?? (Array.isArray(items) ? items.length : 0));
+      setServerStats(statsRes);
     } catch (error) {
       console.error('Failed to fetch receipts:', error);
       setLocalReceipts([]);
+      setServerStats(null);
       setTotalFromServer(0);
     } finally {
       setIsLoading(false);
@@ -190,25 +191,13 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
   const totalReceiptItems = totalFromServer;
   const paginatedReceipts = localReceipts;
 
-  const receiptStats = useMemo(() => {
-    const total = receiptData.length;
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const todayReceipts = receiptData.filter((r) => {
-      const receivedDate = (r.received_at || r.paid_at || '').slice(0, 10);
-      return receivedDate === todayStr;
-    });
-    const todayCount = todayReceipts.length;
-    const todayAmount = todayReceipts.reduce(
-      (sum, r) => sum + (Number(r.amount) || 0),
-      0
-    );
-    const totalAmount = receiptData.reduce(
-      (sum, r) => sum + (Number(r.amount) || 0),
-      0
-    );
-
-    return { total, todayCount, todayAmount, totalAmount };
-  }, [receiptData]);
+  // Stats จาก /receipts/stats endpoint (SQL aggregated + today filter)
+  const receiptStats = useMemo(() => ({
+    total: serverStats?.total ?? 0,
+    todayCount: serverStats?.today_count ?? 0,
+    todayAmount: serverStats?.today_amount ?? 0,
+    totalAmount: serverStats?.total_amount ?? 0,
+  }), [serverStats]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -372,9 +361,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             </svg>
           </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <DatePicker selected={receiptStartDate ? new Date(receiptStartDate) : null} onChange={(date: Date | null) => setReceiptStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+              <DatePicker selected={receiptStartDate ? new Date(receiptStartDate) : null} onChange={(date: Date | null) => setReceiptStartDate(toLocalISODate(date))} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
               <span className="text-slate-400">-</span>
-              <DatePicker selected={receiptEndDate ? new Date(receiptEndDate) : null} onChange={(date: Date | null) => setReceiptEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+              <DatePicker selected={receiptEndDate ? new Date(receiptEndDate) : null} onChange={(date: Date | null) => setReceiptEndDate(toLocalISODate(date))} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
             </div>
             <div className="w-full sm:w-56">
               <DropdownSelect
@@ -842,7 +831,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       <label className="block text-sm font-medium text-slate-700 mb-1">
                         วันที่รับชำระ <span className="text-red-500">*</span>
                       </label>
-                      <DatePicker selected={receiptFormReceivedAt ? new Date(receiptFormReceivedAt) : null} onChange={(date: Date | null) => setReceiptFormReceivedAt(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
+                      <DatePicker selected={receiptFormReceivedAt ? new Date(receiptFormReceivedAt) : null} onChange={(date: Date | null) => setReceiptFormReceivedAt(toLocalISODate(date))} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">

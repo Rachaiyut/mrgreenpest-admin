@@ -4,7 +4,7 @@ import Swal from '@/src/utils/swal';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { TruncateText } from '../../components/common/TruncateText';
-import { formatThaiDate } from '../../utils/date';
+import { formatThaiDate, toLocalISODate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import {
@@ -74,6 +74,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
   const [invoiceEndDate, setInvoiceEndDate] = useState('');
   // Server-side pagination state (เหมือน Contract page)
   const [localInvoices, setLocalInvoices] = useState<Invoice[]>([]);
+  const [serverStats, setServerStats] = useState<{ total: number; pending: number; paid: number; overdue: number; cancelled: number; total_value: number; pending_value: number } | null>(null);
   const [totalFromServer, setTotalFromServer] = useState(0);
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -137,29 +138,29 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     return () => clearTimeout(t);
   }, [invoiceSearchQuery]);
 
-  // Server-side fetch — ดึงเฉพาะหน้าปัจจุบัน + filters
+  // Server-side fetch — ดึงเฉพาะหน้าปัจจุบัน + filters; ดึง stats query (limit 1000) คู่กันสำหรับ summary cards
   const fetchInvoicesPage = useCallback(async () => {
     setIsLoading(true);
     try {
-      const query: Record<string, unknown> = {
-        page: invoicePage,
-        limit: invoiceItemsPerPage,
-        sort_by: 'created_at',
-        sort_order: 'DESC',
-      };
-      if (debouncedInvoiceSearch) query.search = debouncedInvoiceSearch;
-      if (invoiceStatusFilter !== 'ทั้งหมด') query.status = invoiceStatusFilter;
-      if (invoiceStartDate) query.start_date = invoiceStartDate;
-      if (invoiceEndDate) query.end_date = invoiceEndDate;
+      const filterBase: Record<string, unknown> = { sort_by: 'created_at', sort_order: 'DESC' };
+      if (debouncedInvoiceSearch) filterBase.search = debouncedInvoiceSearch;
+      if (invoiceStatusFilter !== 'ทั้งหมด') filterBase.status = invoiceStatusFilter;
+      if (invoiceStartDate) filterBase.start_date = invoiceStartDate;
+      if (invoiceEndDate) filterBase.end_date = invoiceEndDate;
 
-      const response = await InvoiceApi.getAll(query as unknown as Record<string, never>);
-      const res = response as unknown as { data?: Invoice[]; meta?: { total?: number } };
-      const items = res?.data || (response as unknown as Invoice[]) || [];
+      const [pageRes, statsRes] = await Promise.all([
+        InvoiceApi.getAll({ ...filterBase, page: invoicePage, limit: invoiceItemsPerPage } as unknown as Record<string, never>),
+        InvoiceApi.getStats(filterBase),
+      ]);
+      const res = pageRes as unknown as { data?: Invoice[]; meta?: { total?: number } };
+      const items = res?.data || (pageRes as unknown as Invoice[]) || [];
       setLocalInvoices(Array.isArray(items) ? items : []);
       setTotalFromServer(res?.meta?.total ?? (Array.isArray(items) ? items.length : 0));
+      setServerStats(statsRes);
     } catch (error) {
       console.error('Failed to fetch invoices:', error);
       setLocalInvoices([]);
+      setServerStats(null);
       setTotalFromServer(0);
     } finally {
       setIsLoading(false);
@@ -178,32 +179,15 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
   const totalInvoiceItems = totalFromServer;
   const paginatedInvoices = localInvoices;
 
-  const invoiceStats = useMemo(() => {
-    const total = invoiceData.length;
-    const pending = invoiceData.filter(
-      (i) => i.status === InvoiceStatus.PENDING
-    ).length;
-    const paid = invoiceData.filter(
-      (i) => i.status === InvoiceStatus.PAID
-    ).length;
-    const overdue = invoiceData.filter(
-      (i) => i.status === InvoiceStatus.OVERDUE
-    ).length;
-    const totalValue = invoiceData.reduce(
-      (sum, i) => sum + (Number(i.total) || 0),
-      0
-    );
-    const pendingValue = invoiceData
-      .filter(
-        (i) =>
-          (i.status === InvoiceStatus.PENDING ||
-          i.status === InvoiceStatus.OVERDUE) &&
-          !(i as unknown as Record<string, unknown>).carried_over_to_id
-      )
-      .reduce((sum, i) => sum + ((Number(i.total) || 0) - (Number((i as unknown as Record<string, number>).paid_amount) || 0)), 0);
-
-    return { total, pending, paid, overdue, totalValue, pendingValue };
-  }, [invoiceData]);
+  // Stats จาก /invoices/stats endpoint (SQL aggregated)
+  const invoiceStats = useMemo(() => ({
+    total: serverStats?.total ?? 0,
+    pending: serverStats?.pending ?? 0,
+    paid: serverStats?.paid ?? 0,
+    overdue: serverStats?.overdue ?? 0,
+    totalValue: serverStats?.total_value ?? 0,
+    pendingValue: serverStats?.pending_value ?? 0,
+  }), [serverStats]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -756,9 +740,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             </svg>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <DatePicker selected={invoiceStartDate ? new Date(invoiceStartDate) : null} onChange={(date: Date | null) => setInvoiceStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+            <DatePicker selected={invoiceStartDate ? new Date(invoiceStartDate) : null} onChange={(date: Date | null) => setInvoiceStartDate(toLocalISODate(date))} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
             <span className="text-slate-400">-</span>
-            <DatePicker selected={invoiceEndDate ? new Date(invoiceEndDate) : null} onChange={(date: Date | null) => setInvoiceEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+            <DatePicker selected={invoiceEndDate ? new Date(invoiceEndDate) : null} onChange={(date: Date | null) => setInvoiceEndDate(toLocalISODate(date))} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
           </div>
           <div className="w-full sm:w-48">
             <DropdownSelect
