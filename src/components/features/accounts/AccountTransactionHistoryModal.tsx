@@ -153,7 +153,7 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
     AccountApi.getTransactions({
       account_id: account.id,
       page: 1,
-      limit: 10000,
+      limit: 10,
       ...(typeFilter !== 'all' ? { type: typeFilter } : {}),
       ...(startDate ? { start_date: startDate } : {}),
       ...(endDate ? { end_date: endDate } : {}),
