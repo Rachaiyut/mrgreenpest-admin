@@ -45,7 +45,7 @@ interface UnifiedConfig {
   // Navigation
   name: string;
   icon?: React.ElementType;
-  access?: string;
+  access?: string | undefined;
   roles?: Role[];
   /** Hide from sidebar nav but keep the route reachable via direct URL */
   hideFromNav?: boolean;
@@ -184,7 +184,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     name: 'ภาคสนาม',
     path: 'field-operations',
     icon: NewFieldOpsIcon,
-    access: null,
+    access: undefined,
     component: FieldOperations,
     getProps: (data) => ({
       users: data.users,
@@ -206,7 +206,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     name: 'แผนการเข้าปฏิบัติงาน',
     path: 'service-schedules',
     icon: ClipboardDocumentListIcon,
-    access: null,
+    access: undefined,
     group: 'service-schedule',
     component: ServiceSchedulePage,
     subItems: [
@@ -239,7 +239,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     name: 'การเงินและบัญชี',
     path: 'billing',
     icon: NewAccountingIcon,
-    access: null,
+    access: undefined,
     group: 'billing',
     component: Quotation,
     subItems: [
@@ -285,7 +285,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     name: 'ระบบเงินสดภายใน',
     path: 'cash-system',
     icon: CurrencyDollarIcon,
-    access: null,
+    access: undefined,
     group: 'cash-system',
     component: Account,
     subItems: [
@@ -311,7 +311,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     name: 'คลังสินค้า',
     path: 'warehouse',
     icon: BuildingOfficeIcon,
-    access: null,
+    access: undefined,
     group: 'inventory',
     component: Warehouse,
     subItems: [
@@ -363,7 +363,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     name: 'จัดการสินค้าภายใน',
     path: 'inventory-internal',
     icon: NewWarehouseIcon,
-    access: null,
+    access: undefined,
     group: 'inventory',
     component: Withdrawals,
     subItems: [
@@ -401,7 +401,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     name: 'ข้อมูลสินค้าเเละคู่ค้า',
     path: 'products',
     icon: PackageIcon,
-    access: null,
+    access: undefined,
     component: Product,
     subItems: [
       {
@@ -442,7 +442,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     name: 'การตั้งค่าระบบ',
     path: 'users',
     icon: NewUsersIcon,
-    access: null,
+    access: undefined,
     component: User,
     subItems: [
       {
@@ -470,7 +470,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     name: 'รายงาน',
     path: 'reports',
     icon: NewReportIcon,
-    access: null,
+    access: undefined,
     component: Reports,
     subItems: [
       {
@@ -505,62 +505,62 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
       },
       // ── รายงานวิเคราะห์การปฏิบัติงาน ─────────────────────────────
       {
-        name: 'อัตราลูกค้ายกเลิกงาน',
+        name: 'รายงานอัตราลูกค้ายกเลิกงาน',
         path: 'reports/job-cancellation',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: JobCancellationPage,
       },
       {
-        name: 'สถานะใบประเมิน',
+        name: 'รายงานใบประเมิน',
         path: 'reports/assessment-status',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: AssessmentStatusPage,
       },
       {
-        name: 'ลูกค้าคงค้างเข้าบริการ',
+        name: 'รายงานลูกค้าคงค้างเข้าบริการ',
         path: 'reports/overdue-jobs',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: OverdueJobsPage,
       },
       {
-        name: 'การต่อสัญญา',
+        name: 'รายงานการต่อสัญญา',
         path: 'reports/contract-renewal-status',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: ContractRenewalStatusPage,
       },
       {
-        name: 'จำนวนเข้าบริการลูกค้ารายวันเทียบรายเดือน',
+        name: 'รายงานจำนวนเข้าบริการลูกค้ารายวันเทียบรายเดือน',
         path: 'reports/daily-service-count',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: DailyServiceCountPage,
       },
       // ── รายงานวิเคราะห์การปฏิบัติงาน (Phase 2) ─────────────────────────────
       {
-        name: 'การใช้สารเคมี',
+        name: 'รายงานการใช้สารเคมี',
         path: 'reports/chemical-usage-daily',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: ChemicalUsageDailyPage,
       },
       {
-        name: 'จำนวนพนักงานปฏิบัติงานรายวันเทียบจำนวนบ้านลูกค้า',
+        name: 'รายงานจำนวนพนักงานปฏิบัติงานรายวันเทียบจำนวนบ้านลูกค้า',
         path: 'reports/daily-tech-deployment',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: DailyTechDeploymentPage,
       },
       {
-        name: 'อัตราการต่อสัญญาของลูกค้าใหม่ หรือ ลูกค้าเดิม',
+        name: 'รายงานอัตราการต่อสัญญาของลูกค้าใหม่ หรือ ลูกค้าเดิม',
         path: 'reports/contract-renewal-cohort',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: ContractRenewalCohortPage,
       },
       {
-        name: 'เวลาปฏิบัติงานเฉลี่ยของหัวหน้าทีม',
+        name: 'รายงานเวลาปฏิบัติงานเฉลี่ยของหัวหน้าทีม',
         path: 'reports/service-time-performance',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: ServiceTimePerformancePage,
       },
       {
-        name: 'สรุปผลการทำงานของหัวหน้าทีม',
+        name: 'รายงานสรุปผลการทำงานของหัวหน้าทีม',
         path: 'reports/tech-lead-activity',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: TechLeadActivityPage,
@@ -573,7 +573,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     name: 'คู่มือธุรกิจ',
     path: 'docs/flow',
     icon: DocumentTextIcon,
-    access: null,
+    access: undefined,
     component: FlowDocs,
     hideFromNav: true,
   },
