@@ -149,9 +149,9 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
       try {
         // dropdown options ต้องโหลดให้ครบ ไม่งั้น user เลือกได้แค่ 10 ตัวแรก
         const [warehousesRes, suppliersRes, productsRes] = await Promise.all([
-          WarehouseApi.getWarehouses({ limit: 1000 }),
-          SupplierApi.getSuppliers({ limit: 1000, is_active: true }),
-          ProductApi.getProducts({ limit: 1000, is_active: true }),
+          WarehouseApi.getWarehouses({ limit: 10 }),
+          SupplierApi.getSuppliers({ limit: 10, is_active: true }),
+          ProductApi.getProducts({ limit: 10, is_active: true }),
         ]);
         setWarehouses(warehousesRes.data || []);
         setSuppliers(suppliersRes.data || []);

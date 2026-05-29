@@ -52,9 +52,10 @@ const Transfers: React.FC = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
+        // TODO: refactor to server-side search per dropdown if master data grows beyond ~1000 rows
         const [whRes, prodRes] = await Promise.all([
-          WarehouseApi.getWarehouses({ limit: 1000 }),
-          ProductApi.getProducts({ limit: 1000, is_active: true }),
+          WarehouseApi.getWarehouses({ limit: 10 }),
+          ProductApi.getProducts({ limit: 10, is_active: true }),
         ]);
         setWarehouses(whRes.data || []);
         setProducts(prodRes.data || []);

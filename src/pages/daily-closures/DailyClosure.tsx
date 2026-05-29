@@ -87,11 +87,13 @@ const DailyClosure: React.FC = () => {
       const dateStr = filterDate ? toLocalDate(filterDate) : toLocalDate(today);
 
       // Fetch overview (for vehicle cards) and jobs (for table) in parallel
+      // ใช้ server-side pagination — ส่ง page + limit จาก state ตรงๆ
       const [overviewRes, jobsRes] = await Promise.all([
         DailyClosureApi.getOverview(dateStr),
         JobApi.getAll({
           appointment_date: dateStr,
-          limit: 1000,
+          page: currentPage,
+          limit: itemsPerPage,
           ...(selectedVehicleId ? { vehicle_id: selectedVehicleId } : {}),
           ...(filterStatus ? { status: filterStatus } : {}),
           ...(searchQuery ? { search: searchQuery } : {}),
@@ -103,22 +105,25 @@ const DailyClosure: React.FC = () => {
 
       const jobs = jobsRes.data || [];
       setJobsData(jobs);
-      setTotalItems(jobs.length);
+      setTotalItems((jobsRes as { meta?: { total?: number } }).meta?.total ?? jobs.length);
     } catch (error) {
       console.error('Error fetching overview:', error);
     } finally {
       setLoading(false);
     }
-  }, [filterDate, searchQuery, filterStatus, selectedVehicleId]);
+  }, [filterDate, searchQuery, filterStatus, selectedVehicleId, currentPage, itemsPerPage]);
 
   useEffect(() => {
     fetchOverview();
   }, [fetchOverview]);
 
-  const paginatedJobs = jobsData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Reset to page 1 ตอน filter เปลี่ยน (ไม่งั้นอาจอยู่หน้าที่ไม่มีข้อมูล)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterDate, searchQuery, filterStatus, selectedVehicleId]);
+
+  // Server-side paginated — jobsData คือหน้าปัจจุบันอยู่แล้ว
+  const paginatedJobs = jobsData;
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);

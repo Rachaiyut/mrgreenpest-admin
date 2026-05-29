@@ -78,10 +78,11 @@ const ReturnToSupplierPage: React.FC = () => {
   useEffect(() => {
     const fetchMaster = async () => {
       try {
+        // TODO: refactor to server-side search per dropdown if master data grows beyond ~1000 rows
         const [whRes, supRes, prodRes] = await Promise.all([
-          WarehouseApi.getWarehouses({ limit: 1000 }),
-          SupplierApi.getSuppliers({ limit: 1000, is_active: true }),
-          ProductApi.getProducts({ limit: 1000, is_active: true }),
+          WarehouseApi.getWarehouses({ limit: 10 }),
+          SupplierApi.getSuppliers({ limit: 10, is_active: true }),
+          ProductApi.getProducts({ limit: 10, is_active: true }),
         ]);
         setWarehouses((whRes.data || []) as WarehouseType[]);
         setSuppliers((supRes.data || []) as Supplier[]);

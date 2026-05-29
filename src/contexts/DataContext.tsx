@@ -51,6 +51,7 @@ import { ReturnToSupplierApi } from '@/src/api/return-to-supplier';
 import { IssueNoteApi } from '@/src/api/issue-note';
 import { RequisitionApi } from '@/src/api/requisition';
 import { StockIssueSummaryApi } from '@/src/api/stock-issue-summary';
+import { Quotation } from '../types';
 
 export type ResourceType =
   | 'users'
@@ -281,8 +282,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       );
     }
     if (shouldFetch('receipts')) {
+      // ดึงเฉพาะ limit ไว้สำหรับ derive payment methods + initial preview
+      //   หน้า Receipt ใช้ server-paginated query + stats endpoint ของตัวเอง ไม่พึ่ง cache นี้สำหรับ table
       promises.push(
-        safeFetch(() => ReceiptApi.getAll({ limit: 1000, sort_by: 'created_at', sort_order: 'DESC' })).then((data: any) =>
+        safeFetch(() => ReceiptApi.getAll({ limit: 200, sort_by: 'created_at', sort_order: 'DESC' })).then((data: any) =>
           setReceipts(data)
         )
       );

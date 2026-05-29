@@ -94,16 +94,11 @@ export const ReturnToMainWarehouseModal: React.FC<
 
       const fetchData = async () => {
         try {
+          // TODO: refactor to server-side search per dropdown if master data grows beyond ~1000 rows
           const [mainRes, vehicleRes, usersRes] = await Promise.all([
-            WarehouseApi.getWarehouses({
-              type: WarehouseType.MAIN,
-              limit: 1000,
-            }),
-            WarehouseApi.getWarehouses({
-              type: WarehouseType.VEHICLE,
-              limit: 1000,
-            }),
-            UserApi.getAll({ limit: 1000 }),
+            WarehouseApi.getWarehouses({ type: WarehouseType.MAIN, limit: 10 }),
+            WarehouseApi.getWarehouses({ type: WarehouseType.VEHICLE, limit: 10 }),
+            UserApi.getAll({ limit: 10 }),
           ]);
 
           setMainWarehouses(
