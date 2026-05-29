@@ -58,7 +58,6 @@ interface GoodsReceiveProps {
 const GoodsReceive: React.FC<GoodsReceiveProps> = ({
   onCreateReceipt,
   onUpdateReceipt,
-  onDeleteReceipt,
 }) => {
   const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -148,6 +147,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
+        // dropdown options ต้องโหลดให้ครบ ไม่งั้น user เลือกได้แค่ 10 ตัวแรก
         const [warehousesRes, suppliersRes, productsRes] = await Promise.all([
           WarehouseApi.getWarehouses({ limit: 1000 }),
           SupplierApi.getSuppliers({ limit: 1000, is_active: true }),
@@ -181,15 +181,6 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
       await fetchGoodReceives(); // ดึงใหม่หลังอัปเดตเสร็จ
     } catch (error) {
       console.error('Update error', error);
-    }
-  };
-
-  const handleDeleteItem = async (id: string) => {
-    try {
-      await onDeleteReceipt(id);
-      await fetchGoodReceives(); // ดึงใหม่หลังลบเสร็จ
-    } catch (error) {
-      console.error('Delete error', error);
     }
   };
 
@@ -610,7 +601,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                             >
                               {receipt.code || receipt.id.substring(0, 8)}
                             </button>
-                            <StatusBadge status={receipt.status} />
+                            <StatusBadge status={receipt.status || 'PENDING'} />
                           </div>
                           <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-600">
                             <div className="col-span-2">
@@ -706,7 +697,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                         {receipt.supplier_id ? supplierMap[receipt.supplier_id] : '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-center">
-                        <StatusBadge status={receipt.status} />
+                        <StatusBadge status={receipt.status || 'PENDING'} />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-left">
                         {(() => {

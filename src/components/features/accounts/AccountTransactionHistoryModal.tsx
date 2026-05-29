@@ -142,7 +142,7 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
     setPage(1);
   }, [startDate, endDate]);
 
-  // 3.2 — ยอดเงินคำนวณตามช่วงเดือนเลย (ไม่ใช่แค่หน้าปัจจุบัน) → fetch อีก call ด้วย limit ใหญ่
+  // ยอดเงินรวมตาม filter — ดึงจาก stats endpoint (SQL SUM/GROUP BY) ไม่ต้องดึง row จริง
   const [summaryTotals, setSummaryTotals] = useState({ deposit: 0, withdraw: 0 });
   useEffect(() => {
     if (!account || !isOpen) {
@@ -150,24 +150,15 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
       return;
     }
     let cancelled = false;
-    AccountApi.getTransactions({
+    AccountApi.getTransactionStats({
       account_id: account.id,
-      page: 1,
-      limit: 10,
       ...(typeFilter !== 'all' ? { type: typeFilter } : {}),
       ...(startDate ? { start_date: startDate } : {}),
       ...(endDate ? { end_date: endDate } : {}),
     })
-      .then((res) => {
+      .then((stats) => {
         if (cancelled) return;
-        let deposit = 0;
-        let withdraw = 0;
-        (res.data || []).forEach((t) => {
-          const amt = Number(t.amount || 0);
-          if (t.type === 'DEPOSIT') deposit += amt;
-          else if (t.type === 'WITHDRAW') withdraw += amt;
-        });
-        setSummaryTotals({ deposit, withdraw });
+        setSummaryTotals({ deposit: stats.deposit, withdraw: stats.withdraw });
       })
       .catch(() => {
         if (!cancelled) setSummaryTotals({ deposit: 0, withdraw: 0 });

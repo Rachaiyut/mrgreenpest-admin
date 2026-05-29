@@ -218,25 +218,19 @@ const AccountTransactions: FC = () => {
       setStatsTotals({ income: 0, expense: 0, net: 0 });
       return;
     }
+    // ใช้ /accounts/transactions/stats — SQL SUM/GROUP BY type, ไม่ต้องดึง row จริง
     let cancelled = false;
-    AccountApi.getTransactions({
-      page: 1,
-      limit: 10000,
+    AccountApi.getTransactionStats({
       ...(effectiveAccountId ? { account_id: effectiveAccountId } : {}),
       ...(type ? { type: type as AccountTransactionType } : {}),
       ...(startDate ? { start_date: startDate } : {}),
       ...(endDate ? { end_date: endDate } : {}),
       ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
     })
-      .then((res) => {
+      .then((s) => {
         if (cancelled) return;
-        let income = 0;
-        let expense = 0;
-        (res?.data || []).forEach((t) => {
-          const amt = Number(t.amount || 0);
-          if (t.type === 'DEPOSIT') income += amt;
-          else if (t.type === 'WITHDRAW') expense += amt;
-        });
+        const income = s.deposit;
+        const expense = s.withdraw;
         setStatsTotals({ income, expense, net: income - expense });
       })
       .catch(() => {

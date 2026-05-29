@@ -77,6 +77,16 @@ class AccountService extends AuthService {
     return res.data;
   }
 
+  async getTransactionStats(
+    query?: AccountTransactionFilterQuery,
+  ): Promise<{ deposit: number; withdraw: number; deposit_count: number; withdraw_count: number; total_count: number }> {
+    const res = await this.http.get<{ data: { deposit: number; withdraw: number; deposit_count: number; withdraw_count: number; total_count: number } }>(
+      `${this.path}/transactions/stats`,
+      { params: query },
+    );
+    return (res.data as { data: { deposit: number; withdraw: number; deposit_count: number; withdraw_count: number; total_count: number } }).data;
+  }
+
   async createTransaction(
     accountId: string,
     payload: CreateAccountTransactionPayload,
