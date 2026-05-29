@@ -124,7 +124,14 @@ class ReportApiService extends AuthService {
     const body = res.data as unknown as { data?: unknown };
     return body?.data || res.data;
   }
-  async getContractRenewalCohort(filter?: ReportFilter) {
+  async getContractRenewalCohort(filter?: ReportFilter & {
+    cohort?: string;
+    status?: string;
+    province?: string;
+    expiring_within_days?: number;
+    start_date?: string;
+    end_date?: string;
+  }) {
     const res = await this.http.get(`${this.path}/contract-renewal-cohort`, { params: filter });
     const body = res.data as unknown as { data?: unknown };
     return body?.data || res.data;

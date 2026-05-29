@@ -127,7 +127,7 @@ const DailyCashPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">การเดินบัญชี</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานการเดินบัญชี</h1>
           <p className="mt-1 text-slate-600">รายงานการเคลื่อนไหวของเงินสดประจำวัน (จากบัญชีที่เปิดใช้งาน)</p>
           <p className="hidden print:block text-slate-700 text-sm mt-1">
             ประจำเดือน {thaiMonths[selectedMonth - 1]} {selectedYear}
