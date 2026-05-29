@@ -129,7 +129,13 @@ class ReportApiService extends AuthService {
     const body = res.data as unknown as { data?: unknown };
     return body?.data || res.data;
   }
-  async getServiceTimePerformance(filter?: ReportFilter) {
+  async getServiceTimePerformance(filter?: ReportFilter & {
+    technician_id?: string;
+    status?: string;
+    start_date?: string;
+    end_date?: string;
+    duration_bucket?: string;
+  }) {
     const res = await this.http.get(`${this.path}/service-time-performance`, { params: filter });
     const body = res.data as unknown as { data?: unknown };
     return body?.data || res.data;
