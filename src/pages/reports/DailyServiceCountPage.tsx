@@ -217,7 +217,7 @@ const DailyServiceCountPage: React.FC = () => {
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานบริการรายวัน</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานจำนวนเข้าบริการลูกค้ารายวันเทียบรายเดือน</h1>
             <p className="mt-1 text-slate-600">จำนวนลูกค้าที่เข้าให้บริการในแต่ละวันของเดือน</p>
           </div>
           <Button

@@ -505,7 +505,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
       },
       // ── รายงานวิเคราะห์การปฏิบัติงาน ─────────────────────────────
       {
-        name: 'การยกเลิกงาน',
+        name: 'อัตราลูกค้ายกเลิกงาน',
         path: 'reports/job-cancellation',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: JobCancellationPage,
@@ -517,50 +517,50 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         component: AssessmentStatusPage,
       },
       {
-        name: 'ลูกค้ารอบริการค้าง',
+        name: 'ลูกค้าคงค้างเข้าบริการ',
         path: 'reports/overdue-jobs',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: OverdueJobsPage,
       },
       {
-        name: 'สถานะสัญญาหมดอายุ',
+        name: 'การต่อสัญญา',
         path: 'reports/contract-renewal-status',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: ContractRenewalStatusPage,
       },
       {
-        name: 'บริการรายวัน',
+        name: 'จำนวนเข้าบริการลูกค้ารายวันเทียบรายเดือน',
         path: 'reports/daily-service-count',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: DailyServiceCountPage,
       },
       // ── รายงานวิเคราะห์การปฏิบัติงาน (Phase 2) ─────────────────────────────
       {
-        name: 'การใช้สารเคมี/อุปกรณ์ รายวัน',
+        name: 'การใช้สารเคมี',
         path: 'reports/chemical-usage-daily',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: ChemicalUsageDailyPage,
       },
       {
-        name: 'พนักงาน vs บ้านลูกค้า',
+        name: 'จำนวนพนักงานปฏิบัติงานรายวันเทียบจำนวนบ้านลูกค้า',
         path: 'reports/daily-tech-deployment',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: DailyTechDeploymentPage,
       },
       {
-        name: 'ต่อสัญญา: ลูกค้าใหม่/เดิม',
+        name: 'อัตราการต่อสัญญาของลูกค้าใหม่ หรือ ลูกค้าเดิม',
         path: 'reports/contract-renewal-cohort',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: ContractRenewalCohortPage,
       },
       {
-        name: 'เวลาเข้าบริการ',
+        name: 'เวลาปฏิบัติงานเฉลี่ยของหัวหน้าทีม',
         path: 'reports/service-time-performance',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: ServiceTimePerformancePage,
       },
       {
-        name: 'หัวหน้าทีม: เก็บเงิน + สารเคมี',
+        name: 'สรุปผลการทำงานของหัวหน้าทีม',
         path: 'reports/tech-lead-activity',
         access: 'ACCESS_REPORT_ANALYSIS',
         component: TechLeadActivityPage,

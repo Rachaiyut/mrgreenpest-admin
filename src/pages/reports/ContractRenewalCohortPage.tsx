@@ -40,7 +40,7 @@ const ContractRenewalCohortPage: React.FC = () => {
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานอัตราการต่อสัญญา: ลูกค้าใหม่ vs ลูกค้าเดิม</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานอัตราการต่อสัญญาของลูกค้าใหม่ หรือ ลูกค้าเดิม</h1>
             <p className="mt-1 text-slate-600">เปรียบเทียบจำนวนสัญญา + อัตราต่อสัญญาแยกตามกลุ่มลูกค้า</p>
           </div>
           <Button variant="primary" onClick={() => ReportApi.downloadExcel('contract-renewal-cohort', { month, year })}>ส่งออก Excel</Button>

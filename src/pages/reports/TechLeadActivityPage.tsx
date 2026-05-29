@@ -33,7 +33,7 @@ const TechLeadActivityPage: React.FC = () => {
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานหัวหน้าทีม: เก็บเงิน + ใช้สารเคมี</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานสรุปผลการทำงานของหัวหน้าทีม</h1>
             <p className="mt-1 text-slate-600">สรุปรายชื่อหัวหน้าทีม จำนวน/มูลค่าการเก็บเงิน + ปริมาณสารเคมีในเดือน</p>
           </div>
           <Button variant="primary" onClick={() => ReportApi.downloadExcel('tech-lead-activity', { month, year })}>ส่งออก Excel</Button>

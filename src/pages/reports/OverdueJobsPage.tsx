@@ -140,7 +140,7 @@ const OverdueJobsPage: React.FC = () => {
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานลูกค้ารอบริการค้าง</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานลูกค้าคงค้างเข้าบริการ</h1>
             <p className="mt-1 text-slate-600">งานที่นัดไว้แต่ยังไม่ได้เข้าให้บริการ (เกินวันนัด)</p>
           </div>
           <Button

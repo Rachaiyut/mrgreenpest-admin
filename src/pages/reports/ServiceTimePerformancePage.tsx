@@ -33,7 +33,7 @@ const ServiceTimePerformancePage: React.FC = () => {
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานเวลาเข้าบริการต่อทีม</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานเวลาปฏิบัติงานเฉลี่ยของหัวหน้าทีม</h1>
             <p className="mt-1 text-slate-600">เฉลี่ยกี่นาทีต่องาน + งานที่อยู่ไม่ถึง 20 นาที</p>
           </div>
           <Button variant="primary" onClick={() => ReportApi.downloadExcel('service-time-performance', { month, year, search })}>ส่งออก Excel</Button>

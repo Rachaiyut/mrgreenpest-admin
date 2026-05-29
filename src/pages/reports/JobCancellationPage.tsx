@@ -81,7 +81,7 @@ const JobCancellationPage: React.FC = () => {
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานการยกเลิกงาน</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานอัตราลูกค้ายกเลิกงาน</h1>
             <p className="mt-1 text-slate-600">รายการงานที่ถูกยกเลิก พร้อมเหตุผลและสถิติ</p>
           </div>
           <Button variant="primary" onClick={() => ReportApi.downloadExcel('job-cancellation', { month, year, search })}>

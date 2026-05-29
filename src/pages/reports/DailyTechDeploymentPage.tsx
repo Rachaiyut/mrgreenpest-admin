@@ -34,7 +34,7 @@ const DailyTechDeploymentPage: React.FC = () => {
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานพนักงาน vs บ้านลูกค้า</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">รายงานจำนวนพนักงานปฏิบัติงานรายวันเทียบจำนวนบ้านลูกค้า</h1>
             <p className="mt-1 text-slate-600">จำนวนพนักงานออกงานเทียบกับบ้านลูกค้าที่ให้บริการต่อวัน</p>
           </div>
           <Button variant="primary" onClick={() => ReportApi.downloadExcel('daily-tech-deployment', { month, year })}>ส่งออก Excel</Button>
